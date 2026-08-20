@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>cn.jowen.framework</groupId>
+        <artifactId>framework-data</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>framework-data-mybatis</artifactId>
+    <packaging>jar</packaging>
+    <description>framework-data-core 的 MyBatis Flex 增强实现，提供类型安全查询、多表关联、数据脱敏/加密、多租户与 SQL 审计能力</description>
+</project>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>cn.jowen.framework</groupId>
+        <artifactId>framework-data</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>framework-data-jdbc</artifactId>
+    <description>framework-data-core 的轻量 JDBC 实现，封装 SQL 构建执行、结果集映射、连接池、事务与方言，与 framework-data-mybatis 二选一</description>
+    <packaging>jar</packaging>
+</project>

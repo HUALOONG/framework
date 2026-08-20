@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>cn.jowen.framework</groupId>
+        <artifactId>framework</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>framework-data</artifactId>
+    <description>数据访问聚合父模块，仅含 pom.xml，聚合 data-core / data-jdbc / data-mybatis 三个子模块</description>
+    <packaging>pom</packaging>
+
+
+    <modules>
+        <module>framework-data-core</module>
+        <module>framework-data-jdbc</module>
+        <module>framework-data-mybatis</module>
+    </modules>
+</project>

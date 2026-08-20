@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>cn.jowen.framework</groupId>
+        <artifactId>framework-boot</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>framework-boot-starter</artifactId>
+    <packaging>jar</packaging>
+    <description>框架 Starter 聚合入口，仅含 pom.xml 无代码，引入单一依赖即获 core/logger/autoconfigure 默认能力，data/cache/i18n 按需另行引入</description>
+</project>

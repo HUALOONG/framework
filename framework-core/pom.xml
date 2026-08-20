@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>cn.jowen.framework</groupId>
+        <artifactId>framework</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>framework-core</artifactId>
+    <description>框架基础设施层（L0），提供 SPI 扩展机制、统一异常体系、断言工具、生命周期管理、事件机制与上下文传播，唯一外部依赖 JSpecify，零 Spring 依赖</description>
+    <packaging>jar</packaging>
+</project>

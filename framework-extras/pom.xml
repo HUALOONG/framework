@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>cn.jowen.framework</groupId>
+        <artifactId>framework</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>framework-extras</artifactId>
+    <packaging>jar</packaging>
+
+    <description>企业级扩展工具集，提供分布式锁、接口限流、幂等控制、文件存储、消息通知、Excel 处理、验证码、IP 地域识别、数据脱敏、操作日志、数据权限等 12 项高频能力，按需引入、互不耦合</description>
+</project>
