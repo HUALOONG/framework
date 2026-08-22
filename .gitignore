@@ -53,3 +53,5 @@ rebel.xml
 
 # Git worktrees
 .worktrees/
+*.class
+target/
