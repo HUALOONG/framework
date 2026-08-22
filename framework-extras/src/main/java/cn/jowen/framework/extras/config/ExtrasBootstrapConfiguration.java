@@ -47,6 +47,10 @@ import cn.jowen.framework.extras.datapermission.aop.DataPermissionAspect;
 import cn.jowen.framework.extras.storage.impl.DefaultFileStorageManager;
 import cn.jowen.framework.extras.notification.channel.EmailNotificationHandler;
 import cn.jowen.framework.extras.notification.channel.WebhookNotificationHandler;
+import cn.jowen.framework.extras.excel.ExcelProperties;
+import cn.jowen.framework.extras.excel.ExcelService;
+import cn.jowen.framework.extras.ip2region.Ip2RegionProperties;
+import cn.jowen.framework.extras.ip2region.IpRegionService;
 import jakarta.mail.Message;
 import okhttp3.OkHttpClient;
 import io.minio.MinioClient;
@@ -124,6 +128,18 @@ public class ExtrasBootstrapConfiguration {
     @ConditionalOnClass(DesensitizeModule.class)
     public DesensitizeProperties desensitizeProperties() {
         return new DesensitizeProperties();
+    }
+
+    @Bean
+    @ConditionalOnClass(ExcelService.class)
+    public ExcelProperties excelProperties() {
+        return new ExcelProperties();
+    }
+
+    @Bean
+    @ConditionalOnClass(Ip2RegionProperties.class)
+    public Ip2RegionProperties ip2RegionProperties() {
+        return new Ip2RegionProperties();
     }
 
     // ==================== 2. 核心服务 Bean ====================
