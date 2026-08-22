@@ -20,20 +20,12 @@ import java.util.Map;
 @NullMarked
 public final class DependencyResolver {
 
-    private volatile List<String> sortedResult = null;
-
     /**
      * 解析插件 id 列表的依赖顺序，返回可安全启动的顺序（依赖方在前）。
-     *
-     * @param descriptors 描述符列表，不可为 {@code null}
-     * @return 按启动顺序排列的插件 id 列表
-     * @throws DependencyResolutionException 循环依赖或未满足依赖时抛出
+     * 每次调用独立计算，不缓存结果。
      */
     public List<String> resolve(List<cn.jowen.framework.plugin.PluginDescriptor> descriptors)
             throws DependencyResolutionException {
-        if (sortedResult != null) {
-            return sortedResult;
-        }
         Map<String, cn.jowen.framework.plugin.PluginDescriptor> byId = new LinkedHashMap<>();
         for (cn.jowen.framework.plugin.PluginDescriptor d : descriptors) {
             byId.put(d.id(), d);
@@ -87,7 +79,6 @@ public final class DependencyResolver {
             throw new DependencyResolutionException("检测到循环依赖，无法完成拓扑排序");
         }
 
-        sortedResult = Collections.unmodifiableList(result);
-        return sortedResult;
+        return Collections.unmodifiableList(result);
     }
 }
