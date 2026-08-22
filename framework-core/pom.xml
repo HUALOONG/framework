@@ -13,4 +13,23 @@
     <artifactId>framework-core</artifactId>
     <description>框架基础设施层（L0），提供 SPI 扩展机制、统一异常体系、断言工具、生命周期管理、事件机制与上下文传播，唯一外部依赖 JSpecify，零 Spring 依赖</description>
     <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+        </dependency>
+
+        <!-- 测试 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

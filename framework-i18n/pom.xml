@@ -13,4 +13,37 @@
     <artifactId>framework-i18n</artifactId>
     <packaging>jar</packaging>
     <description>统一国际化与本地化基础设施，提供多语言消息管理、区域解析、消息格式化、多源聚合（Properties/DB/Redis）与动态刷新</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-core</artifactId>
+        </dependency>
+
+        <!-- Web 区域解析器/拦截器（locale/interceptor 子包）按需使用 -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- DB 消息源/轮询 watcher（source/reload 子包）按需使用 -->
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-data-jdbc</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
 </project>

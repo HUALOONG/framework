@@ -13,4 +13,37 @@
     <artifactId>framework-data-jdbc</artifactId>
     <description>framework-data-core 的轻量 JDBC 实现，封装 SQL 构建执行、结果集映射、连接池、事务与方言，与 framework-data-mybatis 二选一</description>
     <packaging>jar</packaging>
+
+    <dependencies>
+        <!-- 抽象层 -->
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-data-core</artifactId>
+        </dependency>
+
+        <!-- Spring JDBC：JdbcTemplate / 事务（不引入 web/mvc） -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+        </dependency>
+
+        <!-- 连接池 -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+        </dependency>
+
+        <!-- 测试：H2 内存库跑通 CRUD/事务/分页 -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

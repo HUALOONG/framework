@@ -13,4 +13,11 @@
     <artifactId>framework-data-core</artifactId>
     <packaging>jar</packaging>
     <description>数据访问纯抽象层，定义仓储/查询/分页/事务/数据源/映射/方言/异常抽象，零 JDBC、零 Spring 依赖</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-core</artifactId>
+        </dependency>
+    </dependencies>
 </project>

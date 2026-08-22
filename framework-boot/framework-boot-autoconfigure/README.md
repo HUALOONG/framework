@@ -45,7 +45,7 @@
 
 | 功能        | 子包          | 依赖                             | 说明                                                    |
 |:------------|:--------------|:---------------------------------|:--------------------------------------------------------|
-| 总装配入口  | 根包          | 全部模块                         | FrameworkAutoConfiguration + Registrar                  |
+| 总装配入口  | 根包          | 全部模块                         | BootAutoConfiguration + Registrar                       |
 | Logger 装配 | logger        | framework-logger                 | 日志/脱敏/追踪/MDC                                      |
 | 数据装配    | data          | framework-data-core/jdbc/mybatis | DataSource / JDBC / MyBatis                             |
 | Cache 装配  | cache         | framework-cache                  | 多级缓存 CacheManager                                   |
@@ -64,19 +64,18 @@
 ```text
 framework-boot-autoconfigure
 └─ src/main/java/com/framework/boot/autoconfigure/
-   ├─ FrameworkAutoConfiguration.java          # 总入口（@Import 各功能装配类）
-   ├─ FrameworkAutoConfigurationRegistrar.java # 编程式注册（条件注册辅助）
-   │
-   ├─ logger/        # FrameworkLoggerAutoConfiguration
+   ├─ BootAutoConfiguration.java          # 总入口（@Import 各功能装配类）
+   ├─ BootAutoConfigurationRegistrar.java # 编程式注册（条件注册辅助）
+   ├─ logger/        # LoggerAutoConfiguration
    ├─ data/          # DataSourceAutoConfiguration / DataJdbcAutoConfiguration / DataMybatisAutoConfiguration
-   ├─ cache/         # FrameworkCacheAutoConfiguration
-   ├─ i18n/          # FrameworkI18nAutoConfiguration
-   ├─ plugin/        # FrameworkPluginAutoConfiguration
-   ├─ extras/        # FrameworkExtrasAutoConfiguration（引用 extras.config.*Factory 逐功能装配）
-   ├─ health/        # FrameworkHealthAutoConfiguration（HealthIndicator 聚合）
-   ├─ observability/ # FrameworkObservabilityAutoConfiguration（MeterBinder 聚合）
-   ├─ web/           # FrameworkWebAutoConfiguration（拦截器/过滤器注册）
-   └─ bridge/        # FrameworkEventBridgeAutoConfiguration（core.event ↔ Spring 事件双向桥接）
+   ├─ cache/         # CacheAutoConfiguration
+   ├─ i18n/          # I18nAutoConfiguration
+   ├─ plugin/        # PluginAutoConfiguration
+   ├─ extras/        # ExtrasAutoConfiguration（引用 extras.config.*Factory 逐功能装配）
+   ├─ health/        # HealthAutoConfiguration（HealthIndicator 聚合）
+   ├─ observability/ # ObservabilityAutoConfiguration（MeterBinder 聚合）
+   ├─ web/           # WebAutoConfiguration（拦截器/过滤器注册）
+   └─ bridge/        # EventBridgeAutoConfiguration（core.event ↔ Spring 事件双向桥接）
 
 # 资源
 src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
@@ -96,25 +95,25 @@ src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoCo
 @AutoConfiguration
 @ConditionalOnProperty(prefix = "framework", name = "enabled", matchIfMissing = true)
 @Import({
-    FrameworkLoggerAutoConfiguration.class,
+    LoggerAutoConfiguration.class,
     DataSourceAutoConfiguration.class,
     DataJdbcAutoConfiguration.class,
     DataMybatisAutoConfiguration.class,
-    FrameworkCacheAutoConfiguration.class,
-    FrameworkI18nAutoConfiguration.class,
-    FrameworkPluginAutoConfiguration.class,
-    FrameworkExtrasAutoConfiguration.class,
-    FrameworkHealthAutoConfiguration.class,
-    FrameworkObservabilityAutoConfiguration.class,
-    FrameworkWebAutoConfiguration.class,
-    FrameworkEventBridgeAutoConfiguration.class
+    CacheAutoConfiguration.class,
+    I18nAutoConfiguration.class,
+    PluginAutoConfiguration.class,
+    ExtrasAutoConfiguration.class,
+    HealthAutoConfiguration.class,
+    ObservabilityAutoConfiguration.class,
+    WebAutoConfiguration.class,
+    EventBridgeAutoConfiguration.class
 })
-public class FrameworkAutoConfiguration {
-    // 框架级公共 Bean（如 FrameworkMarker、公共 MeterBinder）
+public class BootAutoConfiguration {
+    // 框架级公共 Bean（如 Marker、公共 MeterBinder）
 }
 ```
 
-**Registrar 的职责**：`FrameworkAutoConfigurationRegistrar` 处理无法用注解表达的编程式注册（如扫描用户配置的 Customizer
+**Registrar 的职责**：`BootAutoConfigurationRegistrar` 处理无法用注解表达的编程式注册（如扫描用户配置的 Customizer
 Bean、动态注册模块装配类），在 `registerBeanDefinitions` 中按配置决定注册哪些装配。
 
 #### 4.2 logger/ — Logger 装配
@@ -128,7 +127,7 @@ Bean、动态注册模块装配类），在 `registerBeanDefinitions` 中按配�
 @AutoConfiguration
 @ConditionalOnClass(name = "cn.jowen.framework.logger.facade.LoggerFactory")
 @ConditionalOnProperty(prefix = "framework.logger", name = "enabled", matchIfMissing = true)
-public class FrameworkLoggerAutoConfiguration {
+public class LoggerAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public LoggerBootstrap loggerBootstrap() { ...}          // 初始化 facade → adapter
@@ -213,7 +212,7 @@ public class DataMybatisAutoConfiguration {
 @AutoConfiguration
 @ConditionalOnClass(name = "cn.jowen.framework.cache.api.CacheManager")
 @ConditionalOnProperty(prefix = "framework.cache", name = "enabled", matchIfMissing = true)
-public class FrameworkCacheAutoConfiguration {
+public class CacheAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public CacheManager cacheManager(CacheProperties props) { ...}     // local/redis/multi 按 type
@@ -243,7 +242,7 @@ public class FrameworkCacheAutoConfiguration {
 @AutoConfiguration
 @ConditionalOnClass(name = "cn.jowen.framework.i18n.api.MessageSource")
 @ConditionalOnProperty(prefix = "framework.i18n", name = "enabled", matchIfMissing = true)
-public class FrameworkI18nAutoConfiguration {
+public class I18nAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public MessageSource messageSource(I18nProperties props) { ...}     // 按 SourceType 装配
@@ -273,7 +272,7 @@ public class FrameworkI18nAutoConfiguration {
 @AutoConfiguration
 @ConditionalOnClass(name = "cn.jowen.framework.plugin.api.PluginManager")
 @ConditionalOnProperty(prefix = "framework.plugin", name = "enabled", matchIfMissing = false)
-public class FrameworkPluginAutoConfiguration {
+public class PluginAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public PluginManager pluginManager(PluginProperties props) { ...}
@@ -299,7 +298,7 @@ public class FrameworkPluginAutoConfiguration {
 @AutoConfiguration
 @ConditionalOnClass(name = "cn.jowen.framework.extras.config.ExtrasProperties")
 @ConditionalOnProperty(prefix = "framework.extras", name = "enabled", matchIfMissing = true)
-public class FrameworkExtrasAutoConfiguration {
+public class ExtrasAutoConfiguration {
     // 引用 extras.config.*Factory 按功能装配：
     // LockFactory / RateLimitFactory / IdempotentFactory / StorageFactory / NotificationFactory
     // ExcelFactory / CaptchaFactory / Ip2RegionFactory / DesensitizeModuleFactory
@@ -318,10 +317,10 @@ public class FrameworkExtrasAutoConfiguration {
 @AutoConfiguration
 @ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
 @ConditionalOnProperty(prefix = "framework.health", name = "enabled", matchIfMissing = true)
-public class FrameworkHealthAutoConfiguration {
+public class HealthAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public FrameworkHealthAggregator frameworkHealthAggregator(List<HealthIndicator> indicators) { ...}
+    public HealthAggregator healthAggregator(List<HealthIndicator> indicators) { ...}
     // 聚合：cache/data/i18n/plugin 的 HealthIndicator，统一输出框架健康明细
 }
 ```
@@ -336,10 +335,10 @@ Micrometer 2.0 指标统一注册。
 
 @AutoConfiguration
 @ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
-public class FrameworkObservabilityAutoConfiguration {
+public class ObservabilityAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public FrameworkMeterBinderAggregator meterBinderAggregator(List<MeterBinder> binders) { ...}
+    public MeterBinderAggregator meterBinderAggregator(List<MeterBinder> binders) { ...}
     // 聚合 cache/data-jdbc/logger/i18n 的 MeterBinder，统一注册到全局 MeterRegistry
 }
 ```
@@ -355,10 +354,10 @@ public class FrameworkObservabilityAutoConfiguration {
 @AutoConfiguration
 @ConditionalOnWebApplication(type = SERVLET)
 @ConditionalOnClass(name = "cn.jowen.framework.i18n.interceptor.I18nInterceptor")
-public class FrameworkWebAutoConfiguration {
+public class WebAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public FrameworkWebMvcConfigurer frameworkWebMvcConfigurer(
+    public WebMvcConfigurer frameworkWebMvcConfigurer(
             @Nullable I18nInterceptor i18nInterceptor,
             @Nullable I18nResponseInterceptor i18nResponseInterceptor,
             @Nullable RateLimitInterceptor rateLimitInterceptor) {
@@ -375,22 +374,16 @@ public class FrameworkWebAutoConfiguration {
 
 ```textmate
 cn.jowen.framework.boot.autoconfigure.bridge
-├─FrameworkEventBridgeAutoConfiguration   #@ConditionalOnProperty("framework.event.bridge-enabled"，默认 true)
-        ├─SpringToFrameworkBridge                  #
-监听 ApplicationEvent →
-转发 core
-EventBus（按类型映射）
-        ├─FrameworkToSpringBridge                  #
-订阅 core
-EventBus →
-发布 ApplicationEvent
-└─EventMappingRegistry                     #类型映射注册表（默认 1:1全量；可配置过滤）
+├─ EventBridgeAutoConfiguration    # @ConditionalOnProperty("framework.event.bridge-enabled"，默认 true)
+├─ SpringToBridge                  # 监听 ApplicationEvent → 转发 core EventBus（按类型映射）
+├─ ToSpringBridge                  # 订阅 core EventBus → 发布 ApplicationEvent
+└─ EventMappingRegistry            # 类型映射注册表（默认 1:1全量；可配置过滤）
 ```
 
 **双向语义**：
 
-- 宿主业务发 Spring 事件 → `SpringToFrameworkBridge` 转发 → 框架插件/模块经 `EventBus` 收到；
-- 框架内 `EventBus.publish` → `FrameworkToSpringBridge` 发布 → Spring 监听器/`@EventListener` 收到；
+- 宿主业务发 Spring 事件 → `SpringToBridge` 转发 → 框架插件/模块经 `EventBus` 收到；
+- 框架内 `EventBus.publish` → `ToSpringBridge` 发布 → Spring 监听器/`@EventListener` 收到；
 - 防回环：Bridge 自身发布带来源标记（`EventSource.BRIDGE`），对端 Bridge 忽略；
 - 配置过滤：`framework.event.bridge.include-packages / exclude-packages` 控制转发范围。
 
@@ -404,11 +397,11 @@ EventBus →
 │                                                                  │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │   META-INF/spring/...AutoConfiguration.imports             │  │
-│  │   └─ cn.jowen.framework.boot.autoconfigure.FrameworkAutoConfig. │  │
+│  │   └─ cn.jowen.framework.boot.autoconfigure.BootAutoConfig. │  │
 │  └─────────────────────────┬─────────────────────────────────┘  │
 │                            │ @AutoConfiguration                 │
 │  ┌─────────────────────────▼─────────────────────────────────┐  │
-│  │              FrameworkAutoConfiguration（总入口）           │  │
+│  │              BootAutoConfiguration（总入口）           │  │
 │  │  @ConditionalOnProperty("framework.enabled")              │  │
 │  │  @Import(11 个装配类)                                     │  │
 │  └──┬────────┬────────┬────────┬────────┬────────┬───────────┘  │
@@ -637,13 +630,13 @@ public class BizAutoConfiguration { ...
 
 ## 十、SPI 扩展点汇总
 
-| 扩展点                                | 所在包        | 用途                                                        |
-|:--------------------------------------|:--------------|:------------------------------------------------------------|
-| 各模块 `*Customizer`                  | 对应装配类    | 定制 CacheManager / MessageSource / FlexGlobalConfig 等构建 |
-| `@ConditionalOnMissingBean` 覆盖      | 全部装配类    | 用户 Bean 让位机制                                          |
-| `FrameworkAutoConfigurationRegistrar` | 根包          | 编程式动态注册装配                                          |
-| `FrameworkMeterBinderAggregator`      | observability | 自定义 MeterBinder 聚合                                     |
-| `FrameworkHealthAggregator`           | health        | 自定义健康指标聚合策略                                      |
+| 扩展点                           | 所在包        | 用途                                                        |
+|:---------------------------------|:--------------|:------------------------------------------------------------|
+| 各模块 `*Customizer`             | 对应装配类    | 定制 CacheManager / MessageSource / FlexGlobalConfig 等构建 |
+| `@ConditionalOnMissingBean` 覆盖 | 全部装配类    | 用户 Bean 让位机制                                          |
+| `BootAutoConfigurationRegistrar` | 根包          | 编程式动态注册装配                                          |
+| `MeterBinderAggregator`          | observability | 自定义 MeterBinder 聚合                                     |
+| `HealthAggregator`               | health        | 自定义健康指标聚合策略                                      |
 
 ---
 

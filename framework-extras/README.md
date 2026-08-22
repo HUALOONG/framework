@@ -371,7 +371,7 @@ cn.jowen.framework.extras.config
 ```
 
 **装配约定**：本模块暴露 `@ConfigurationProperties` 类与工厂方法；Bean 的实例化、条件判断、组合编排全部由
-`framework-boot-autoconfigure` 的 `FrameworkExtrasAutoConfiguration` 完成（依赖本模块 `config` 的工厂）。
+`framework-boot-autoconfigure` 的 `ExtrasAutoConfiguration` 完成（依赖本模块 `config` 的工厂）。
 
 #### 4.13 support/ — 跨模块编排工具
 

@@ -375,7 +375,7 @@ cn.jowen.framework.plugin.config
 
 **装配约定**：
 `PluginManager / PluginLifecycleManager / PluginRegistry / DependencyResolver / PluginHotSwapManager / PluginHealthIndicator / PluginEndpoint`
-的实例化与条件判断全部由 `framework-boot-autoconfigure` 的 `FrameworkPluginAutoConfiguration` 完成；Actuator 端点类物理位于
+的实例化与条件判断全部由 `framework-boot-autoconfigure` 的 `PluginAutoConfiguration` 完成；Actuator 端点类物理位于
 boot-autoconfigure（依赖 Spring Boot Actuator）。
 
 #### 4.12 support/ — 通用工具与支撑类

@@ -469,19 +469,21 @@ framework:
 
 ```
 cn.jowen.framework.boot.autoconfigure/
-├─ FrameworkAutoConfiguration           # 总入口（@Import 各模块）
-├─ logger/    FrameworkLoggerAutoConfiguration
+├─ BootAutoConfiguration           # 总入口（@Import 各模块）
+├─ logger/    LoggerAutoConfiguration
 ├─ data/      DataSourceAutoConfiguration · DataJdbcAutoConfiguration · DataMybatisAutoConfiguration
-├─ cache/     FrameworkCacheAutoConfiguration
-├─ i18n/      FrameworkI18nAutoConfiguration
-├─ plugin/    FrameworkPluginAutoConfiguration
-├─ extras/    FrameworkExtrasAutoConfiguration
-├─ health/    FrameworkHealthAutoConfiguration
-├─ observability/  FrameworkObservabilityAutoConfiguration
-└─ web/       FrameworkWebAutoConfiguration
+├─ cache/     CacheAutoConfiguration
+├─ i18n/      I18nAutoConfiguration
+├─ plugin/    PluginAutoConfiguration
+├─ extras/    ExtrasAutoConfiguration          # ✅ M6：限流/幂等/本地锁装配
+├─ health/    HealthAutoConfiguration          # ✅ M6：BootHealthIndicator
+├─ observability/  ObservabilityAutoConfiguration  # ✅ M6：PluginEndpoint
+├─ runtime/   BootRuntimeHints                     # ✅ M6：全模块 AOT RuntimeHints
+└─ web/       FrameworkWebAutoConfiguration             # ⬜ 待实现
 ```
 
-**注册文件**：`META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`
+**注册文件**：`META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`（装配）、
+`META-INF/spring/aot.factories`（RuntimeHintsRegistrar）
 
 **装配示例**：
 
@@ -729,15 +731,15 @@ public class OrderService {
 
 ## 十四、演进路线与里程碑
 
-| 里程碑          | 内容                                   | 出口标准                                                 |
-|-----------------|----------------------------------------|----------------------------------------------------------|
-| M1 基线搭建     | 根 pom + bom + core + logger 落地      | 空应用可启动，日志脱敏生效                               |
-| M2 数据访问     | data-core + data-jdbc 实现             | JDBC CRUD + 事务 + 分页通过测试                          |
-| M3 MyBatis 集成 | data-mybatis + Flex 适配               | Flex 查询/审计/多租户可用；**验证 Spring Boot 4.x 兼容** |
-| M4 缓存与 i18n  | cache + i18n 落地                      | 多级缓存命中率可观测；i18n 热加载生效                    |
-| M5 扩展与插件   | extras + plugin                        | 12 项能力按需可用；插件热部署验证                        |
-| M6 云原生       | AOT 原生镜像 + 虚拟线程压测 + 可观测性 | 全模块 RuntimeHints 齐备，原生镜像启动 ≤ 2s，压测达标    |
-| M7 文档与发布   | 各模块 11 章文档 + BOM 发布            | 全部模块文档齐备，BOM 发布到私服                         |
+| 里程碑          | 内容                                   | 出口标准                                                                             | 状态                                                                                                              |
+|-----------------|----------------------------------------|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| M1 基线搭建     | 根 pom + bom + core + logger 落地      | 空应用可启动，日志脱敏生效                                                           | ✅ 完成                                                                                                           |
+| M2 数据访问     | data-core + data-jdbc 实现 + boot 装配 | JDBC CRUD + 事务 + 分页通过测试；空配置自动装配 RepositoryFactory/TransactionManager | ✅ 完成                                                                                                           |
+| M3 MyBatis 集成 | data-mybatis + Flex 适配（可选）       | Flex 查询/审计/多租户可用；**验证 Spring Boot 4.x 兼容**                             | ⏭️ 延后：自研 data-jdbc 已覆盖 JDBC 访问与 SB4 兼容验证，MyBatis/Flex 作为可选适配后续按需补                       |
+| M4 缓存与 i18n  | cache + i18n 落地                      | 多级缓存命中率可观测；i18n 热加载生效                                                | ✅ 完成                                                                                                           |
+| M5 扩展与插件   | extras + plugin                        | 12 项能力按需可用；插件热部署验证                                                    | ✅ 完成（零耦合能力优先落地：限流/幂等/本地锁 + 插件体系注册/加载/自动发现；分布式锁与其余可选能力延后）          |
+| M6 云原生       | AOT 原生镜像 + 虚拟线程压测 + 可观测性 | 全模块 RuntimeHints 齐备，原生镜像启动 ≤ 2s，压测达标                                | 🔄 进行中（可观测性/健康检查/extras 装配 + 全模块 RuntimeHints 已落地；原生镜像构建与虚拟线程压测待演示工程实测） |
+| M7 文档与发布   | 各模块 11 章文档 + BOM 发布            | 全部模块文档齐备，BOM 发布到私服                                                     | ⬜ 待启动                                                                                                         |
 
 ---
 

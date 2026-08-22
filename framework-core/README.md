@@ -55,7 +55,7 @@ framework-core
    ├─ spi/                    # SPI 扩展机制
    ├─ exception/              # 异常体系
    ├─ lifecycle/              # 生命周期
-   ├─ assert_/                # 断言工具
+   ├─ assertion/              # 断言工具
    ├─ event/                  # 事件机制
    ├─ util/                   # 通用工具（不含脱敏，见 desensitize）
    ├─ desensitize/            # 数据脱敏内核（规则模型+执行器+注解）

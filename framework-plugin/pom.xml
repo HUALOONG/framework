@@ -13,4 +13,23 @@
     <artifactId>framework-plugin</artifactId>
     <packaging>jar</packaging>
     <description>框架自有插件体系，支持插件发现、加载、类加载隔离、依赖解析、生命周期管理与热部署，核心零 Spring 依赖，经自动装配层桥接 Spring</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
 </project>

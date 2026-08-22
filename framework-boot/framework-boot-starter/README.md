@@ -73,9 +73,8 @@ framework-boot-starter
 
     <parent>
         <groupId>cn.jowen.framework</groupId>
-        <artifactId>framework-parent</artifactId>   <!-- 根 pom：统一 properties + dependencyManagement -->
-        <version>4.0.0</version>
-        <relativePath>../pom.xml</relativePath>
+        <artifactId>framework-boot</artifactId>     <!-- 父 POM：统一 properties + dependencyManagement（版本由根 pom ${revision} 控制） -->
+        <version>${revision}</version>
     </parent>
 
     <artifactId>framework-boot-starter</artifactId>
@@ -128,7 +127,7 @@ framework-boot-starter
 │  │  └─ spring-boot / spring-boot-autoconfigure          │   │
 │  ├──────────────────────────────────────────────────────┤   │
 │  │  framework-boot-autoconfigure（装配层）               │   │
-│  │  └─ FrameworkAutoConfiguration + 11 个装配类          │   │
+│  │  └─ BootAutoConfiguration + 8 个装配类           │   │
 │  ├──────────────────────────────────────────────────────┤   │
 │  │  framework-core（地基）→ framework-logger（日志）      │   │
 │  └──────────────────────────────────────────────────────┘   │
@@ -155,7 +154,7 @@ L6（版本层）         framework-bom（import scope）+ 根 pom（三方版�
 
 **模块间规则**：
 
-- starter 依赖 autoconfigure，autoconfigure 依赖各实现模块 → 传递闭合；
+- starter 依赖 autoconfigure，autoconfigure 编译期依赖各实现模块（optional，不向业务方传递），运行时由 @ConditionalOnClass 按需装配；
 - 数据/缓存/i18n/plugin/extras 不在 starter 默认聚合内，避免无 Redis/无 DB 场景下引入无用传递依赖；
 - starter 不参与版本管理（无 dependencyManagement 职责），版本问题一律上抛 BOM/根 pom。
 
@@ -194,13 +193,12 @@ framework:
 #### 9.1 最小启动（仅默认能力）
 
 ```xml
-
 <dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>cn.jowen.framework</groupId>
             <artifactId>framework-bom</artifactId>
-            <version>4.0.0</version>
+            <version>0.0.1</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -208,15 +206,14 @@ framework:
 </dependencyManagement>
 
 <dependencies>
-<dependency>
-    <groupId>cn.jowen.framework</groupId>
-    <artifactId>framework-boot-starter</artifactId>
-</dependency>
+    <dependency>
+        <groupId>cn.jowen.framework</groupId>
+        <artifactId>framework-boot-starter</artifactId>
+    </dependency>
 </dependencies>
 ```
 
-```textmate
-
+```java
 @SpringBootApplication
 public class Application {
     public static void main(String[] args) {
@@ -225,10 +222,12 @@ public class Application {
 }
 ```
 
+> **可选增强**：健康检查（`/actuator/health` 含框架指标）与插件端点（`/actuator/frameworkPlugins`）需业务方另行引入
+> `spring-boot-starter-actuator` 后由 autoconfigure 层自动装配。
+
 #### 9.2 完整能力（+ 数据访问 + 缓存 + i18n）
 
 ```xml
-
 <dependencies>
     <dependency>
         <groupId>cn.jowen.framework</groupId>

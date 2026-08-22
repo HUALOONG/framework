@@ -13,4 +13,122 @@
     <artifactId>framework-boot-autoconfigure</artifactId>
     <packaging>jar</packaging>
     <description>框架唯一的 Spring Boot 依赖汇聚点，通过 @AutoConfiguration + @Conditional 将各模块能力按需装配进容器</description>
+
+    <dependencies>
+        <!-- 框架内：核心地基与日志（默认聚合，向业务方传递） -->
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-logger</artifactId>
+        </dependency>
+
+        <!-- 框架内：实现模块（optional，仅编译期可见、不向业务方传递，由装配类 @ConditionalOnClass 按需生效） -->
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-data-jdbc</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-cache</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-i18n</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-plugin</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-extras</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Boot 依赖汇聚点 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- 按需（optional）：健康检查/可观测性装配类触发时生效 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- 数据源装配层强依赖：JDBC 模板与事务抽象（由框架直接聚合，用户无需额外引入） -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+        </dependency>
+
+        <!-- 可观测性：缓存命中率指标绑定（可选，运行时由 actuator 提供） -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- 云原生（M6）：Actuator 端点与健康检查（可选，命中 @ConditionalOnClass 时生效） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-actuator</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-health</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- 测试：装配验证 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

@@ -12,4 +12,23 @@
     <artifactId>framework-cache</artifactId>
     <description>多级缓存管理模块，提供本地缓存（Caffeine）、分布式缓存（Redisson）与组合缓存，支持缓存注解、事件监听、缓存锁与穿透/雪崩/击穿防护，仅依赖 framework-core</description>
 
+    <dependencies>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
 </project>

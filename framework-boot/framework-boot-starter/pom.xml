@@ -13,4 +13,17 @@
     <artifactId>framework-boot-starter</artifactId>
     <packaging>jar</packaging>
     <description>框架 Starter 聚合入口，仅含 pom.xml 无代码，引入单一依赖即获 core/logger/autoconfigure 默认能力，data/cache/i18n 按需另行引入</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-boot-autoconfigure</artifactId>
+        </dependency>
+
+        <!-- Spring Boot 运行时（默认 Logback） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+    </dependencies>
 </project>

@@ -14,4 +14,27 @@
     <packaging>jar</packaging>
 
     <description>企业级扩展工具集，提供分布式锁、接口限流、幂等控制、文件存储、消息通知、Excel 处理、验证码、IP 地域识别、数据脱敏、操作日志、数据权限等 12 项高频能力，按需引入、互不耦合</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-cache</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
 </project>
