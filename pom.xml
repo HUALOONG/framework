@@ -30,6 +30,17 @@
         <spring.cloud.version>2025.1.2</spring.cloud.version>
         <jspecify.version>1.0.0</jspecify.version>
 
+        <!-- extras optional dependencies -->
+        <minio.version>8.5.17</minio.version>
+        <aliyun-oss.version>3.18.1</aliyun-oss.version>
+        <aws-sdk.version>2.31.0</aws-sdk.version>
+        <angus-mail.version>2.0.3</angus-mail.version>
+        <aliyun-sms.version>2.0.24</aliyun-sms.version>
+        <dingtalk-sdk.version>2.0.0</dingtalk-sdk.version>
+        <workchat-sdk.version>1.0.0</workchat-sdk.version>
+        <okhttp.version>4.12.0</okhttp.version>
+        <wiremock.version>3.9.2</wiremock.version>
+
         <maven.compiler.release>21</maven.compiler.release>
         <maven.compiler.parameters>true</maven.compiler.parameters>
 
@@ -133,6 +144,47 @@
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>2.3.232</version>
+            </dependency>
+
+            <!-- extras 可选依赖版本仲裁 -->
+            <!-- spring-aop 和 aspectjweaver 版本由 spring-boot-dependencies BOM 管理，无需显式声明 -->
+            <dependency>
+                <groupId>org.eclipse.angus</groupId>
+                <artifactId>angus-mail</artifactId>
+                <version>${angus-mail.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun</groupId>
+                <artifactId>dysmsapi20170525</artifactId>
+                <version>${aliyun-sms.version}</version>
+            </dependency>
+            <!-- 钉钉 SDK 坐标暂缺 Maven Central，使用骨架占位；后续集成时替换为 com.dingtalk.open:dingtalk-stream -->
+            <!-- 企业微信 SDK 坐标暂缺 Maven Central，使用骨架占位 -->
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.minio</groupId>
+                <artifactId>minio</artifactId>
+                <version>${minio.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun.oss</groupId>
+                <artifactId>aliyun-sdk-oss</artifactId>
+                <version>${aliyun-oss.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>s3</artifactId>
+                <version>${aws-sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wiremock</groupId>
+                <artifactId>wiremock</artifactId>
+                <version>${wiremock.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
