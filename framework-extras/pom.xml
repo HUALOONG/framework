@@ -25,6 +25,13 @@
             <artifactId>framework-cache</artifactId>
         </dependency>
 
+        <!-- 数据脱敏 Jackson 3 序列化适配（仅 desensitize 需要，optional 避免向下游强传导） -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -33,6 +40,76 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- ========== Config 装配层（optional） ========== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- ========== AOP 拦截器（optional） ========== -->
+        <!-- Spring AOP + AspectJ Weaver：版本由 spring-boot-dependencies BOM 管理，不写 version -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aop</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- ========== Notification 渠道（optional） ========== -->
+        <!-- Email -->
+        <dependency>
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>angus-mail</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- SMS（阿里云） -->
+        <dependency>
+            <groupId>com.aliyun</groupId>
+            <artifactId>dysmsapi20170525</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- 钉钉（骨架实现，无 SDK 依赖；集成时需替换为 com.dingtalk.open:dingtalk-stream） -->
+        <!-- 企业微信（骨架实现，无 SDK 依赖；集成时需替换为专用 SDK） -->
+        <!-- Webhook（HTTP） -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- ========== Storage 云后端（optional） ========== -->
+        <!-- MinIO -->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- 阿里云 OSS -->
+        <dependency>
+            <groupId>com.aliyun.oss</groupId>
+            <artifactId>aliyun-sdk-oss</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- AWS S3 -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- ========== Test（test scope） ========== -->
+        <!-- WireMock（云存储单测 mock） -->
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
