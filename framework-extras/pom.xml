@@ -112,6 +112,22 @@
             <artifactId>wiremock</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- ========== Excel 处理（optional） ========== -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>easyexcel</artifactId>
+            <version>3.3.4</version>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- ========== IP 地域解析（optional） ========== -->
+        <dependency>
+            <groupId>org.lionsoul</groupId>
+            <artifactId>ip2region</artifactId>
+            <version>2.7.0</version>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
 </project>
