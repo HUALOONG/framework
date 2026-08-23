@@ -23,7 +23,7 @@ import java.util.List;
  * @date 2026-08-21
  */
 @NullMarked
-public final class PluginLoader {
+public final class PluginLoader implements AutoCloseable {
 
     private final PluginDescriptor descriptor;
     private final PluginClassLoader classLoader;
