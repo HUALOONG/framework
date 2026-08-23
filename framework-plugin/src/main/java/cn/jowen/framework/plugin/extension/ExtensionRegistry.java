@@ -6,9 +6,12 @@ import org.jspecify.annotations.NullMarked;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * 扩展点运行时注册表。
@@ -104,6 +107,19 @@ public final class ExtensionRegistry {
             if ("file".equals(url.getProtocol())) {
                 java.nio.file.Path root = java.nio.file.Paths.get(url.toURI());
                 scanDirectory(root, basePackage);
+            } else if ("jar".equals(url.getProtocol())) {
+                // jar URL format: jar:file:/path/to/file.jar!/internal/path
+                String urlPath = url.getPath();
+                int exclamationIdx = urlPath.indexOf('!');
+                String jarPathStr = exclamationIdx >= 0 ? urlPath.substring(0, exclamationIdx) : urlPath;
+                // Strip leading slash from path string
+                if (jarPathStr.startsWith("/")) {
+                    jarPathStr = jarPathStr.substring(1);
+                }
+                java.nio.file.Path jarPath = java.nio.file.Paths.get(jarPathStr);
+                try (JarFile jarFile = new JarFile(jarPath.toFile())) {
+                    scanJarEntries(jarFile, basePackage);
+                }
             }
         } catch (Exception e) {
             java.util.logging.Logger.getLogger(ExtensionRegistry.class.getName())
@@ -111,6 +127,42 @@ public final class ExtensionRegistry {
         }
     }
 
+    /**
+     * 遍历 JAR 文件中匹配 basePackage 前缀的类，反射加载并注册标注了 {@link Extension} 的类。
+     *
+     * <p>JAR 内路径示例：{@code com/example/Foo.class}，对应包名 {@code com.example}。
+     *
+     * @param jarFile     已打开的 JAR 文件，调用方负责关闭
+     * @param basePackage 基础包名，如 {@code cn.jowen.framework.plugin.extension}
+     * @throws Exception 反射加载或注册失败时抛出
+     */
+    private void scanJarEntries(JarFile jarFile, String basePackage) throws Exception {
+        String prefix = basePackage.replace('.', '/') + "/";
+        // 使用当前线程的 context classloader 加载类。
+        // 调用方（如测试）已将 jar URL 设置到了 context classloader 上，
+        // 这样可以确保内部类的宿主类也能被正确解析。
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        Enumeration<JarEntry> entries = jarFile.entries();
+        while (entries.hasMoreElements()) {
+            JarEntry entry = entries.nextElement();
+            String name = entry.getName();
+            if (!entry.isDirectory() && name.endsWith(".class") && name.startsWith(prefix)) {
+                String className = name.replace('/', '.').substring(0, name.length() - ".class".length());
+                try {
+                    Class<?> clazz = Class.forName(className, false, cl);
+                    if (clazz.isAnnotationPresent(Extension.class) && !clazz.isInterface()
+                            && !java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {
+                        Object instance = clazz.getDeclaredConstructor().newInstance();
+                        register(instance);
+                    }
+                } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException
+                        | IllegalAccessException | InvocationTargetException e) {
+                    java.util.logging.Logger.getLogger(ExtensionRegistry.class.getName())
+                            .finer("跳过扩展类 " + className + "：" + e.getMessage());
+                }
+            }
+        }
+    }
     private void scanDirectory(java.nio.file.Path dir, String basePackage) throws Exception {
         if (!java.nio.file.Files.isDirectory(dir)) return;
         try (java.util.stream.Stream<java.nio.file.Path> stream = java.nio.file.Files.list(dir)) {
