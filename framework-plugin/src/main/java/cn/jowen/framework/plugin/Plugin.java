@@ -25,4 +25,9 @@ public interface Plugin extends Lifecycle {
     default String description() {
         return "";
     }
+
+    /** @return 插件静态描述符，未实现时返回 {@code null}；用于发布 {@link cn.jowen.framework.plugin.event.PluginInstallEvent} */
+    default @org.jspecify.annotations.Nullable PluginDescriptor descriptor() {
+        return null;
+    }
 }

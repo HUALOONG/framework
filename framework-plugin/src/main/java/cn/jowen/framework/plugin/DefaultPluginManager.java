@@ -48,6 +48,10 @@ public final class DefaultPluginManager implements PluginManager {
         }
         registry.put(id, plugin);
         if (eventPublisher != null) {
+            PluginDescriptor desc = plugin.descriptor();
+            if (desc != null) {
+                eventPublisher.publishPluginInstall(plugin, desc);
+            }
             eventPublisher.publishPluginLoaded(plugin);
             eventPublisher.publishPluginStarted(plugin);
         }

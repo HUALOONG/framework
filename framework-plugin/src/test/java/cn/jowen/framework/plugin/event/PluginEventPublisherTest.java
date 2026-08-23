@@ -4,6 +4,7 @@ import cn.jowen.framework.core.event.EventBus;
 import cn.jowen.framework.core.event.EventListener;
 import cn.jowen.framework.plugin.DefaultPluginManager;
 import cn.jowen.framework.plugin.Plugin;
+import cn.jowen.framework.plugin.PluginDescriptor;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ class PluginEventPublisherTest {
         manager.unregister("p1");
 
         assertThat(received).contains(
-                "PluginLoadedEvent", "PluginStartedEvent",
+                "PluginInstallEvent", "PluginLoadedEvent", "PluginStartedEvent",
                 "PluginStoppedEvent", "PluginUnloadedEvent"
         );
     }
@@ -42,6 +43,9 @@ class PluginEventPublisherTest {
             @Override public String version() { return "1.0.0"; }
             @Override public void afterPropertiesSet() {}
             @Override public void destroy() {}
+            @Override public PluginDescriptor descriptor() {
+                return PluginDescriptor.of(id, "1.0.0", "cn.jowen.framework.plugin.event.PluginEventPublisherTest$TestImpl");
+            }
         };
     }
 }
