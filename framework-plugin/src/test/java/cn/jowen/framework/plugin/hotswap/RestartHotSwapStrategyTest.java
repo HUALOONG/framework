@@ -62,20 +62,20 @@ class RestartHotSwapStrategyTest {
 
     /**
      * AC2：ID 来自 PluginDescriptor.id()，而非 jar 文件名。
-     * 验证：jar 文件名为 "different-name.jar"，但 descriptor id 为 "actual-id"，
-     * 查询应使用 "actual-id"。
+     * 验证：jar 文件名为 "different-name.jar"，但 descriptor id 为 "stub"（与 StubPlugin.id() 一致），
+     * 查询应使用 "stub"。
      */
     @Test
     void onPluginChangeUsesDescriptorIdNotFileName() throws Exception {
-        // descriptor id 与 StubPlugin.id() 保持一致（均为 "stub"）
+        // descriptor id = "stub" 与 StubPlugin.id() 保持一致
         // 但 jar 文件名不同，验证 ID 来自 descriptor 而非文件名
-        Path jarPath = buildPluginJar("actual-id", "2.0.0", StubPlugin.class.getName());
+        Path jarPath = buildPluginJar("stub", "2.0.0", StubPlugin.class.getName());
         Path renamedJar = pluginsDir.resolve("different-name.jar");
         Files.copy(jarPath, renamedJar);
 
         strategy.onPluginChange("different-name.jar");
 
-        // ID 应来自 descriptor（即 StubPlugin.id() = "stub"），而不是文件名
+        // ID 应来自 descriptor（即 "stub"），而不是文件名
         Plugin plugin = manager.get("stub");
         assertThat(plugin).isNotNull();
         assertThat(manager.get("different-name")).isNull();

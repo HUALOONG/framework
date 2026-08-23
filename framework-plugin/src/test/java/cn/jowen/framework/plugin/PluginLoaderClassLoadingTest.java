@@ -1,11 +1,15 @@
 package cn.jowen.framework.plugin;
 
 import cn.jowen.framework.plugin.classloader.FrameworkApiDelegateClassLoader;
+import cn.jowen.framework.plugin.classloader.PluginClassLoaderConfig;
 import cn.jowen.framework.plugin.PluginDescriptor;
 import pluginimpl.StubPlugin;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.URL;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -14,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * {@link PluginLoader} 接入三层 {@link cn.jowen.framework.plugin.classloader.PluginClassLoader} 体系的验证。
  *
  * <p>桩插件 {@code pluginimpl.StubPlugin} 故意置于非 {@code cn.jowen.framework} 包下，使其可被插件内部分类加载器
- * 自身定义；其引用的框架类（{@code Plugin}）经由 delegate 委派父加载器，与宿主共享同一 {@code Class}。
+ * 自身定义；其引用的框架类（{@code Plugin}）经由 delegate 委派父加载器，与宿主共享同一 {@code Plugin}。
  */
 class PluginLoaderClassLoadingTest {
 
@@ -94,6 +98,32 @@ class PluginLoaderClassLoadingTest {
         // delegate 下框架资源经父委派可定位
         assertThat(loader.getResource("cn/jowen/framework/plugin/Plugin.class")).isNotNull();
         loader.close();
+    }
+
+    /** T4：验证 configure() 的幂等性：每次 configure 独立生效，后一次覆盖前一次，无残留。 */
+    @Test
+    void configureStateIsIsolatedPerCall() {
+        // 模拟测试 A：配置 delegate 策略
+        PluginClassLoaderConfig.configure("delegate", List.of("com.example.a"));
+        assertThat(PluginClassLoaderConfig.strategy()).isEqualTo("delegate");
+        assertThat(PluginClassLoaderConfig.exportedPackages()).containsExactly("com.example.a");
+
+        // 模拟测试 B：配置 isolated 策略
+        PluginClassLoaderConfig.configure("isolated", List.of("com.example.b"));
+        assertThat(PluginClassLoaderConfig.strategy()).isEqualTo("isolated");
+        assertThat(PluginClassLoaderConfig.exportedPackages()).containsExactly("com.example.b");
+    }
+
+    /** T4：在所有测试完成后重置默认状态，防止污染后续测试。 */
+    @AfterAll
+    static void resetConfig() {
+        PluginClassLoaderConfig.configure("delegate", List.of());
+    }
+
+    /** T4：每个测试后重置配置，防止 configure 测试影响其他测试。 */
+    @AfterEach
+    void resetConfigPerTest() {
+        PluginClassLoaderConfig.configure("delegate", List.of());
     }
 
     private static PluginDescriptor descriptorFor(String className, String id) {
