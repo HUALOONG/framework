@@ -25,8 +25,8 @@ class DependencyResolverTest {
     @Test
     void dependentPluginsOrder() {
         List<PluginDescriptor> descriptors = List.of(
-                PluginDescriptor.of("a", "1.0.0", "com.a.A"),
-                PluginDescriptor.of("b", "1.0.0", "com.b.B", List.of("a"))
+                new PluginDescriptor("a", "1.0.0", "com.a.A", "", List.of()),
+                new PluginDescriptor("b", "1.0.0", "com.b.B", "", List.of("a"))
         );
         List<String> order = resolver.resolve(descriptors);
         assertThat(order.indexOf("a")).isLessThan(order.indexOf("b"));
@@ -35,9 +35,9 @@ class DependencyResolverTest {
     @Test
     void chainDependency() {
         List<PluginDescriptor> descriptors = List.of(
-                PluginDescriptor.of("a", "1.0.0", "com.a.A"),
-                PluginDescriptor.of("b", "1.0.0", "com.b.B", List.of("a")),
-                PluginDescriptor.of("c", "1.0.0", "com.c.C", List.of("b"))
+                new PluginDescriptor("a", "1.0.0", "com.a.A", "", List.of()),
+                new PluginDescriptor("b", "1.0.0", "com.b.B", "", List.of("a")),
+                new PluginDescriptor("c", "1.0.0", "com.c.C", "", List.of("b"))
         );
         List<String> order = resolver.resolve(descriptors);
         assertThat(order).containsExactly("a", "b", "c");
