@@ -62,6 +62,9 @@ public final class DefaultPluginManager implements PluginManager {
         PluginDescriptor descriptor = loader.descriptor();
         resolveDependencies(descriptor);
         Plugin plugin = loader.load();
+        if (!plugin.id().equals(descriptor.id())) {
+            throw new PluginLoader.PluginException("插件 id 与描述符 id 不一致：" + plugin.id() + " vs " + descriptor.id());
+        }
         register(plugin);
     }
 
@@ -72,7 +75,9 @@ public final class DefaultPluginManager implements PluginManager {
         for (PluginLoader loader : loaders) {
             PluginDescriptor descriptor = loader.descriptor();
             descriptors.add(descriptor);
-            loaderById.put(descriptor.id(), loader);
+            if (loaderById.putIfAbsent(descriptor.id(), loader) != null) {
+                throw new PluginLoader.PluginException("插件 id 重复：" + descriptor.id());
+            }
         }
 
         // 依赖解析先行：循环依赖或批次内未满足依赖都在此抛出 DependencyResolutionException，

@@ -23,7 +23,7 @@ public abstract class AbstractPlugin implements Plugin {
     }
 
     @Override
-    public String id() {
+    public final String id() {
         return descriptor.id();
     }
 
