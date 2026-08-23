@@ -1,18 +1,16 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.captcha;
 
+import cn.jowen.framework.extras.config.CaptchaProperties;
 import cn.jowen.framework.extras.captcha.generator.ArithmeticCaptchaGenerator;
 import cn.jowen.framework.extras.captcha.generator.CaptchaGenerator;
 import cn.jowen.framework.extras.captcha.generator.CaptchaImage;
 import cn.jowen.framework.extras.captcha.generator.ImageCaptchaGenerator;
 import cn.jowen.framework.extras.captcha.store.CaptchaStore;
 import cn.jowen.framework.extras.captcha.store.LocalCaptchaStore;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,9 +19,6 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import javax.imageio.ImageIO;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 本地验证码服务：组合生成器、存储与配置，生成图形/算术验证码并校验。
@@ -32,8 +27,8 @@ import org.jspecify.annotations.Nullable;
  * {@link CaptchaType#SLIDER} / {@link CaptchaType#SMS} 调用 {@link #generate(CaptchaType)}
  * 抛 {@link UnsupportedOperationException}（本轮未实现）。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public final class LocalCaptchaService implements CaptchaService {
@@ -57,6 +52,17 @@ public final class LocalCaptchaService implements CaptchaService {
         this.generators = Map.copyOf(map);
     }
 
+    private static String encode(BufferedImage image) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            if (!ImageIO.write(image, "png", baos)) {
+                throw new CaptchaException("不支持的图片格式: png");
+            }
+            return Base64.getEncoder().encodeToString(baos.toByteArray());
+        } catch (IOException e) {
+            throw new CaptchaException("验证码图片编码失败", e);
+        }
+    }
+
     @Override
     public CaptchaResult generate(CaptchaType type) {
         Objects.requireNonNull(type, "type must not be null");
@@ -69,17 +75,6 @@ public final class LocalCaptchaService implements CaptchaService {
         store.put(captchaId, captchaImage.answer(), properties.getTtlMillis());
         return new CaptchaResult(captchaId, DATA_URI_PREFIX + encode(captchaImage.image()),
                 properties.getTtlMillis(), Map.of());
-    }
-
-    private static String encode(BufferedImage image) {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            if (!ImageIO.write(image, "png", baos)) {
-                throw new CaptchaException("不支持的图片格式: png");
-            }
-            return Base64.getEncoder().encodeToString(baos.toByteArray());
-        } catch (IOException e) {
-            throw new CaptchaException("验证码图片编码失败", e);
-        }
     }
 
     @Override

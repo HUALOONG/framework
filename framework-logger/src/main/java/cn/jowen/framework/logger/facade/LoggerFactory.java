@@ -10,16 +10,20 @@ import java.util.List;
 /**
  * 日志工厂，按名/类获取 {@link Logger}，底层实现经 {@link LoggerAdapter} SPI 解析（默认 Logback）。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class LoggerFactory {
-
+    /**
+     * 底层适配器。
+     */
     private static volatile @Nullable LoggerAdapter adapter;
 
-    private LoggerFactory() {
-    }
+    /**
+     * 私有构造函数。
+     */
+    private LoggerFactory() { }
 
     /**
      * 按类获取日志器。
@@ -60,7 +64,7 @@ public final class LoggerFactory {
             if (adapters.isEmpty()) {
                 throw new IllegalStateException("未找到可用的 LoggerAdapter 实现，请引入 logback/log4j2 适配");
             }
-            adapter = adapters.get(0);
+            adapter = adapters.getFirst();
             return adapter;
         }
     }

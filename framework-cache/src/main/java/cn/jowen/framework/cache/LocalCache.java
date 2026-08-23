@@ -14,14 +14,16 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @param <K> 键类型
  * @param <V> 值类型
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class LocalCache<K, V> extends AbstractCache<K, V> {
 
     private final ConcurrentMap<K, Entry<V>> store = new ConcurrentHashMap<>();
-    /** TTL（毫秒）；{@code <=0} 表示永不过期。 */
+    /**
+     * TTL（毫秒）；{@code <=0} 表示永不过期。
+     */
     private final long ttlMillis;
 
     public LocalCache(String name, long ttlMillis) {
@@ -31,6 +33,10 @@ public final class LocalCache<K, V> extends AbstractCache<K, V> {
 
     public LocalCache(String name) {
         this(name, 0L);
+    }
+
+    private static long now() {
+        return System.currentTimeMillis();
     }
 
     @Override
@@ -80,10 +86,6 @@ public final class LocalCache<K, V> extends AbstractCache<K, V> {
 
     private boolean isExpired(Entry<V> entry) {
         return now() - entry.writeTime() > ttlMillis;
-    }
-
-    private static long now() {
-        return System.currentTimeMillis();
     }
 
     private record Entry<V>(V value, long writeTime) {

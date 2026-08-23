@@ -2,17 +2,18 @@ package cn.jowen.framework.i18n.locale;
 
 import cn.jowen.framework.i18n.api.LocaleResolver;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.Locale;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Accept-Language 头区域解析器：按 RFC 7231 解析请求头，质量值降序取首个；
  * 可配置支持的区域集合用于就近匹配。上下文须为 {@link HttpServletRequest}。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class AcceptHeaderLocaleResolver implements LocaleResolver {
@@ -42,8 +43,8 @@ public final class AcceptHeaderLocaleResolver implements LocaleResolver {
             return null;
         }
         if (supportedLocales == null) {
-            return parsed.get(0);
+            return parsed.getFirst();
         }
-        return LocaleUtils.match(parsed.get(0), supportedLocales);
+        return LocaleUtils.match(parsed.getFirst(), supportedLocales);
     }
 }

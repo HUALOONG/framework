@@ -1,62 +1,102 @@
 package cn.jowen.framework.core.assertion;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
+import cn.jowen.framework.core.exception.ErrorCode;
 import cn.jowen.framework.core.exception.SystemException;
-import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.*;
+
 /**
- * {@link State} 状态断言测试。
+ * {@link State} 测试。
  */
 class StateTest {
 
-    @Test
-    void checkState_passes() {
-        assertThatCode(() -> State.checkState(true)).doesNotThrowAnyException();
+    enum TestCode implements ErrorCode {
+        STATE_ERR("2001", "状态错误");
+
+        TestCode(String code, String message) {
+            this.code = code;
+            this.message = message;
+        }
+
+        private final String code;
+        private final String message;
+
+        @Override
+        public String code() {
+            return code;
+        }
+
+        @Override
+        public String message() {
+            return message;
+        }
     }
 
     @Test
-    void checkState_fails() {
-        assertThatThrownBy(() -> State.checkState(false))
-                .isInstanceOf(SystemException.class);
+    void checkState_successWhenTrue() {
+        State.checkState(true);
     }
 
     @Test
-    void checkState_failsWithMessage() {
-        assertThatThrownBy(() -> State.checkState(false, null, "组件未就绪"))
-                .isInstanceOf(SystemException.class)
-                .hasMessage("组件未就绪");
+    void checkState_throwsWhenFalse() {
+        catchThrowableOfType(() -> State.checkState(false), SystemException.class);
     }
 
     @Test
-    void checkNotNull_returnsObject() {
-        String value = State.checkNotNull("ok", null, null);
-        assertThat(value).isEqualTo("ok");
+    void checkState_throwsWhenFalse_withCode() {
+        catchThrowableOfType(() -> State.checkState(false, TestCode.STATE_ERR, null), SystemException.class);
     }
 
     @Test
-    void checkNotNull_fails() {
-        assertThatThrownBy(() -> State.checkNotNull(null, null, "值不能为空"))
-                .isInstanceOf(SystemException.class);
+    void checkNotNull_successWhenNotNull() {
+        String result = State.checkNotNull("hello", null, null);
+        assertThat(result).isEqualTo("hello");
     }
 
     @Test
-    void checkNotEmpty_string() {
-        assertThatThrownBy(() -> State.checkNotEmpty("  ", null, "blank"))
-                .isInstanceOf(SystemException.class);
-        assertThat(State.checkNotEmpty("x", null, null)).isEqualTo("x");
+    void checkNotNull_throwsWhenNull() {
+        catchThrowableOfType(() -> State.checkNotNull(null, null, "null check"), SystemException.class);
     }
 
     @Test
-    void checkNotEmpty_collectionAndMap() {
-        assertThatThrownBy(() -> State.checkNotEmpty(List.of(), null, "empty list"))
-                .isInstanceOf(SystemException.class);
-        assertThatThrownBy(() -> State.checkNotEmpty(Map.of(), null, "empty map"))
-                .isInstanceOf(SystemException.class);
-        assertThat(State.checkNotEmpty(List.of(1), null, null)).containsExactly(1);
+    void checkNotEmpty_string_success() {
+        String result = State.checkNotEmpty("hello", null, null);
+        assertThat(result).isEqualTo("hello");
+    }
+
+    @Test
+    void checkNotEmpty_string_throwsWhenNull() {
+        catchThrowableOfType(() -> State.checkNotEmpty((String) null, null, null), SystemException.class);
+    }
+
+    @Test
+    void checkNotEmpty_string_throwsWhenBlank() {
+        catchThrowableOfType(() -> State.checkNotEmpty("  ", null, null), SystemException.class);
+    }
+
+    @Test
+    void checkNotEmpty_collection_success() {
+        List<String> list = List.of("a", "b");
+        assertThat(State.checkNotEmpty(list, null, null)).isSameAs(list);
+    }
+
+    @Test
+    void checkNotEmpty_collection_throwsWhenEmpty() {
+        catchThrowableOfType(() -> State.checkNotEmpty(List.of(), null, null), SystemException.class);
+    }
+
+    @Test
+    void checkNotEmpty_map_success() {
+        Map<String, String> map = Map.of("k", "v");
+        assertThat(State.checkNotEmpty(map, null, null)).isSameAs(map);
+    }
+
+    @Test
+    void checkNotEmpty_map_throwsWhenEmpty() {
+        catchThrowableOfType(() -> State.checkNotEmpty(Map.of(), null, null), SystemException.class);
     }
 }

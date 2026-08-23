@@ -1,24 +1,18 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.storage;
+
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.InputStream;
 import java.util.List;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 文件存储抽象接口。
  *
  * <p>统一本地磁盘与云后端（本轮仅 {@code LocalFileStorage} 实现），所有方法零/低外部依赖。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public interface FileStorage {
@@ -53,13 +47,19 @@ public interface FileStorage {
     @Nullable
     String getPresignedUrl(String objectName);
 
-    /** 删除单个对象。 */
+    /**
+     * 删除单个对象。
+     */
     void delete(String objectName);
 
-    /** 批量删除。 */
+    /**
+     * 批量删除。
+     */
     void deleteBatch(List<String> names);
 
-    /** 判断对象是否存在。 */
+    /**
+     * 判断对象是否存在。
+     */
     boolean exists(String objectName);
 
     /**

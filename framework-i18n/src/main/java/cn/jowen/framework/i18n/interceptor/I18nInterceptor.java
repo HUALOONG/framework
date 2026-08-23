@@ -8,12 +8,13 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 请求区域拦截器（Servlet Filter）：解析请求区域并绑定到 {@link I18nContext}，
@@ -22,8 +23,8 @@ import org.jspecify.annotations.Nullable;
  * <p>典型配置：{@code ParameterLocaleResolver → CookieLocaleResolver → AcceptHeaderLocaleResolver}
  * 组合解析，本过滤器作为最先执行的 Filter 注册。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public class I18nInterceptor implements Filter {

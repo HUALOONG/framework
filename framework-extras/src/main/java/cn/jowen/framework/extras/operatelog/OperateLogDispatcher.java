@@ -1,11 +1,6 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.operatelog;
+
+import org.jspecify.annotations.NullMarked;
 
 import java.util.Collection;
 import java.util.List;
@@ -13,7 +8,6 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * 操作日志异步分发器：将一条记录并发分发给所有已注册 {@link OperateLogHandler}。
@@ -21,8 +15,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>零依赖（不引用 {@code core.event}），使用 Java 21 虚拟线程池
  * （{@link Executors#newVirtualThreadPerTaskExecutor()}）执行；提供 {@link #shutdown()} 钩子。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public final class OperateLogDispatcher {

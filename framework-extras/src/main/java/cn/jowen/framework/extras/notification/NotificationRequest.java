@@ -1,19 +1,13 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.notification;
+
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 通知请求。
@@ -26,14 +20,15 @@ import org.jspecify.annotations.Nullable;
  * @param templateParams 模板参数（可为 null）
  * @param attachments    附件列表（可为 null）
  * @param extra          扩展字段（可为 null）
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public record NotificationRequest(NotificationChannel channel, @Nullable String to, @Nullable String subject,
-        @Nullable String content, @Nullable String templateCode,
-        @Nullable Map<String, Object> templateParams, @Nullable List<NotificationAttachment> attachments,
-        @Nullable Map<String, Object> extra) {
+                                  @Nullable String content, @Nullable String templateCode,
+                                  @Nullable Map<String, Object> templateParams,
+                                  @Nullable List<NotificationAttachment> attachments,
+                                  @Nullable Map<String, Object> extra) {
 
     public NotificationRequest {
         Objects.requireNonNull(channel, "channel must not be null");
@@ -42,12 +37,16 @@ public record NotificationRequest(NotificationChannel channel, @Nullable String 
         extra = extra == null ? Map.of() : extra;
     }
 
-    /** 便捷构建器。 */
+    /**
+     * 便捷构建器。
+     */
     public static Builder builder() {
         return new Builder();
     }
 
-    /** @author Jowen */
+    /**
+     * @author 王飞
+     */
     public static final class Builder {
         private NotificationChannel channel;
         private String to;

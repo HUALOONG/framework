@@ -1,17 +1,9 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.datapermission.aop;
 
 import cn.jowen.framework.extras.datapermission.DataPermission;
 import cn.jowen.framework.extras.datapermission.DataPermissionContext;
-import cn.jowen.framework.extras.datapermission.UserInfo;
-import cn.jowen.framework.extras.datapermission.DataScope;
 import cn.jowen.framework.extras.datapermission.TableInfo;
+import cn.jowen.framework.extras.datapermission.UserInfo;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -29,8 +21,8 @@ import org.springframework.stereotype.Component;
  * <p>当前用户从 {@link #resolveCurrentUser()} 解析；本轮简化实现为读取已有上下文，
  * 实际项目应接入 Spring Security 的 {@code Authentication}。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  * @see DataPermission
  * @see DataPermissionContext
  */

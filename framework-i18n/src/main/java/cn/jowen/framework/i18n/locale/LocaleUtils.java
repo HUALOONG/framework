@@ -1,17 +1,18 @@
 package cn.jowen.framework.i18n.locale;
 
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 区域工具：Accept-Language 头解析、语言标签规范化、区域匹配。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class LocaleUtils {
@@ -85,10 +86,10 @@ public final class LocaleUtils {
         for (int i = 1; i < parts.length; i++) {
             String part = parts[i];
             if (part.length() == 2 || part.length() == 3) {
-                return new Locale(language, part.toUpperCase());
+                return Locale.of(language, part.toUpperCase());
             }
         }
-        return new Locale(language);
+        return Locale.of(language);
     }
 
     /**
@@ -126,7 +127,7 @@ public final class LocaleUtils {
                 return locale;
             }
         }
-        return supported.get(0);
+        return supported.getFirst();
     }
 
     private record WeightedLocale(Locale locale, double q) {

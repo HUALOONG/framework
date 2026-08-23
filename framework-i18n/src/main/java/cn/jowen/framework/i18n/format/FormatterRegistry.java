@@ -1,21 +1,24 @@
 package cn.jowen.framework.i18n.format;
 
+import org.jspecify.annotations.NullMarked;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * 格式化器注册表。按名称管理 {@link MessageFormatter}，预置
  * {@link JavaTextMessageFormatter}（默认）与 {@link NamedParameterMessageFormatter}，
  * 支持按需覆盖与追加（如启用 {@link IcuMessageFormatter}）。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class FormatterRegistry {
 
-    /** 默认格式化器名称。 */
+    /**
+     * 默认格式化器名称。
+     */
     public static final String DEFAULT_FORMATTER = JavaTextMessageFormatter.NAME;
 
     private final Map<String, MessageFormatter> formatters = new LinkedHashMap<>();
@@ -46,12 +49,16 @@ public final class FormatterRegistry {
         return formatters.get(name);
     }
 
-    /** 是否包含指定名称。 */
+    /**
+     * 是否包含指定名称。
+     */
     public boolean contains(String name) {
         return formatters.containsKey(name);
     }
 
-    /** 已注册的格式化器名称集合（按注册顺序）。 */
+    /**
+     * 已注册的格式化器名称集合（按注册顺序）。
+     */
     public Map<String, MessageFormatter> all() {
         return Map.copyOf(formatters);
     }

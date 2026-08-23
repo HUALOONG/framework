@@ -55,17 +55,17 @@ SQL 拦截器链（日志/性能/多租户）与异常翻译。
 
 ```text
 framework-data-jdbc
-└─ src/main/java/com/framework/data/jdbc/
+└─ src/main/java/cn/jowen/framework/data/jdbc/
    ├─ core/          # JdbcTemplate / NamedParameterTemplate / BatchTemplate / SqlRunner
-   ├─ connection/    # ConnectionProvider / HikariConnectionProvider / DruidConnectionProvider
-   ├─ statement/     # PreparedStatementBuilder / SqlBuilder / ParameterBinder
-   ├─ mapping/       # BeanPropertyRowMapper / DefaultTypeHandlers / CamelCaseNamingStrategy
-   ├─ dialect/       # MySQLDialect / PostgreSQLDialect / OracleDialect / SQLServerDialect / H2Dialect
-   ├─ transaction/   # JdbcTransactionManager / TransactionSynchronizationManager
-   ├─ repository/    # JdbcRepository / SimpleJdbcRepository / IdGenerator
-   ├─ interceptor/   # SqlInterceptor / LoggingInterceptor / PerformanceInterceptor / TenantInterceptor
-   ├─ exception/     # SQLExceptionTranslator / SqlStateClassifier
-   ├─ config/        # JdbcProperties / DataSourceConfiguration
+   ├─ connection/    # ConnectionProvider / HikariConnectionProvider / SimpleConnectionProvider / ConnectionProxy / ConnectionHolder
+   ├─ statement/     # PreparedStatementBuilder / SqlBuilder / SqlResult / ParameterBinder / BatchParameterBinder / SqlParser
+   ├─ mapping/       # BeanRowMapper / MapRowMapper / ScalarRowMapper / DefaultTypeHandlers / CamelCaseNamingStrategy / DefaultEntityMetadataResolver
+   ├─ dialect/       # AbstractDialect / MySQLDialect / PostgreSQLDialect / OracleDialect / SQLServerDialect / H2Dialect / JdbcDialectDetector / DialectRegistry
+   ├─ transaction/   # JdbcTransactionManager / JdbcTransaction / TransactionSynchronizationManager / TransactionSynchronization / IsolationLevelManager
+   ├─ repository/    # JdbcRepository / SimpleJdbcRepository / JdbcRepositoryFactory / QueryWrapperTranslator / IdGenerator
+   ├─ interceptor/   # SqlInterceptor / SqlContext / LoggingInterceptor / PerformanceInterceptor / TenantInterceptor / InterceptorChain
+   ├─ exception/     # SQLExceptionTranslator / SqlStateClassifier / VendorSpecificTranslator
+   ├─ config/        # DataSourceProperties
    └─ util/          # JdbcUtils / ResultSetExtractor / LobHandler
 ```
 
@@ -80,7 +80,7 @@ framework-data-jdbc
 JDBC 操作入口，封装连接获取、SQL 执行、结果处理。
 
 ```textmate
-com.framework.data.jdbc.core
+cn.jowen.framework.data.jdbc.core
 ├─ JdbcTemplate              # 核心：query /queryForObject /update /execute
 ├─ NamedParameterTemplate    # 命名参数（:name）
 ├─ BatchTemplate             # 批量操作（addBatch /executeBatch）
@@ -95,7 +95,7 @@ com.framework.data.jdbc.core
 统一连接获取与释放，适配主流连接池，虚拟线程参数调优。
 
 ```textmate
-com.framework.data.jdbc.connection
+cn.jowen.framework.data.jdbc.connection
 ├─ ConnectionProvider        # 连接提供者接口
 ├─ HikariConnectionProvider  # HikariCP 适配（默认）
 ├─ DruidConnectionProvider   # Druid 适配
@@ -119,7 +119,7 @@ framework:
 #### 4.3 statement/ — Statement 构建
 
 ```textmate
-com.framework.data.jdbc.statement
+cn.jowen.framework.data.jdbc.statement
 ├─ PreparedStatementBuilder   # 预编译语句构建
 ├─ SqlBuilder                 # SQL 拼接构建器
 ├─ SqlResult                  # 构建结果（SQL +参数）
@@ -131,7 +131,7 @@ com.framework.data.jdbc.statement
 #### 4.4 mapping/ — 结果集映射
 
 ```textmate
-com.framework.data.jdbc.mapping
+cn.jowen.framework.data.jdbc.mapping
 ├─ BeanPropertyRowMapper<T>   # Bean 属性自动映射
 ├─ MapRowMapper               # Map 结果
 ├─ ScalarRowMapper<T>         # 单值结果
@@ -143,7 +143,7 @@ com.framework.data.jdbc.mapping
 #### 4.5 dialect/ — 方言实现
 
 ```textmate
-com.framework.data.jdbc.dialect
+cn.jowen.framework.data.jdbc.dialect
 ├─ AbstractDialect            # 抽象基类（分页模板/函数差异）
 ├─ MySQLDialect / PostgreSQLDialect
 ├─ OracleDialect / SQLServerDialect / H2Dialect
@@ -154,7 +154,7 @@ com.framework.data.jdbc.dialect
 #### 4.6 transaction/ — 事务实现
 
 ```textmate
-com.framework.data.jdbc.transaction
+cn.jowen.framework.data.jdbc.transaction
 ├─ JdbcTransactionManager     # data-core TransactionManager 实现
 ├─ JdbcTransaction            # 事务对象
 ├─ TransactionSynchronizationManager   # 同步管理器（事务内资源绑定）
@@ -165,7 +165,7 @@ com.framework.data.jdbc.transaction
 #### 4.7 repository/ — 仓储实现
 
 ```textmate
-com.framework.data.jdbc.repository
+cn.jowen.framework.data.jdbc.repository
 ├─ JdbcRepository<T, ID>       # data-core CrudRepository 落地
 ├─ SimpleJdbcRepository<T, ID> # 简单实现
 ├─ JdbcRepositoryFactory       # RepositoryFactory 实现（SPI 自动装配）
@@ -176,7 +176,7 @@ com.framework.data.jdbc.repository
 #### 4.8 interceptor/ — SQL 拦截器
 
 ```textmate
-com.framework.data.jdbc.interceptor
+cn.jowen.framework.data.jdbc.interceptor
 ├─ SqlInterceptor              # 拦截器接口
 ├─ SqlContext                  # 拦截上下文
 ├─ LoggingInterceptor          # SQL 日志（敏感参数脱敏：委托 coreDesensitizer）
@@ -188,21 +188,22 @@ com.framework.data.jdbc.interceptor
 #### 4.9 exception/ + config/ + util/
 
 ```textmate
-com.framework.data.jdbc.exception
+cn.jowen.framework.data.jdbc.exception
 ├─ SQLExceptionTranslator      # SQLException →DataAccessException
 ├─ SqlStateClassifier          # SQLState 分类（模式匹配 switch）
 └─ VendorSpecificTranslator    # 厂商特定错误映射
 
-com.framework.data.jdbc.config
-├─ JdbcProperties              # 配置属性
-├─ DataSourceConfiguration     # 数据源 Bean 配置
-└─ RepositoryConfiguration     # 仓储扫描配置
+cn.jowen.framework.data.jdbc.config
+└─ DataSourceProperties            # 配置属性（纯 POJO，@ConfigurationProperties 由 boot-autoconfigure 绑定）
 
-com.framework.data.jdbc.util
+cn.jowen.framework.data.jdbc.util
 ├─ JdbcUtils                   # JDBC 工具
 ├─ ResultSetExtractor<T>       # 结果集提取器
 └─ LobHandler                  # LOB 处理
 ```
+
+> **注意**：`DataSourceConfiguration` / `RepositoryConfiguration` 等自动装配类**不在此模块**，统一由
+> `framework-boot-autoconfigure` 模块的 `data/` 子包（`DataSourceAutoConfiguration` / `JdbcAutoConfiguration`）承载。
 
 ---
 

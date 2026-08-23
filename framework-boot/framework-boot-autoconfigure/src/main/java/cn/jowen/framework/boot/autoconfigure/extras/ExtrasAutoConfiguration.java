@@ -1,10 +1,12 @@
 package cn.jowen.framework.boot.autoconfigure.extras;
 
-import cn.jowen.framework.cache.CacheManager;
+import cn.jowen.framework.cache.api.CacheManager;
 import cn.jowen.framework.extras.idempotent.Idempotent;
 import cn.jowen.framework.extras.lock.LocalLock;
 import cn.jowen.framework.extras.lock.Lock;
 import cn.jowen.framework.extras.ratelimit.RateLimiter;
+import cn.jowen.framework.extras.ratelimit.RateLimiterManager;
+import cn.jowen.framework.extras.ratelimit.algorithm.TokenBucketRateLimiter;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -19,34 +21,50 @@ import org.springframework.context.annotation.Bean;
  *
  * <p>幂等控制依赖 {@link CacheManager}，故声明在缓存装配之后执行。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 @AutoConfiguration(afterName = "cn.jowen.framework.boot.autoconfigure.cache.CacheAutoConfiguration")
-@EnableConfigurationProperties(ExtrasProperties.class)
+@EnableConfigurationProperties(BootExtrasProperties.class)
 @ConditionalOnClass(name = "cn.jowen.framework.extras.lock.Lock")
 @ConditionalOnProperty(prefix = "framework.extras", name = "enabled", matchIfMissing = true)
 public class ExtrasAutoConfiguration {
 
-    /** 令牌桶限流器。 */
+    /**
+     * 令牌桶限流器。
+     */
     @Bean
     @ConditionalOnMissingBean
-    public RateLimiter frameworkRateLimiter(ExtrasProperties properties) {
-        ExtrasProperties.RateLimit rateLimit = properties.getRateLimit();
-        return new RateLimiter(rateLimit.getPermitsPerSecond(), rateLimit.getCapacity());
+    public RateLimiterManager frameworkRateLimiterManager() {
+        return new RateLimiterManager();
     }
 
-    /** 幂等控制器（令牌存储取自缓存管理器；缓存被禁用时不装配）。 */
+    /**
+     * 默认令牌桶限流器。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public RateLimiter frameworkRateLimiter() {
+        return new TokenBucketRateLimiter(100, 10_000_000L);
+    }
+
+    /**
+     * 幂等控制器（令牌存储取自缓存管理器；缓存被禁用时不装配）。
+     */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(CacheManager.class)
-    public Idempotent frameworkIdempotent(CacheManager cacheManager, ExtrasProperties properties) {
-        ExtrasProperties.Idempotency idempotency = properties.getIdempotent();
-        return new Idempotent(cacheManager.getCache(idempotency.getCacheName()), idempotency.getTtlMillis());
+    public Idempotent frameworkIdempotent(CacheManager cacheManager, BootExtrasProperties properties) {
+        cn.jowen.framework.extras.config.IdempotentProperties conf = properties.getIdempotent();
+        return new Idempotent(
+                cacheManager.getCache(conf.getKeyPrefix()),
+                conf.getDefaultTtl());
     }
 
-    /** 进程内锁实现。 */
+    /**
+     * 进程内锁实现。
+     */
     @Bean
     @ConditionalOnMissingBean
     public Lock frameworkLocalLock() {

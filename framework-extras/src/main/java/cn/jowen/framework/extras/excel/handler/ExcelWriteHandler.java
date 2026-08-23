@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.excel.handler;
 
 import com.alibaba.excel.write.handler.SheetWriteHandler;
@@ -17,8 +10,8 @@ import org.jspecify.annotations.NullMarked;
  *
  * <p>用户可实现此接口自定义列宽、合并单元格、样式等写入行为。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  * @see com.alibaba.excel.write.handler.SheetWriteHandler
  */
 @NullMarked

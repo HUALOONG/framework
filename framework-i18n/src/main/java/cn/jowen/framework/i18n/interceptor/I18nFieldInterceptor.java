@@ -1,14 +1,15 @@
 package cn.jowen.framework.i18n.interceptor;
 
-import cn.jowen.framework.i18n.api.MessageSource;
 import cn.jowen.framework.i18n.annotation.I18nField;
+import cn.jowen.framework.i18n.api.MessageSource;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Locale;
 import java.util.Map;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 字段翻译工具：递归遍历对象树，将标注 {@link I18nField} 的字段值视为消息编码解析替换。
@@ -17,8 +18,8 @@ import org.jspecify.annotations.Nullable;
  * <p>处理范围：普通对象字段、{@link Collection} 元素、{@link Map} 值；
  * 字符串原样保留，嵌套对象递归处理，循环引用自动保护。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class I18nFieldInterceptor {
@@ -27,6 +28,13 @@ public final class I18nFieldInterceptor {
 
     public I18nFieldInterceptor(MessageSource messageSource) {
         this.messageSource = messageSource;
+    }
+
+    private static boolean isPrimitiveOrString(Object value) {
+        Class<?> type = value.getClass();
+        return type.isPrimitive() || value instanceof String || value instanceof Number
+                || value instanceof Boolean || value instanceof Character
+                || value instanceof java.util.Date || value instanceof Enum<?>;
     }
 
     /**
@@ -84,12 +92,5 @@ public final class I18nFieldInterceptor {
             }
             type = type.getSuperclass();
         }
-    }
-
-    private static boolean isPrimitiveOrString(Object value) {
-        Class<?> type = value.getClass();
-        return type.isPrimitive() || value instanceof String || value instanceof Number
-                || value instanceof Boolean || value instanceof Character
-                || value instanceof java.util.Date || value instanceof Enum<?>;
     }
 }

@@ -1,57 +1,89 @@
 package cn.jowen.framework.plugin.hotswap;
 
-import cn.jowen.framework.plugin.PluginDescriptor;
-import cn.jowen.framework.plugin.PluginLoader;
+import cn.jowen.framework.logger.facade.Logger;
+import cn.jowen.framework.logger.facade.LoggerFactory;
+import cn.jowen.framework.plugin.api.Plugin;
+import cn.jowen.framework.plugin.api.PluginManager;
+import cn.jowen.framework.plugin.descriptor.PluginDescriptor;
+import cn.jowen.framework.plugin.descriptor.PluginJsonDescriptorParser;
+import cn.jowen.framework.plugin.loader.ClassLoadingStrategy;
+import cn.jowen.framework.plugin.loader.PluginLoader;
 import org.jspecify.annotations.NullMarked;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * 重启策略：停止旧插件实例后重新加载同名 jar。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
  */
 @NullMarked
-public final class RestartHotSwapStrategy implements HotSwapStrategy {
+public final class RestartHotSwapStrategy implements PluginFileWatcher.FileChangeHandler {
 
-    private final cn.jowen.framework.plugin.DefaultPluginManager manager;
-    private final java.nio.file.Path pluginsDir;
+    private static final Logger LOGGER = LoggerFactory.getLogger(RestartHotSwapStrategy.class);
 
-    public RestartHotSwapStrategy(cn.jowen.framework.plugin.DefaultPluginManager manager, java.nio.file.Path pluginsDir) {
+    private final PluginManager manager;
+    private final Path pluginsDir;
+
+    public RestartHotSwapStrategy(PluginManager manager, Path pluginsDir) {
         this.manager = manager;
         this.pluginsDir = pluginsDir;
     }
 
-    @Override
     public void onPluginChange(String fileName) {
-        java.nio.file.Path jarPath = pluginsDir.resolve(fileName);
-        if (!java.nio.file.Files.isRegularFile(jarPath)) return;
-        try {
-            PluginDescriptor desc = new cn.jowen.framework.plugin.descriptor.PluginJsonDescriptorParser().parse(jarPath.toString());
-            String id = desc.id();
-            cn.jowen.framework.plugin.Plugin plugin = manager.get(id);
-            if (plugin != null) {
-                try { manager.unregister(id); } catch (Exception ignored) {}
+        onFileModified(fileName);
+    }
+
+    @Override
+    public void onFileCreated(String fileName) {
+        loadPlugin(fileName);
+    }
+
+    @Override
+    public void onFileModified(String fileName) {
+        loadPlugin(fileName);
+    }
+
+    @Override
+    public void onFileDeleted(String fileName) {
+        // 从文件名提取插件 id 并卸载
+        String pluginId = extractPluginId(fileName);
+        if (pluginId != null) {
+            try {
+                manager.unloadPlugin(pluginId);
+            } catch (Exception ignored) {
             }
-            try (PluginLoader loader = new PluginLoader(desc,
-                    new java.net.URL[]{jarPath.toUri().toURL()},
-                    Thread.currentThread().getContextClassLoader())) {
-                manager.load(loader);
-            }
-        } catch (Exception e) {
-            java.util.logging.Logger.getLogger(RestartHotSwapStrategy.class.getName())
-                    .warning("插件热部署失败：" + fileName + "，原因：" + e.getMessage());
         }
     }
 
-    /**
-     * 关闭指定 ID 的已加载插件并清理类加载器资源。
-     *
-     * @param id 插件唯一标识，不可为 {@code null}
-     */
-    public void restart(String id) {
-        cn.jowen.framework.plugin.Plugin plugin = manager.get(id);
-        if (plugin == null) return;
-        try { manager.unregister(id); } catch (Exception ignored) {}
+    private void loadPlugin(String fileName) {
+        Path jarPath = pluginsDir.resolve(fileName);
+        if (!Files.isRegularFile(jarPath)) return;
+        try {
+            PluginDescriptor desc = new PluginJsonDescriptorParser().load(jarPath);
+            String id = desc.pluginId();
+            // 先卸载旧版本
+            Plugin existing = manager.getPlugin(id);
+            if (existing != null) {
+                try {
+                    manager.unloadPlugin(id);
+                } catch (Exception ignored) {
+                }
+            }
+            // 加载新版本
+            try (PluginLoader loader = new PluginLoader(jarPath,
+                    Thread.currentThread().getContextClassLoader(),
+                    ClassLoadingStrategy.FRAMEWORK_API_DELEGATE)) {
+                Plugin plugin = loader.load();
+                // 注意：实际注册由 PluginManager 完成
+            }
+        } catch (Exception e) {
+            LOGGER.warn("插件热部署失败：" + fileName + "，原因：" + e.getMessage());
+        }
+    }
+
+    private String extractPluginId(String fileName) {
+        return fileName.endsWith(".jar") ? fileName.substring(0, fileName.length() - 4) : fileName;
     }
 }

@@ -16,8 +16,8 @@ import static cn.jowen.framework.core.util.StringUtils.isEmpty;
  *
  * <p>所有方法均为静态；满足即正常返回，不满足即抛异常。用于替代散落的 {@code if (x == null) throw ...} 模板代码。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class Assert {
@@ -28,13 +28,13 @@ public final class Assert {
     /**
      * 断言对象非 {@code null}，否则抛出 {@link BusinessException}。
      *
-     * @param obj   被校验对象，可为 {@code null}
-     * @param code  错误码，可为 {@code null}
+     * @param obj     被校验对象，可为 {@code null}
+     * @param code    错误码，可为 {@code null}
      * @param message 错误消息，可为 {@code null}
      */
     public static void notNull(@Nullable Object obj, @Nullable ErrorCode code, @Nullable String message) {
         if (obj == null) {
-            fail(code, message != null ? message : "对象不能为 null");
+            fail(code, message != null ? message : (code != null ? code.message() : "对象不能为 null"));
         }
     }
 

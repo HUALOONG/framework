@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.excel.converter;
 
 import com.alibaba.excel.converters.Converter;
@@ -21,8 +14,8 @@ import java.util.Map;
 /**
  * 字典转换器，将数字编码映射为显示文本（用于数据字典场景）。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public class DictConverter implements Converter<String> {
@@ -40,6 +33,14 @@ public class DictConverter implements Converter<String> {
         this.reverseDictMap = buildReverseMap(this.dictMap);
     }
 
+    private static Map<String, Integer> buildReverseMap(Map<Integer, String> map) {
+        Map<String, Integer> result = new java.util.HashMap<>();
+        for (Map.Entry<Integer, String> entry : map.entrySet()) {
+            result.put(entry.getValue(), entry.getKey());
+        }
+        return result;
+    }
+
     @Override
     public Class<String> supportJavaTypeKey() {
         return String.class;
@@ -52,7 +53,7 @@ public class DictConverter implements Converter<String> {
 
     @Override
     public String convertToJavaData(ReadCellData<?> cellData, ExcelContentProperty contentProperty,
-            GlobalConfiguration globalConfiguration) {
+                                    GlobalConfiguration globalConfiguration) {
         // 导入时：从单元格文本查找编码，返回编码整数值（供业务层使用）
         String text = cellData.getStringValue();
         if (text == null || text.isBlank()) {
@@ -69,7 +70,7 @@ public class DictConverter implements Converter<String> {
 
     @Override
     public WriteCellData<?> convertToExcelData(String value, ExcelContentProperty contentProperty,
-            GlobalConfiguration globalConfiguration) {
+                                               GlobalConfiguration globalConfiguration) {
         if (value == null) {
             return new WriteCellData<>("");
         }
@@ -96,13 +97,5 @@ public class DictConverter implements Converter<String> {
     @Nullable
     public Integer getCode(String label) {
         return reverseDictMap.get(label);
-    }
-
-    private static Map<String, Integer> buildReverseMap(Map<Integer, String> map) {
-        Map<String, Integer> result = new java.util.HashMap<>();
-        for (Map.Entry<Integer, String> entry : map.entrySet()) {
-            result.put(entry.getValue(), entry.getKey());
-        }
-        return result;
     }
 }

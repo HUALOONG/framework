@@ -2,6 +2,9 @@ package cn.jowen.framework.i18n.source;
 
 import cn.jowen.framework.i18n.api.ReloadableMessageSource;
 import cn.jowen.framework.i18n.reload.ResourceReloader.CountableMessageSource;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -15,8 +18,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 基于资源包的 {@link ReloadableMessageSource}。
@@ -33,19 +34,33 @@ import org.jspecify.annotations.Nullable;
  * <p>重载一致性（原子替换）：{@link #reload()} 基于已加载区域重建全部资源包后整体替换缓存引用；
  * 重载期间新请求继续读取旧快照，重载完成后一次性原子切换，避免读到半更新状态。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class PropertiesMessageSource implements ReloadableMessageSource, CountableMessageSource {
 
     private final String basename;
-    /** locale 键 → 资源包；volatile 引用实现原子替换。 */
+    /**
+     * locale 键 → 资源包；volatile 引用实现原子替换。
+     */
     private volatile Map<String, Properties> bundles = new ConcurrentHashMap<>();
 
     public PropertiesMessageSource(String basename) {
         this.basename = basename;
         reload();
+    }
+
+    private static String localeKey(Locale locale) {
+        return locale.getLanguage() + "_" + locale.getCountry();
+    }
+
+    private static Locale localeFor(String key) {
+        if (key.isEmpty()) {
+            return Locale.ROOT;
+        }
+        int idx = key.indexOf('_');
+        return idx < 0 ? Locale.of(key) : Locale.of(key.substring(0, idx), key.substring(idx + 1));
     }
 
     @Override
@@ -98,7 +113,7 @@ public final class PropertiesMessageSource implements ReloadableMessageSource, C
         // 回退：语言级别
         if (!locale.getCountry().isEmpty()) {
             String langKey = locale.getLanguage();
-            Properties langProps = current.computeIfAbsent(langKey, k -> loadBundle(basename, new Locale(langKey)));
+            Properties langProps = current.computeIfAbsent(langKey, k -> loadBundle(basename, Locale.of(langKey)));
             value = langProps.getProperty(code);
             if (value != null) {
                 return value;
@@ -107,18 +122,6 @@ public final class PropertiesMessageSource implements ReloadableMessageSource, C
         // 回退：默认（无后缀）
         Properties defaultProps = current.computeIfAbsent("", k -> loadBundle(basename, null));
         return defaultProps.getProperty(code);
-    }
-
-    private static String localeKey(Locale locale) {
-        return locale.getLanguage() + "_" + locale.getCountry();
-    }
-
-    private static Locale localeFor(String key) {
-        if (key.isEmpty()) {
-            return Locale.ROOT;
-        }
-        int idx = key.indexOf('_');
-        return idx < 0 ? new Locale(key) : new Locale(key.substring(0, idx), key.substring(idx + 1));
     }
 
     private Properties loadBundle(String base, @Nullable Locale locale) {

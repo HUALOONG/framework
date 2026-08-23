@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.core.lifecycle;
 
 import org.jspecify.annotations.NullMarked;
@@ -23,22 +16,30 @@ import org.jspecify.annotations.NullMarked;
  * <p>兼容性说明：本接口继承 {@link Lifecycle}（组合 {@code InitializingBean}/{@code DisposableBean}），
  * 不破坏既有实现方的初始化/销毁契约。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public interface SmartLifecycle extends Lifecycle {
 
-    /** 默认阶段值：最先启动的组件通常希望尽早就绪。 */
+    /**
+     * 默认阶段值：最先启动的组件通常希望尽早就绪。
+     */
     int DEFAULT_PHASE = 0;
 
-    /** 启动组件（幂等：已在运行则直接返回）。 */
+    /**
+     * 启动组件（幂等：已在运行则直接返回）。
+     */
     void start();
 
-    /** 停止组件（幂等：未在运行则直接返回）。 */
+    /**
+     * 停止组件（幂等：未在运行则直接返回）。
+     */
     void stop();
 
-    /** 是否处于运行中。 */
+    /**
+     * 是否处于运行中。
+     */
     boolean isRunning();
 
     /**

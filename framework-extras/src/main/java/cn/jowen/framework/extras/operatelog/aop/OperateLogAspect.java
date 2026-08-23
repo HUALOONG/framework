@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.operatelog.aop;
 
 import cn.jowen.framework.extras.datapermission.DataPermissionContext;
@@ -13,10 +6,6 @@ import cn.jowen.framework.extras.operatelog.OperateLog;
 import cn.jowen.framework.extras.operatelog.OperateLogDispatcher;
 import cn.jowen.framework.extras.operatelog.OperateLogRecord;
 import cn.jowen.framework.extras.operatelog.OperateStatus;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -26,6 +15,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Objects;
+
 /**
  * 操作日志 AOP 切面。
  *
@@ -34,8 +27,8 @@ import org.springframework.stereotype.Component;
  *
  * <p>依赖 {@code spring-aop} + {@code aspectjweaver}（optional），未引入时不注册。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  * @see OperateLog
  * @see OperateLogDispatcher
  */
@@ -81,8 +74,8 @@ public class OperateLogAspect {
     }
 
     private OperateLogRecord buildRecord(ProceedingJoinPoint pjp, OperateLog oplog,
-                                          Object result, OperateStatus status,
-                                          String errorMsg, long costTime) {
+                                         Object result, OperateStatus status,
+                                         String errorMsg, long costTime) {
         MethodSignature ms = (MethodSignature) pjp.getSignature();
         Method method = ms.getMethod();
         String className = pjp.getTarget().getClass().getSimpleName();

@@ -1,5 +1,6 @@
 package cn.jowen.framework.cache;
 
+import cn.jowen.framework.cache.api.Cache;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -18,19 +19,25 @@ import java.util.function.Function;
  *
  * @param <K> 键类型
  * @param <V> 值类型
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class LayeredCache<K, V> extends AbstractCache<K, V> {
 
     private final Cache<K, V> local;
     private final Cache<K, V> backup;
-    /** 单飞锁：按 key 串行化回源。 */
+    /**
+     * 单飞锁：按 key 串行化回源。
+     */
     private final ConcurrentMap<K, Object> loadLocks = new ConcurrentHashMap<>();
-    /** 已知空 key 及其写入时间（毫秒），用于穿透防护。 */
+    /**
+     * 已知空 key 及其写入时间（毫秒），用于穿透防护。
+     */
     private final ConcurrentMap<K, Long> knownNulls = new ConcurrentHashMap<>();
-    /** 空值占位存活毫秒；{@code <=0} 表示不缓存空值。 */
+    /**
+     * 空值占位存活毫秒；{@code <=0} 表示不缓存空值。
+     */
     private final long nullTtlMillis;
 
     public LayeredCache(String name, Cache<K, V> local, Cache<K, V> backup, long nullTtlMillis) {

@@ -7,8 +7,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * 锁抽象。与具体实现（本地/Redis/ZK）解耦，仅依赖 JDK 并发原语语义。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public interface Lock {
@@ -30,6 +30,8 @@ public interface Lock {
      */
     boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
 
-    /** 释放锁。 */
+    /**
+     * 释放锁。
+     */
     void unlock();
 }

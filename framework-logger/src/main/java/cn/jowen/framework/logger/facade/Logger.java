@@ -1,29 +1,58 @@
 package cn.jowen.framework.logger.facade;
 
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 日志门面接口。业务代码仅依赖本接口，不感知底层 Logback/Log4j2 实现。
  *
  * <p>所有带 {@code {} } 占位符的方法在最终输出前经脱敏器处理，保证敏感信息不落盘。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public interface Logger {
-
+    /**
+     * 日志输出。
+     * @param msg 日志内容
+     * @param args 参数
+     */
     void trace(String msg, Object... args);
 
+    /**
+     * 日志输出。
+     * @param msg 日志内容
+     * @param args 参数
+     */
     void debug(String msg, Object... args);
 
+    /**
+     * 日志输出。
+     * @param msg 日志内容
+     * @param args 参数
+     */
     void info(String msg, Object... args);
 
+    /**
+     * 日志输出。
+     * @param msg 日志内容
+     * @param args 参数
+     */
     void warn(String msg, Object... args);
 
+    /**
+     * 日志输出。
+     * @param msg 日志内容
+     * @param args 参数
+     */
     void error(String msg, Object... args);
 
+    /**
+     * 日志输出。
+     * @param msg 日志内容
+     * @param t 异常
+     * @param args 参数
+     */
     void error(String msg, Throwable t, Object... args);
 
     /**

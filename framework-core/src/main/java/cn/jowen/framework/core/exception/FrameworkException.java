@@ -8,13 +8,15 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>统一承载 {@link ErrorCode}，使上层能够以错误码而非异常类型做分支处理。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public class FrameworkException extends RuntimeException {
 
-    /** 关联的错误码，可能为 {@code null}（未指定时）。 */
+    /**
+     * 关联的错误码，可能为 {@code null}（未指定时）。
+     */
     private final @Nullable ErrorCode errorCode;
 
     public FrameworkException(String message) {

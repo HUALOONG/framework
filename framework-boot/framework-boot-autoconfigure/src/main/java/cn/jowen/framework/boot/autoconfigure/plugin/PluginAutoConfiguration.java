@@ -1,74 +1,36 @@
 package cn.jowen.framework.boot.autoconfigure.plugin;
 
-import cn.jowen.framework.boot.autoconfigure.BootAutoConfiguration;
-import cn.jowen.framework.core.spi.ExtensionLoader;
-import cn.jowen.framework.plugin.DefaultPluginManager;
-import cn.jowen.framework.plugin.Plugin;
-import cn.jowen.framework.plugin.PluginManager;
-import cn.jowen.framework.plugin.classloader.PluginClassLoaderConfig;
-import cn.jowen.framework.plugin.config.PluginApplicationContext;
-import cn.jowen.framework.plugin.config.PluginProperties;
+import cn.jowen.framework.boot.autoconfigure.JowenAutoConfiguration;
+import cn.jowen.framework.plugin.api.PluginManager;
+import cn.jowen.framework.plugin.lifecycle.PluginLifecycleManager;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 
 /**
- * 插件装配。向容器提供 {@link PluginManager}，并自动注册 classpath 中带 {@code @Activate} 的插件实现
- * （基于 core 的 SPI 机制），满足"插件热部署/自动发现"能力。隔离类加载的热加载由 {@link PluginManager#load} 提供。
+ * 插件能力装配。当 classpath 存在 {@code cn.jowen.framework.plugin.api.PluginManager} 且
+ * {@code framework.plugin.enabled=true}（缺省即开）时，注册 {@link PluginLifecycleManager}。
  *
- * @author Jowen
- * @date 2026-08-21
+ * <p>业务方可通过 {@code @Autowired PluginManager} 注入后动态加载/启动/停止插件。
+ *
+ * @author 王飞
+ * @since 2026-08-26
  */
 @NullMarked
-@AutoConfiguration(after = BootAutoConfiguration.class)
-@ConditionalOnClass(name = "cn.jowen.framework.plugin.PluginManager")
+@AutoConfiguration(after = JowenAutoConfiguration.class)
+@ConditionalOnClass(name = "cn.jowen.framework.plugin.api.PluginManager")
 @ConditionalOnProperty(prefix = "framework.plugin", name = "enabled", matchIfMissing = true)
-@EnableConfigurationProperties(PluginProperties.class)
 public class PluginAutoConfiguration {
 
     /**
-     * 插件管理器。创建时自动注册所有激活插件。
-     *
-     * @param props 插件配置，用于把类加载策略/导出包写入 {@link PluginClassLoaderConfig}
-     * @param springContext Spring 子容器持有器，可为 {@code null}（未启用时）
-     * @return 插件管理器，不可为 {@code null}
+     * 插件生命周期管理器：状态机驱动插件的 initialize/start/stop/restart/destroy。
      */
     @Bean
-    @ConditionalOnMissingBean
-    public PluginManager pluginManager(PluginProperties props,
-                                       @Nullable PluginApplicationContext springContext) {
-        PluginClassLoaderConfig.configure(
-                props.getClassLoading().getStrategy(),
-                props.getClassLoading().getExportedPackages());
-        DefaultPluginManager manager = new DefaultPluginManager();
-        manager.setSpringContext(springContext);
-        for (Plugin plugin : ExtensionLoader.getExtensionLoader(Plugin.class).getActivateExtensions()) {
-            manager.register(plugin);
-        }
-        return manager;
-    }
-
-    /**
-     * Spring 子容器持有器。仅在 {@code framework.plugin.spring.enabled=true} 时创建。
-     *
-     * @param applicationContext 宿主 Spring 容器
-     * @param props 插件配置，读取 spring 子属性
-     * @return 子容器持有器，不可为 {@code null}
-     */
-    @Bean
-    @ConditionalOnProperty(prefix = "framework.plugin.spring", name = "enabled", havingValue = "true")
-    @ConditionalOnMissingBean
-    public PluginApplicationContext pluginApplicationContext(
-            ApplicationContext applicationContext, PluginProperties props) {
-        PluginApplicationContext ctx = PluginApplicationContext.create(applicationContext);
-        PluginProperties.SpringProperties spring = props.getSpring();
-        ctx.configure(spring.getBasePackage(), spring.isScanComponentScan());
-        return ctx;
+    @ConditionalOnMissingBean(PluginManager.class)
+    public PluginLifecycleManager pluginLifecycleManager() {
+        return new PluginLifecycleManager();
     }
 }

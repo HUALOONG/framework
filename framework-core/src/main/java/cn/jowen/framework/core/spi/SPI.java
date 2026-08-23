@@ -1,7 +1,6 @@
 package cn.jowen.framework.core.spi;
 
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -18,8 +17,8 @@ import java.lang.annotation.Target;
  * public interface Filter { void doFilter(); }
  * }</pre>
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 @Documented

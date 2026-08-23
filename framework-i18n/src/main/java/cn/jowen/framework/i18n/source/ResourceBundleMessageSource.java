@@ -1,5 +1,8 @@
 package cn.jowen.framework.i18n.source;
 
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -9,8 +12,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 基于 JDK {@link ResourceBundle} 的消息源适配：按 basename 定位资源包
@@ -27,8 +28,8 @@ import org.jspecify.annotations.Nullable;
  * <p>{@link #reload()} 通过 {@link ResourceBundle#clearCache()} 清空缓存后重新解析，
  * 实现运行期热加载。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public class ResourceBundleMessageSource extends AbstractMessageSource {
@@ -39,7 +40,7 @@ public class ResourceBundleMessageSource extends AbstractMessageSource {
             if (locale.equals(Locale.ROOT)) {
                 return List.of(Locale.ROOT);
             }
-            Locale language = locale.getCountry().isEmpty() ? locale : new Locale(locale.getLanguage());
+            Locale language = locale.getCountry().isEmpty() ? locale : Locale.of(locale.getLanguage());
             return language.equals(locale)
                     ? List.of(locale, Locale.ROOT)
                     : List.of(locale, language, Locale.ROOT);
@@ -53,7 +54,7 @@ public class ResourceBundleMessageSource extends AbstractMessageSource {
 
         @Override
         public ResourceBundle newBundle(String baseName, Locale locale, String format,
-                ClassLoader loader, boolean reload)
+                                        ClassLoader loader, boolean reload)
                 throws IllegalAccessException, InstantiationException, IOException {
             if (!format.equals("java.properties")) {
                 return super.newBundle(baseName, locale, format, loader, reload);

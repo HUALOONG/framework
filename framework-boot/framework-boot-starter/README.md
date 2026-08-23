@@ -20,7 +20,7 @@
 **核心价值**：
 
 | 场景     | 没有本模块                    | 有本模块                          |
-|:---------|:------------------------------|:----------------------------------|
+| :------- | :---------------------------- | :-------------------------------- |
 | 引入框架 | 手动引 4+ 个依赖并配版本      | 一个依赖 `framework-boot-starter` |
 | 依赖遗漏 | 漏引 autoconfigure 导致不装配 | POM 聚合保证装配完整              |
 | 版本混乱 | 各模块版本人工对齐            | BOM 统一管理                      |
@@ -37,7 +37,7 @@
 ## 二、功能清单与依赖矩阵
 
 | 功能        | 形式     | 依赖                         | 说明                       |
-|:------------|:---------|:-----------------------------|:---------------------------|
+| :---------- | :------- | :--------------------------- | :------------------------- |
 | Boot 运行时 | 传递依赖 | spring-boot-starter          | 官方基础 starter           |
 | 框架地基    | 传递依赖 | framework-core               | SPI/异常/断言              |
 | 日志能力    | 传递依赖 | framework-logger             | facade + 脱敏 + MDC        |
@@ -54,9 +54,7 @@
 
 ```text
 framework-boot-starter
-├─ pom.xml                          # 唯一内容：依赖聚合声明
-└─ src/
-   └─ (无 main/java / resources —— 零代码模块)
+└─ pom.xml                          # 唯一内容：依赖聚合声明
 ```
 
 ---
@@ -119,20 +117,20 @@ framework-boot-starter
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│              framework-boot-starter（纯 POM）                │
+│              framework-boot-starter（纯 POM）               │
 │                                                             │
-│  依赖聚合（传递）：                                          │
+│  依赖聚合（传递）：                                         │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │  spring-boot-starter（官方）                          │   │
+│  │  spring-boot-starter（官方）                         │   │
 │  │  └─ spring-boot / spring-boot-autoconfigure          │   │
 │  ├──────────────────────────────────────────────────────┤   │
-│  │  framework-boot-autoconfigure（装配层）               │   │
-│  │  └─ BootAutoConfiguration + 8 个装配类           │   │
+│  │  framework-boot-autoconfigure（装配层）              │   │
+│  │  └─ BootAutoConfiguration + 8 个装配类               │   │
 │  ├──────────────────────────────────────────────────────┤   │
-│  │  framework-core（地基）→ framework-logger（日志）      │   │
+│  │  framework-core（地基）→ framework-logger（日志）    │   │
 │  └──────────────────────────────────────────────────────┘   │
 │                                                             │
-│  业务方按需补充（不传递）：                                   │
+│  业务方按需补充（不传递）：                                 │
 │  framework-data-jdbc / framework-data-mybatis / cache       │
 │  i18n / plugin / extras                                     │
 └─────────────────────────────────────────────────────────────┘
@@ -163,7 +161,7 @@ L6（版本层）         framework-bom（import scope）+ 根 pom（三方版�
 ## 七、外部依赖
 
 | 依赖                           | scope           | 用途            |
-|:-------------------------------|:----------------|:----------------|
+| :----------------------------- | :-------------- | :-------------- |
 | `spring-boot-starter`          | compile（传递） | Boot 运行时基础 |
 | `framework-core`               | compile（传递） | 地基            |
 | `framework-boot-autoconfigure` | compile（传递） | 装配层          |
@@ -213,7 +211,7 @@ framework:
 </dependencies>
 ```
 
-```java
+```textmate
 @SpringBootApplication
 public class Application {
     public static void main(String[] args) {
@@ -275,22 +273,22 @@ public class Application {
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│                    业务应用（Application）                    │
-│  引入 framework-boot-starter（+ 按需实现模块）               │
+│                    业务应用（Application）                  │
+│  引入 framework-boot-starter（+ 按需实现模块）              │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
-│   ★ framework-boot-starter（本模块，纯 POM 聚合）            │
-│   用户唯一接触点 · 零代码 · 版本后置                         │
+│   ★ framework-boot-starter（本模块，纯 POM 聚合）          │
+│   用户唯一接触点 · 零代码 · 版本后置                        │
 └──────────────────────────┬──────────────────────────────────┘
                            │ 传递依赖
 ┌──────────────────────────▼──────────────────────────────────┐
-│              framework-boot-autoconfigure                    │
-│  @AutoConfiguration 按需装配 → 各实现模块 → framework-core   │
+│              framework-boot-autoconfigure                   │
+│  @AutoConfiguration 按需装配 → 各实现模块 → framework-core  │
 └──────────────────────────┬──────────────────────────────────┘
                            │ 版本管理
 ┌──────────────────────────▼──────────────────────────────────┐
-│   framework-bom（import scope）+ 根 pom（三方版本）          │
+│   framework-bom（import scope）+ 根 pom（三方版本）         │
 └─────────────────────────────────────────────────────────────┘
 ```
 

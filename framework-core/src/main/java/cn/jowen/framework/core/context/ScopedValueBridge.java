@@ -1,16 +1,10 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.core.context;
+
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * {@code java.lang.ScopedValue} 反射桥接（内部实现，不对外公开）。
@@ -26,8 +20,8 @@ import org.jspecify.annotations.Nullable;
  *       {@link ContextCarrier} 自动降级为 ThreadLocal 模式。</li>
  * </ul>
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 final class ScopedValueBridge {
@@ -74,28 +68,38 @@ final class ScopedValueBridge {
     private ScopedValueBridge() {
     }
 
-    /** ScopedValue 在当前 JVM 是否可用。 */
+    /**
+     * ScopedValue 在当前 JVM 是否可用。
+     */
     static boolean available() {
         return AVAILABLE;
     }
 
-    /** 创建 ScopedValue 实例（不可用时返回 null）。 */
+    /**
+     * 创建 ScopedValue 实例（不可用时返回 null）。
+     */
     static @Nullable Object newInstance() {
         return invoke(NEW_INSTANCE, null);
     }
 
-    /** 是否已绑定。 */
+    /**
+     * 是否已绑定。
+     */
     static boolean isBound(Object scopedValue) {
         Boolean result = invoke(IS_BOUND, scopedValue);
         return result != null && result;
     }
 
-    /** 读取绑定值（未绑定时返回 null）。 */
+    /**
+     * 读取绑定值（未绑定时返回 null）。
+     */
     static @Nullable Object get(Object scopedValue) {
         return invoke(GET, scopedValue);
     }
 
-    /** 在绑定值的作用域内执行任务。 */
+    /**
+     * 在绑定值的作用域内执行任务。
+     */
     static void run(Object scopedValue, @Nullable Object value, Runnable task) {
         Object carrier = invoke(WHERE, null, scopedValue, value);
         invoke(CARRIER_RUN, carrier, task);

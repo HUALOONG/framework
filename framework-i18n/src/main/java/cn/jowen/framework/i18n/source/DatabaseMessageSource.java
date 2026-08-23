@@ -1,12 +1,13 @@
 package cn.jowen.framework.i18n.source;
 
 import cn.jowen.framework.i18n.api.ResourceLoadException;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 基于数据库的消息源：从消息表按 {@code (locale, code)} 加载文案并缓存，
@@ -22,8 +23,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * );
  * }</pre>
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public class DatabaseMessageSource extends AbstractMessageSource {
@@ -34,7 +35,9 @@ public class DatabaseMessageSource extends AbstractMessageSource {
     private final String codeColumn;
     private final String messageColumn;
 
-    /** locale → (code → message)。 */
+    /**
+     * locale → (code → message)。
+     */
     private volatile Map<String, Map<String, String>> cache = Map.of();
 
     /**
@@ -65,6 +68,10 @@ public class DatabaseMessageSource extends AbstractMessageSource {
         reload();
     }
 
+    private static String localeKey(Locale locale) {
+        return locale.toString();
+    }
+
     @Override
     protected @Nullable String loadRaw(String code, Locale locale) {
         Map<String, String> row = cache.get(localeKey(locale));
@@ -92,12 +99,10 @@ public class DatabaseMessageSource extends AbstractMessageSource {
         }
     }
 
-    /** 当前缓存的区域数。 */
+    /**
+     * 当前缓存的区域数。
+     */
     public int localeCount() {
         return cache.size();
-    }
-
-    private static String localeKey(Locale locale) {
-        return locale.toString();
     }
 }

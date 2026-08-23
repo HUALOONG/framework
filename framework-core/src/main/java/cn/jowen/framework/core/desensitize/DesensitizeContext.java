@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.core.desensitize;
 
 import org.jspecify.annotations.NullMarked;
@@ -17,17 +10,19 @@ import org.jspecify.annotations.Nullable;
  * 重复填充（每脱 1 位填充 1 个替换符）；当 {@code skip} 为 true 时原样返回不脱敏
  * （用于配置开关或审计豁免场景）。
  *
- * @param startKeep 开头保留位数（非负，负值按 0 处理）
- * @param endKeep   末尾保留位数（非负，负值按 0 处理）
+ * @param startKeep   开头保留位数（非负，负值按 0 处理）
+ * @param endKeep     末尾保留位数（非负，负值按 0 处理）
  * @param replacement 替换符（默认 {@code *}，单字符）
- * @param skip      是否跳过脱敏（true 时 {@link #mask(String)} 原样返回）
- * @author Jowen
- * @date 2026-08-21
+ * @param skip        是否跳过脱敏（true 时 {@link #mask(String)} 原样返回）
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public record DesensitizeContext(int startKeep, int endKeep, String replacement, boolean skip) {
 
-    /** 全量脱敏（不保留任何位）。 */
+    /**
+     * 全量脱敏（不保留任何位）。
+     */
     public static final DesensitizeContext DEFAULT = new DesensitizeContext(0, 0, "*", false);
 
     /**
@@ -53,8 +48,8 @@ public record DesensitizeContext(int startKeep, int endKeep, String replacement,
     /**
      * 便捷工厂：仅指定保留位数与替换符。
      *
-     * @param startKeep  开头保留位数
-     * @param endKeep    末尾保留位数
+     * @param startKeep   开头保留位数
+     * @param endKeep     末尾保留位数
      * @param replacement 替换符
      * @return 上下文实例
      */

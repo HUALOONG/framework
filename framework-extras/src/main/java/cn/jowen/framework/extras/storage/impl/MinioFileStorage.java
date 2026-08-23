@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.storage.impl;
 
 import cn.jowen.framework.extras.storage.FileInfo;
@@ -12,23 +5,24 @@ import cn.jowen.framework.extras.storage.FileStorage;
 import cn.jowen.framework.extras.storage.StorageException;
 import cn.jowen.framework.extras.storage.config.MinioProperties;
 import io.minio.BucketExistsArgs;
-import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.GetObjectArgs;
+import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.ListObjectsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import io.minio.StatObjectArgs;
-import io.minio.http.Method;
+import io.minio.Http.Method;
 import io.minio.messages.Item;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * MinIO 云存储实现。
@@ -36,8 +30,8 @@ import org.jspecify.annotations.Nullable;
  * <p>基于 {@code io.minio:minio} SDK；依赖 optional，未引入时由
  * {@code @ConditionalOnClass} 保证不注册。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public final class MinioFileStorage implements FileStorage {
@@ -51,6 +45,16 @@ public final class MinioFileStorage implements FileStorage {
         ensureBucketExists(props.getBucket());
     }
 
+    private static MinioClient buildClient(MinioProperties props) {
+        MinioClient.Builder builder = MinioClient.builder()
+                .endpoint(props.getEndpoint())
+                .credentials(props.getAccessKey(), props.getSecretKey());
+        if (!props.getRegion().isBlank()) {
+            builder.region(props.getRegion());
+        }
+        return builder.build();
+    }
+
     @Override
     public FileInfo upload(InputStream in, String originalFilename) {
         Objects.requireNonNull(in, "input stream must not be null");
@@ -59,7 +63,7 @@ public final class MinioFileStorage implements FileStorage {
             client.putObject(PutObjectArgs.builder()
                     .bucket(props.getBucket())
                     .object(objectName)
-                    .stream(in, -1, 10 * 1024 * 1024)
+                    .stream(in, (long) -1, (long) (10 * 1024 * 1024))
                     .build());
         } catch (Exception e) {
             throw new StorageException("MinIO 上传失败: " + objectName, e);
@@ -83,14 +87,13 @@ public final class MinioFileStorage implements FileStorage {
     @Override
     public @Nullable String getPresignedUrl(String objectName) {
         try {
-            String url = client.getPresignedObjectUrl(
+            return client.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
                             .bucket(props.getBucket())
                             .object(objectName)
                             .expiry(1, TimeUnit.HOURS)
                             .build());
-            return url;
         } catch (Exception e) {
             throw new StorageException("MinIO 生成预签名 URL 失败: " + objectName, e);
         }
@@ -167,16 +170,6 @@ public final class MinioFileStorage implements FileStorage {
         return result;
     }
 
-    private static MinioClient buildClient(MinioProperties props) {
-        MinioClient.Builder builder = MinioClient.builder()
-                .endpoint(props.getEndpoint())
-                .credentials(props.getAccessKey(), props.getSecretKey());
-        if (props.getRegion() != null && !props.getRegion().isBlank()) {
-            builder.region(props.getRegion());
-        }
-        return builder.build();
-    }
-
     private void ensureBucketExists(String bucket) {
         try {
             boolean exists = client.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
@@ -198,7 +191,7 @@ public final class MinioFileStorage implements FileStorage {
     }
 
     private String sanitizeObjectName(String originalFilename) {
-        if (originalFilename == null || originalFilename.isBlank()) {
+        if (originalFilename.isBlank()) {
             return "upload-" + System.currentTimeMillis();
         }
         int lastSlash = Math.max(originalFilename.lastIndexOf('/'), originalFilename.lastIndexOf('\\'));

@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.storage.config;
 
 import org.jspecify.annotations.NullMarked;
@@ -14,25 +7,35 @@ import org.jspecify.annotations.NullMarked;
  *
  * <p>对应属性前缀 {@code framework.extras.storage.minio}。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public class MinioProperties {
 
-    /** MinIO 服务器地址（如 http://localhost:9000）。 */
+    /**
+     * MinIO 服务器地址（如 http://localhost:9000）。
+     */
     private String endpoint;
 
-    /** 默认 bucket 名称。 */
+    /**
+     * 默认 bucket 名称。
+     */
     private String bucket;
 
-    /** Access Key。 */
+    /**
+     * Access Key。
+     */
     private String accessKey;
 
-    /** Secret Key。 */
+    /**
+     * Secret Key。
+     */
     private String secretKey;
 
-    /** 区域（通常为空字符串）。 */
+    /**
+     * 区域（通常为空字符串）。
+     */
     private String region = "";
 
     public MinioProperties() {

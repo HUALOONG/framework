@@ -8,8 +8,8 @@ import java.util.Locale;
 /**
  * 区域解析器。从任意上下文（请求头、参数、线程本地）解析目标区域，不依赖 Servlet。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public interface LocaleResolver {

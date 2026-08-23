@@ -1,17 +1,11 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.core.context;
+
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 上下文载体：统一 {@link java.lang.ScopedValue}（JDK 22+ 正式 API）与
@@ -28,24 +22,17 @@ import org.jspecify.annotations.Nullable;
  * <p>模式由启动层注入（如 autoconfigure 依据 {@code framework.context.mode} 配置调用
  * {@link #configure(Mode)}），本类不直接读取配置文件。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class ContextCarrier {
 
-    /** 上下文模式。 */
-    public enum Mode {
-        /** 结构化并发（ScopedValue，JDK 22+ 正式），默认。 */
-        SCOPED_VALUE,
-        /** 传统线程局部存储，兼容模式。 */
-        THREAD_LOCAL
-    }
-
-    /** ScopedValue 实例句柄（通过反射创建，不可用时为 null）。 */
+    /**
+     * ScopedValue 实例句柄（通过反射创建，不可用时为 null）。
+     */
     private static final @Nullable Object SCOPED_VALUE_INSTANCE = ScopedValueBridge.newInstance();
     private static final ThreadLocal<Map<ContextKey<?>, Object>> THREAD_LOCAL_VALUES = new ThreadLocal<>();
-
     private static volatile Mode mode = Mode.SCOPED_VALUE;
 
     private ContextCarrier() {
@@ -158,7 +145,9 @@ public final class ContextCarrier {
         executeScoped(new HashMap<>(snapshot.values()), task);
     }
 
-    /** 当前生效上下文条目（未绑定返回 null）。 */
+    /**
+     * 当前生效上下文条目（未绑定返回 null）。
+     */
     static @Nullable Map<ContextKey<?>, Object> boundValues() {
         if (useScopedValue()) {
             if (!ScopedValueBridge.isBound(SCOPED_VALUE_INSTANCE)) {
@@ -204,5 +193,19 @@ public final class ContextCarrier {
                 THREAD_LOCAL_VALUES.set(previous);
             }
         }
+    }
+
+    /**
+     * 上下文模式。
+     */
+    public enum Mode {
+        /**
+         * 结构化并发（ScopedValue，JDK 22+ 正式），默认。
+         */
+        SCOPED_VALUE,
+        /**
+         * 传统线程局部存储，兼容模式。
+         */
+        THREAD_LOCAL
     }
 }

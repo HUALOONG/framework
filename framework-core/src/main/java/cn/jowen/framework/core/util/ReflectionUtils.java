@@ -1,13 +1,9 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.core.util;
 
 import cn.jowen.framework.core.exception.SystemException;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -15,8 +11,6 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 反射工具：字段/方法查找（含继承链）、读写、调用与实例化。
@@ -29,8 +23,8 @@ import org.jspecify.annotations.Nullable;
  *       高频热点场景建议配合缓存查找结果。</li>
  * </ul>
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class ReflectionUtils {
@@ -235,7 +229,9 @@ public final class ReflectionUtils {
         return method;
     }
 
-    /** 基础类型装箱（非基础类型原样返回）。 */
+    /**
+     * 基础类型装箱（非基础类型原样返回）。
+     */
     private static Class<?> wrap(Class<?> type) {
         if (!type.isPrimitive()) {
             return type;
@@ -308,7 +304,9 @@ public final class ReflectionUtils {
         }
     }
 
-    /** 静态字段场景下的类型占位（按方法名在调用方类解析失败时兜底抛异常）。 */
+    /**
+     * 静态字段场景下的类型占位（按方法名在调用方类解析失败时兜底抛异常）。
+     */
     private static Class<?> resolveStaticType(String name) {
         throw new SystemException("无法解析目标类型（静态成员需通过对象实例访问）: " + name);
     }

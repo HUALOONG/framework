@@ -1,13 +1,14 @@
 package cn.jowen.framework.i18n.reload;
 
 import cn.jowen.framework.i18n.api.ReloadableMessageSource;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+import org.springframework.jdbc.core.JdbcTemplate;
+
 import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
  * 数据库轮询监听器：以固定间隔查询消息表变更指纹（版本号/更新时间最大值），
@@ -16,8 +17,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * <p>默认指纹 SQL 为 {@code SELECT MAX(version) FROM i18n_message}，可通过构造参数覆盖；
  * 消息表需含版本列（{@code version} 或 {@code updated_at}），每次变更递增。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class DatabasePollingWatcher implements ResourceWatcher {

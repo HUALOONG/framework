@@ -11,26 +11,39 @@
     </parent>
 
     <artifactId>framework-data-jdbc</artifactId>
-    <description>framework-data-core 的轻量 JDBC 实现，封装 SQL 构建执行、结果集映射、连接池、事务与方言，与 framework-data-mybatis 二选一</description>
+    <description>framework-data-core 的轻量 JDBC 实现（零 Spring 依赖），封装 SQL 构建执行、结果集映射、连接池、事务与方言，可脱离 Spring 容器独立运行</description>
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- 抽象层 -->
+        <!-- 抽象层：提供仓储/事务/方言/映射等契约（传递 framework-core / jspecify） -->
         <dependency>
             <groupId>cn.jowen.framework</groupId>
             <artifactId>framework-data-core</artifactId>
         </dependency>
 
-        <!-- Spring JDBC：JdbcTemplate / 事务（不引入 web/mvc） -->
+        <!-- 日志门面：SQL 日志/性能日志输出 -->
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-jdbc</artifactId>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-logger</artifactId>
         </dependency>
 
-        <!-- 连接池 -->
+        <!-- 空安全注解（@NullMarked / @Nullable），与 data-core 保持一致 -->
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+        </dependency>
+
+        <!-- 连接池：HikariCP 为编译期依赖，供 HikariConnectionProvider 直接使用 -->
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
+        </dependency>
+
+        <!-- Druid 连接池：可选依赖；DruidConnectionProvider 通过反射构造，无 druid 时仍可编译 -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid</artifactId>
+            <optional>true</optional>
         </dependency>
 
         <!-- 测试：H2 内存库跑通 CRUD/事务/分页 -->
@@ -40,9 +53,26 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- 测试日志实现：framework-logger 的日志实现为 optional，测试需显式引入 -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

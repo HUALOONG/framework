@@ -8,8 +8,8 @@ import org.jspecify.annotations.NullMarked;
  * 即可监听资源重载/加载失败/语言切换等事件。
  *
  * @param <E> 监听的事件类型
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public interface I18nEventListener<E extends I18nEvent> extends EventListener<E> {

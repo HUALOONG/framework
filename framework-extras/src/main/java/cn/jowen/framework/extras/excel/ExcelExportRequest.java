@@ -1,23 +1,17 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.excel;
 
 import cn.jowen.framework.extras.excel.handler.ExcelWriteHandler;
-import java.util.List;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * Excel 导出请求参数。
  *
  * @param <T> 数据行类型
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public record ExcelExportRequest<T>(
@@ -36,10 +30,10 @@ public record ExcelExportRequest<T>(
     /**
      * 创建单 sheet 导出请求。
      *
-     * @param fileName 文件名
+     * @param fileName  文件名
      * @param sheetName sheet 名
-     * @param data 数据
-     * @param head 表头类型
+     * @param data      数据
+     * @param head      表头类型
      */
     public ExcelExportRequest(String fileName, String sheetName, List<T> data, Class<T> head) {
         this(fileName, sheetName, data, head, null);

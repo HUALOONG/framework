@@ -1,21 +1,24 @@
 package cn.jowen.framework.i18n.support;
 
-import java.util.List;
-import java.util.Locale;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.util.List;
+import java.util.Locale;
 
 /**
  * 区域匹配器：在支持的区域集合中为请求区域寻找最佳候选，
  * 供 Accept-Language 解析与资源包候选选择复用。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class LocaleMatcher {
 
-    /** 默认区域（系统默认）。 */
+    /**
+     * 默认区域（系统默认）。
+     */
     public static final Locale DEFAULT = Locale.getDefault();
 
     private LocaleMatcher() {
@@ -45,7 +48,7 @@ public final class LocaleMatcher {
                 return locale;
             }
         }
-        return supported.get(0);
+        return supported.getFirst();
     }
 
     /**

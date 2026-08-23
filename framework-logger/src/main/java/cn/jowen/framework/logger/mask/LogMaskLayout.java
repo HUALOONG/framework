@@ -7,18 +7,28 @@ import org.jspecify.annotations.Nullable;
 /**
  * 日志布局装饰器，在最终输出文本上施加脱敏（适用于 Logback/Log4j2 Layout 包装）。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class LogMaskLayout {
-
+    /**
+     * 脱敏器，不可为 {@code null}
+     */
     private final Desensitizer desensitizer;
 
+    /**
+     * 日志布局装饰器，默认使用 core 脱敏器。
+     */
     public LogMaskLayout() {
         this(Desensitizer.getInstance());
     }
 
+    /**
+     * 日志布局装饰器，可指定脱敏器。
+     *
+     * @param desensitizer 脱敏器，不可为 {@code null}
+     */
     public LogMaskLayout(Desensitizer desensitizer) {
         this.desensitizer = desensitizer;
     }

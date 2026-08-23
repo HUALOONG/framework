@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.notification.channel;
 
 import cn.jowen.framework.extras.notification.NotificationChannel;
@@ -12,8 +5,6 @@ import cn.jowen.framework.extras.notification.NotificationChannelHandler;
 import cn.jowen.framework.extras.notification.NotificationRequest;
 import cn.jowen.framework.extras.notification.NotificationResult;
 import cn.jowen.framework.extras.notification.config.EmailProperties;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Session;
@@ -21,7 +12,8 @@ import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
+
+import java.util.UUID;
 
 /**
  * Email 通知渠道处理器（基于 Jakarta Mail / Angus Mail）。
@@ -31,8 +23,8 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>缺少必要配置（host / from）时返回 {@code success=false}，**不抛异常**。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public final class EmailNotificationHandler implements NotificationChannelHandler {

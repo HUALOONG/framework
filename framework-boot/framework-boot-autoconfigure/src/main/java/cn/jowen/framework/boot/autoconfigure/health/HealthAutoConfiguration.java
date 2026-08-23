@@ -13,8 +13,8 @@ import org.springframework.context.annotation.Bean;
  *
  * <p>仅当 spring-boot-health 在 classpath 时生效。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 @AutoConfiguration

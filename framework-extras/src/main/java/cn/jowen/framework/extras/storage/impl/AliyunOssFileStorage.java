@@ -1,45 +1,39 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.storage.impl;
 
 import cn.jowen.framework.extras.storage.FileInfo;
 import cn.jowen.framework.extras.storage.FileStorage;
 import cn.jowen.framework.extras.storage.StorageException;
 import cn.jowen.framework.extras.storage.config.AliyunOssProperties;
+import com.aliyun.oss.HttpMethod;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.OSSException;
-import com.aliyun.oss.HttpMethod;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
 import com.aliyun.oss.model.HeadObjectRequest;
 import com.aliyun.oss.model.ListObjectsRequest;
-import com.aliyun.oss.model.ObjectListing;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.OSSObjectSummary;
+import com.aliyun.oss.model.ObjectListing;
 import com.aliyun.oss.model.ObjectMetadata;
 import com.aliyun.oss.model.PutObjectRequest;
 import com.aliyun.oss.model.PutObjectResult;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 阿里云 OSS 云存储实现。
  *
  * <p>基于 {@code com.aliyun.oss:aliyun-sdk-oss} SDK；依赖 optional。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public final class AliyunOssFileStorage implements FileStorage {

@@ -1,6 +1,5 @@
 package cn.jowen.framework.plugin.descriptor;
 
-import cn.jowen.framework.plugin.PluginDescriptor;
 import org.jspecify.annotations.NullMarked;
 
 import java.io.BufferedReader;
@@ -8,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -17,56 +17,34 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 /**
- * 从 JAR 内 {@code /META-INF/plugin/plugin.json} 解析为 {@link PluginDescriptor}。
+ * 从 JAR 内 {@code META-INF/plugin/plugin.json} 解析为 {@link PluginDescriptor}。
  *
- * @author Jowen
- * @date 2026-08-21
+ * <p>同时兼容旧格式（id/version/class/dependencies）和新格式（pluginId/pluginName/pluginClass/requires...）。
+ *
+ * @author 王飞
  */
 @NullMarked
-public final class PluginJsonDescriptorParser {
+public final class PluginJsonDescriptorParser implements PluginDescriptorLoader {
 
     private static final String PLUGIN_JSON_PATH = "META-INF/plugin/plugin.json";
 
-    public PluginDescriptor parse(JarFile jarFile) throws IOException {
-        JarEntry entry = jarFile.getJarEntry(PLUGIN_JSON_PATH);
-        if (entry == null) {
-            throw new DescriptorParseException("JAR 中不存在 " + PLUGIN_JSON_PATH);
-        }
-        String content;
-        try (InputStream is = jarFile.getInputStream(entry);
-             BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
+    private static String readJarResource(Path jarPath, String entryName) throws IOException {
+        try (JarFile jarFile = new JarFile(jarPath.toFile())) {
+            JarEntry entry = jarFile.getJarEntry(entryName);
+            if (entry == null) {
+                throw new DescriptorParseException("JAR 中不存在 " + entryName);
             }
-            content = sb.toString();
+            try (InputStream is = jarFile.getInputStream(entry);
+                 BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) {
+                    sb.append(line);
+                }
+                return sb.toString();
+            }
         }
-        return parseJson(content);
     }
-
-    public PluginDescriptor parse(String jarPath) throws IOException {
-        try (JarFile jarFile = new JarFile(jarPath)) {
-            return parse(jarFile);
-        }
-    }
-
-    public PluginDescriptor parseJson(String json) throws DescriptorParseException {
-        Map<String, Object> map = parseJsonObject(json);
-        String id = requiredString(map, "id");
-        String version = requiredString(map, "version");
-        String className = requiredString(map, "class");
-        String description = (String) map.getOrDefault("description", "");
-        List<String> dependencies = toStringList(map.get("dependencies"));
-        List<String> exportedPackages = toStringList(map.get("exportedPackages"));
-        boolean springEnabled = Boolean.TRUE.equals(map.get("springEnabled"));
-
-        // PluginDescriptor is a record, create new instance with all fields
-        return new PluginDescriptor(id, version, className, description,
-                dependencies, exportedPackages, springEnabled);
-    }
-
-    // ----- simple JSON object parser -----
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> parseJsonObject(String json) throws DescriptorParseException {
@@ -100,11 +78,14 @@ public final class PluginJsonDescriptorParser {
                 value = inner.substring(pos + 1, end);
                 pos = end + 1;
             } else if (inner.regionMatches(true, pos, "true", 0, 4)) {
-                value = true; pos += 4;
+                value = true;
+                pos += 4;
             } else if (inner.regionMatches(true, pos, "false", 0, 5)) {
-                value = false; pos += 5;
+                value = false;
+                pos += 5;
             } else if (inner.regionMatches(true, pos, "null", 0, 4)) {
-                value = null; pos += 4;
+                value = null;
+                pos += 4;
             } else if (inner.charAt(pos) == '[') {
                 int end = findMatchingBracket(inner, pos, '[', ']');
                 value = parseJsonArray(inner.substring(pos, end + 1));
@@ -115,12 +96,17 @@ public final class PluginJsonDescriptorParser {
                 pos = end + 1;
             } else {
                 int end = pos;
-                while (end < inner.length() && ",}".indexOf(inner.charAt(end)) < 0) end++;
+                while (end < inner.length() && ",}]"
+                        .indexOf(inner.charAt(end)) < 0) end++;
                 String numStr = inner.substring(pos, end).trim();
-                try { value = Long.parseLong(numStr); }
-                catch (NumberFormatException e) {
-                    try { value = Double.parseDouble(numStr); }
-                    catch (NumberFormatException e2) { value = numStr; }
+                try {
+                    value = Long.parseLong(numStr);
+                } catch (NumberFormatException e) {
+                    try {
+                        value = Double.parseDouble(numStr);
+                    } catch (NumberFormatException e2) {
+                        value = numStr;
+                    }
                 }
                 pos = end;
             }
@@ -171,7 +157,10 @@ public final class PluginJsonDescriptorParser {
     private static int findClosingQuote(String s, int start) {
         int i = start;
         while (i < s.length()) {
-            if (s.charAt(i) == '\\') { i += 2; continue; }
+            if (s.charAt(i) == '\\') {
+                i += 2;
+                continue;
+            }
             if (s.charAt(i) == '"') return i;
             i++;
         }
@@ -182,32 +171,167 @@ public final class PluginJsonDescriptorParser {
         int depth = 0;
         for (int i = start; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c == '\\') { i++; continue; }
+            if (c == '\\') {
+                i++;
+                continue;
+            }
             if (c == open) depth++;
-            else if (c == close) { depth--; if (depth == 0) return i; }
+            else if (c == close) {
+                depth--;
+                if (depth == 0) return i;
+            }
         }
         return -1;
     }
 
-    private static String requiredString(Map<String, Object> map, String key) throws DescriptorParseException {
-        Object v = map.get(key);
-        if (v == null) throw new DescriptorParseException("缺少必需字段：" + key);
-        return v.toString();
+    // ----- file reading -----
+
+    private static String requiredString(Map<String, Object> map, String... alternateKeys) throws DescriptorParseException {
+        for (String key : alternateKeys) {
+            Object v = map.get(key);
+            if (v != null) return v.toString();
+        }
+        throw new DescriptorParseException("缺少必需字段：" + alternateKeys[0]);
     }
+
+    // ----- simple JSON object parser -----
 
     @SuppressWarnings("unchecked")
     private static List<String> toStringList(Object val) {
         if (val == null) return Collections.emptyList();
         if (val instanceof List<?> list) {
             List<String> result = new ArrayList<>();
-            for (Object item : list) { if (item != null) result.add(item.toString()); }
+            for (Object item : list) {
+                if (item != null) result.add(item.toString());
+            }
             return result;
         }
         return Collections.singletonList(val.toString());
     }
 
+    @Override
+    public List<String> supportedExtensions() {
+        return List.of("json");
+    }
+
+    @Override
+    public PluginDescriptor load(Path jarPath) throws IOException {
+        String content = readJarResource(jarPath, PLUGIN_JSON_PATH);
+        return parseJson(content);
+    }
+
+    /**
+     * 直接从 JSON 字符串解析。
+     *
+     * @param json JSON 字符串，不可为 {@code null}
+     * @return 插件描述符
+     * @throws DescriptorParseException JSON 格式非法时抛出
+     */
+    public PluginDescriptor parseJson(String json) throws DescriptorParseException {
+        Map<String, Object> map = parseJsonObject(json);
+
+        // 兼容新旧字段名
+        String pluginId = requiredString(map, "pluginId", "id");
+        String version = requiredString(map, "version");
+        String pluginClass = requiredString(map, "pluginClass", "class");
+        String pluginName = (String) map.getOrDefault("pluginName", pluginId);
+        String description = (String) map.getOrDefault("description", "");
+        String author = (String) map.getOrDefault("author", "");
+        String license = (String) map.getOrDefault("license", "");
+
+        // requires: 兼容旧格式（List<String>）和新格式（List<{pluginId, versionRange}>）
+        List<PluginDependency> requires = parseRequires(map.get("requires"));
+        List<PluginDependency> optionalRequires = parseRequires(map.get("optionalRequires"));
+
+        // provides
+        List<String> provides = toStringList(map.get("provides"));
+
+        // extensionPoints
+        List<ExtensionPointDescriptor> extensionPoints = parseExtensionPointDescriptors(map.get("extensionPoints"));
+
+        // extensions
+        List<ExtensionDescriptor> extensions = parseExtensionDescriptors(map.get("extensions"));
+
+        // configuration
+        PluginConfigurationDescriptor configuration = parseConfiguration(map.get("configuration"));
+
+        boolean enabledByDefault = Boolean.TRUE.equals(map.get("enabledByDefault"));
+
+        return new PluginDescriptor(
+                pluginId, pluginName, version, description, author, license, pluginClass,
+                requires, optionalRequires, provides,
+                extensionPoints, extensions, configuration, enabledByDefault
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<PluginDependency> parseRequires(Object val) {
+        if (val == null) return List.of();
+        if (val instanceof List<?> list) {
+            List<PluginDependency> result = new ArrayList<>();
+            for (Object item : list) {
+                if (item instanceof String s) {
+                    // 旧格式：纯字符串作为 pluginId，版本范围默认为全部
+                    result.add(new PluginDependency(s, new VersionRange("[0.0.0,999.999.999]"), false));
+                } else if (item instanceof Map<?, ?> m) {
+                    result.add(PluginDependency.fromMap((Map<String, Object>) m));
+                }
+            }
+            return result;
+        }
+        return List.of();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ExtensionPointDescriptor> parseExtensionPointDescriptors(Object val) {
+        if (val == null || !(val instanceof List<?> list)) return List.of();
+        List<ExtensionPointDescriptor> result = new ArrayList<>();
+        for (Object item : list) {
+            if (item instanceof Map<?, ?> m) {
+                result.add(new ExtensionPointDescriptor(
+                        (String) m.get("id"),
+                        (String) m.get("interfaceName"),
+                        Boolean.TRUE.equals(m.get("singleton"))
+                ));
+            }
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ExtensionDescriptor> parseExtensionDescriptors(Object val) {
+        if (val == null || !(val instanceof List<?> list)) return List.of();
+        List<ExtensionDescriptor> result = new ArrayList<>();
+        for (Object item : list) {
+            if (item instanceof Map<?, ?> m) {
+                result.add(ExtensionDescriptor.fromMap((Map<String, Object>) m));
+            }
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private PluginConfigurationDescriptor parseConfiguration(Object val) {
+        if (val == null || !(val instanceof Map<?, ?> m)) return null;
+        Object items = m.get("items");
+        if (!(items instanceof List<?> list) || list.isEmpty()) return null;
+        Map<String, Object> item = (Map<String, Object>) list.getFirst();
+        return new PluginConfigurationDescriptor(
+                (String) item.get("key"),
+                (String) item.get("type"),
+                (String) item.get("defaultValue"),
+                Boolean.TRUE.equals(item.get("required")),
+                (String) item.get("description")
+        );
+    }
+
     public static final class DescriptorParseException extends RuntimeException {
-        public DescriptorParseException(String message) { super(message); }
-        public DescriptorParseException(String message, Throwable cause) { super(message, cause); }
+        public DescriptorParseException(String message) {
+            super(message);
+        }
+
+        public DescriptorParseException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

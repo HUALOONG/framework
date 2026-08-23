@@ -1,17 +1,18 @@
 package cn.jowen.framework.i18n.support;
 
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 占位符解析器：替换模板中的 {@code ${name}} 占位符为参数值，未提供的键替换为空串。
  * 与格式化器区分：本工具面向配置模板（如邮件/通知文案），不参与消息参数化。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class PlaceholderResolver {
@@ -23,7 +24,9 @@ public final class PlaceholderResolver {
     private PlaceholderResolver() {
     }
 
-    /** 单例实例。 */
+    /**
+     * 单例实例。
+     */
     public static PlaceholderResolver getInstance() {
         return INSTANCE;
     }
@@ -49,7 +52,9 @@ public final class PlaceholderResolver {
         return sb.toString();
     }
 
-    /** 模板是否包含占位符。 */
+    /**
+     * 模板是否包含占位符。
+     */
     public boolean hasPlaceholders(@Nullable String template) {
         return template != null && PLACEHOLDER.matcher(template).find();
     }

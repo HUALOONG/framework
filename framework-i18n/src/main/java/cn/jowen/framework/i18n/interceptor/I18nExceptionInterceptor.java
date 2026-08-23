@@ -1,10 +1,11 @@
 package cn.jowen.framework.i18n.interceptor;
 
-import cn.jowen.framework.i18n.api.MessageSource;
 import cn.jowen.framework.i18n.annotation.I18nException;
-import java.util.Locale;
+import cn.jowen.framework.i18n.api.MessageSource;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.util.Locale;
 
 /**
  * 异常消息翻译工具：按异常类上的 {@link I18nException} 注解解析消息编码，
@@ -13,8 +14,8 @@ import org.jspecify.annotations.Nullable;
  * <p>解析规则：取异常类及其父类链上首个携带 {@link I18nException} 注解的类型；
  * 编码未找到时回退为异常原始消息。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class I18nExceptionInterceptor {
@@ -23,6 +24,18 @@ public final class I18nExceptionInterceptor {
 
     public I18nExceptionInterceptor(MessageSource messageSource) {
         this.messageSource = messageSource;
+    }
+
+    private static @Nullable I18nException findAnnotation(Class<?> type) {
+        Class<?> current = type;
+        while (current != null && current != Object.class) {
+            I18nException annotation = current.getAnnotation(I18nException.class);
+            if (annotation != null) {
+                return annotation;
+            }
+            current = current.getSuperclass();
+        }
+        return null;
     }
 
     /**
@@ -43,17 +56,5 @@ public final class I18nExceptionInterceptor {
         String raw = messageSource.getMessage(annotation.value(), locale,
                 new Object[]{throwable.getMessage()});
         return raw != null ? raw : throwable.getMessage();
-    }
-
-    private static @Nullable I18nException findAnnotation(Class<?> type) {
-        Class<?> current = type;
-        while (current != null && current != Object.class) {
-            I18nException annotation = current.getAnnotation(I18nException.class);
-            if (annotation != null) {
-                return annotation;
-            }
-            current = current.getSuperclass();
-        }
-        return null;
     }
 }

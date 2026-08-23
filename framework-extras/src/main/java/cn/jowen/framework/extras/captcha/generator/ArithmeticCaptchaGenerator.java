@@ -1,40 +1,27 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.captcha.generator;
 
-import cn.jowen.framework.extras.captcha.CaptchaProperties;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
+import cn.jowen.framework.extras.config.CaptchaProperties;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.security.SecureRandom;
 import java.util.Random;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 算术验证码生成器：随机生成加法/减法算式，答案与算式自洽。
  *
  * <p>减法保证非负（取两数较大者减较小者）；算式文本渲染于图片，答案单独返回供校验。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public final class ArithmeticCaptchaGenerator implements CaptchaGenerator {
 
-    /** 算式构造结果（供单测验证答案与算式自洽）。 */
-    public record ArithmeticProblem(int a, int b, boolean add, int answer, String expression) {
-    }
-
     private final CaptchaProperties properties;
     private final Random random = new SecureRandom();
-
     public ArithmeticCaptchaGenerator() {
         this(new CaptchaProperties());
     }
@@ -83,5 +70,11 @@ public final class ArithmeticCaptchaGenerator implements CaptchaGenerator {
         } finally {
             g.dispose();
         }
+    }
+
+    /**
+     * 算式构造结果（供单测验证答案与算式自洽）。
+     */
+    public record ArithmeticProblem(int a, int b, boolean add, int answer, String expression) {
     }
 }

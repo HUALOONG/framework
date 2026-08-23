@@ -1,18 +1,20 @@
 package cn.jowen.framework.plugin.event;
 
-import cn.jowen.framework.plugin.Plugin;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * 插件卸载事件，在插件从注册表移除时发布。
+ * 插件卸载事件。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
  */
 @NullMarked
-public final class PluginUnloadedEvent extends PluginLifecycleEvent {
+public final class PluginUnloadedEvent extends PluginEvent {
+    public PluginUnloadedEvent(String pluginId) {
+        super(pluginId, "plugin-unloaded");
+    }
 
-    public PluginUnloadedEvent(Plugin plugin) {
-        super(plugin);
+    @Override
+    public EventType getEventType() {
+        return EventType.UNLOADED;
     }
 }

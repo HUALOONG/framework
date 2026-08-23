@@ -8,8 +8,8 @@ import java.time.Instant;
 /**
  * 框架事件基类。所有自定义事件应继承此类，提供时间戳与可选的源对象。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public class FrameworkEvent {

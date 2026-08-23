@@ -10,13 +10,12 @@
 
 ## 一、模块定位
 
-`framework-logger` 是框架的 **日志管理模块（L1）**，为业务与框架各模块提供统一日志门面，屏蔽 Logback/Log4j2 实现差异，并叠加
-**日志脱敏、链路追踪增强、结构化日志、异步日志** 能力。
+`framework-logger` 是框架的 **日志管理模块（L1）**，为业务与框架各模块提供统一日志门面，屏蔽 Logback/Log4j2 实现差异，并叠加 **日志脱敏、链路追踪增强、结构化日志、异步日志** 能力。
 
 **核心价值**：
 
 | 场景         | 没有本模块                         | 有本模块                            |
-|:-------------|:-----------------------------------|:------------------------------------|
+| :----------- | :--------------------------------- | :---------------------------------- |
 | 日志实现切换 | 业务代码写死 Logback/Log4j2 API    | 门面隔离，一行配置切换              |
 | 敏感信息     | 手机号/身份证明文入日志            | 内置 MaskPattern 自动脱敏           |
 | 链路追踪     | 多线程/虚拟线程切换后 TraceId 丢失 | ContextSnapshot 传播，MDC 不丢      |
@@ -25,7 +24,7 @@
 **与核心模块的边界**：
 
 | 模块                 | 定位              | 特点                                |
-|:---------------------|:------------------|:------------------------------------|
+| :------------------- | :---------------- | :---------------------------------- |
 | **framework-logger** | **日志门面+增强** | **脱敏/追踪/结构化**                |
 | framework-core       | 基础设施          | SPI、异常、断言（logger 依赖）      |
 | framework-extras     | 工具集            | operatelog 操作日志复用 logger 门面 |
@@ -35,7 +34,7 @@
 ## 二、功能清单与依赖矩阵
 
 | 功能         | 子包    | 核心依赖                 | 可选依赖         |
-|:-------------|:--------|:-------------------------|:-----------------|
+| :----------- | :------ | :----------------------- | :--------------- |
 | 日志门面     | facade  | framework-core           | —                |
 | 实现适配     | adapter | —                        | Logback / Log4j2 |
 | 链路追踪增强 | trace   | facade                   | Micrometer 2.0   |
@@ -49,10 +48,10 @@
 
 ```text
 framework-logger
-└─ src/main/java/com/framework/logger/
+└─ src/main/java/cn/jowen/framework/logger/
    ├─ facade/                 # 日志门面（Logger / LoggerFactory / LogLevel）
    ├─ adapter/                # 日志实现适配（Logback / Log4j2）
-   ├─ trace/                  # 链路追踪增强（TraceEnhancer / MdcContextPropagation）
+   ├─ trace/                  # 链路追踪增强（TraceEnhancer / TraceContext / MdcContextPropagation）
    ├─ mask/                   # 日志脱敏（core.desensitize 适配：LogMasker / LogMaskLayout）
    ├─ layout/                 # 结构化日志（StructuredLayout / JsonLogFormatter）
    └─ config/                 # 配置（LoggerProperties）
@@ -70,9 +69,9 @@ framework-logger
 
 ```textmate
 cn.jowen.framework.logger.facade
-├─ Logger                    #日志接口：info/warn/error/debug +占位符
-├─ LoggerFactory             #工厂：LoggerFactory.getLogger(Class/name)
-└─ LogLevel                  #枚举：TRACE/DEBUG/INFO/WARN/ERROR
+├─ Logger                    # 日志接口：info/warn/error/debug + 占位符
+├─ LoggerFactory             # 工厂：LoggerFactory.getLogger(Class/name)
+└─ LogLevel                  # 枚举：TRACE/DEBUG/INFO/WARN/ERROR
 ```
 
 #### 4.2 adapter/ — 实现适配
@@ -83,9 +82,9 @@ cn.jowen.framework.logger.facade
 
 ```textmate
 cn.jowen.framework.logger.adapter
-├─ LoggerAdapter             #适配器接口
-├─ LogbackAdapter            #Logback 适配（默认）
-└─ Log4j2Adapter             #Log4j2 适配
+├─ LoggerAdapter             # 适配器接口
+├─ LogbackAdapter            # Logback 适配（默认）
+└─ Log4j2Adapter             # Log4j2 适配
 ```
 
 #### 4.3 trace/ — 链路追踪增强
@@ -96,22 +95,21 @@ TraceId 注入与跨线程/虚拟线程传播，保证日志链路完整。
 
 ```textmate
 cn.jowen.framework.logger.trace
-├─ TraceEnhancer             #TraceId 注入（无侵入）
-├─ TraceContext              #追踪上下文（traceId/spanId），基于 core  ContextCarrier
-└─ MdcContextPropagation     #MDC ↔ ContextCarrier 桥接（虚拟线程适配）
+├─ TraceEnhancer             # TraceId 注入（无侵入）
+├─ TraceContext              # 追踪上下文（traceId/spanId），基于 core ContextCarrier
+└─ MdcContextPropagation     # ContextSnapshot 桥接（虚拟线程适配，实现 ContextPropagator SPI）
 ```
 
 **上下文统一（冲突修正决议 #3）**：`TraceContext` 读写委托 `core.context.ContextCarrier`（默认 ScopedValue，兼容模式 ThreadLocal），不再自建；虚拟线程之间迁移用 `ContextSnapshot.capture()/replay()`。
 
 ```textmate
-// MDC ↔ ContextCarrier 双向桥接（经 ContextPropagator SPI 注册）
+// ContextSnapshot 跨线程传播（经 ContextPropagator SPI 注册）
 public class MdcContextPropagation implements ContextPropagator {
     @Override
     public Runnable wrap(Runnable task) {
         ContextSnapshot snapshot = ContextSnapshot.capture();   // 统一快照
         return () -> snapshot.replay(task);                      // 跨虚拟线程迁移
     }
-    // 可选：适配 Micrometer ContextSnapshot（io.micrometer.context）作为桥接实现之一
 }
 ```
 
@@ -123,13 +121,13 @@ public class MdcContextPropagation implements ContextPropagator {
 
 ```textmate
 cn.jowen.framework.logger.mask
-├─ LogMasker                 #日志脱敏入口：委托 core Desensitizer，按 LoggerProperties 开关
-└─ LogMaskLayout             #Logback/ Log4j2 布局装饰器：输出前对消息做脱敏
+├─ LogMasker                 # 日志脱敏入口：委托 core Desensitizer，按 LoggerProperties 开关
+└─ LogMaskLayout             # Logback/Log4j2 布局装饰器：输出前对消息做脱敏
 ```
 
 **与 core 的分工**：
 
-- 内置策略（手机号/身份证/银行卡/邮箱…）→ `core.desensitize.DesensitizeStrategies`， **本模块不复制**；
+- 内置策略（手机号/身份证/银行卡/邮箱…）→ `core.desensitize.DesensitizeStrategies`，**本模块不复制**；
 - 自定义规则 → 实现 `core.desensitize.DesensitizeRule` 并经 SPI 注册，日志与结果集/JSON 输出 **一处定义、处处生效**；
 - 本模块只注册 `LogMaskLayout`（把脱敏挂在日志布局/Appender 上）。
 
@@ -145,15 +143,15 @@ cn.jowen.framework.logger.mask
 
 ```textmate
 cn.jowen.framework.logger.layout
-├─ StructuredLayout          #结构化布局
-└─ JsonLogFormatter          #JSON 输出（Jackson 3JsonMapper）
+├─ StructuredLayout          # 结构化布局
+└─ JsonLogFormatter          # JSON 输出（Jackson 3 JsonMapper）
 ```
 
 #### 4.6 config/ — 配置
 
 ```textmate
 cn.jowen.framework.logger.config
-└─ LoggerProperties          #mask-enabled /async-enabled /level...
+└─ LoggerProperties          # mask-enabled / async-enabled / level...
 ```
 
 ---
@@ -243,11 +241,10 @@ framework:
 ```textmate
 // 门面使用（业务无感底层实现）
 Logger log = LoggerFactory.getLogger(UserService.class);
-log.info("用户创建成功, userId={}",userId);          // 自动脱敏 + TraceId
+log.info("用户创建成功, userId={}", userId);          // 自动脱敏 + TraceId
 
 // 编程式设置 TraceId
-try(
-    var ignored = TraceContext.open()){
+try (var ignored = TraceContext.open()) {
     log.info("业务执行");   // 自动携带 traceId/spanId
 }
 ```
@@ -257,7 +254,7 @@ try(
 ## 十、SPI 扩展点汇总
 
 | 扩展点接口                            | 所在包  | 用途                                                  |
-|:--------------------------------------|:--------|:------------------------------------------------------|
+| :------------------------------------ | :------ | :---------------------------------------------------- |
 | `LoggerAdapter`                       | adapter | 接入新日志实现                                        |
 | `ContextPropagator`（core.context）   | trace   | MDC 桥接 / 自定义上下文传播（跨虚拟线程）             |
 | `DesensitizeRule`（core.desensitize） | mask    | 自定义脱敏规则（日志/结果集/JSON 共用，见 core 模块） |
@@ -269,7 +266,7 @@ try(
 ```text
 ┌─────────────────────────────────────────────────────────────┐
 │              framework-boot (适配编排层)                    │
-│  └─ LoggerAutoConfiguration                        │
+│              └─ LoggerAutoConfiguration                     │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────────┐

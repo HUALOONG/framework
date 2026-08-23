@@ -5,8 +5,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * 防抖定时器，确保短时间内多次触发只执行最后一次。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class DebounceTimer {

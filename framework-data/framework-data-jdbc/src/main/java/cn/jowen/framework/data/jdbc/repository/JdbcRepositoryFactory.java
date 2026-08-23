@@ -1,44 +1,38 @@
 package cn.jowen.framework.data.jdbc.repository;
 
-import cn.jowen.framework.data.core.dialect.Dialect;
+import cn.jowen.framework.core.spi.SPIImplementation;
+import cn.jowen.framework.data.jdbc.dialect.DialectRegistry;
 import cn.jowen.framework.data.core.mapping.EntityMetadataResolver;
 import cn.jowen.framework.data.core.repository.Repository;
 import cn.jowen.framework.data.core.repository.RepositoryFactory;
+import cn.jowen.framework.data.jdbc.core.JdbcTemplate;
 import org.jspecify.annotations.NullMarked;
-import org.springframework.jdbc.core.JdbcTemplate;
-
-import javax.sql.DataSource;
 
 /**
- * JDBC 仓储工厂，基于 {@link DataSource} 创建 {@link JdbcRepository}。
+ * JDBC 仓储工厂（SPI 实现）：按实体类型创建 {@link SimpleJdbcRepository} 实例。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-25
  */
+@SPIImplementation(name = "jdbc")
 @NullMarked
 public final class JdbcRepositoryFactory implements RepositoryFactory {
 
     private final JdbcTemplate jdbcTemplate;
     private final EntityMetadataResolver resolver;
-    private final Dialect dialect;
+    private final DialectRegistry dialectRegistry;
+    private final IdGenerator idGenerator;
 
-    public JdbcRepositoryFactory(DataSource dataSource, EntityMetadataResolver resolver, Dialect dialect) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    public JdbcRepositoryFactory(JdbcTemplate jdbcTemplate, EntityMetadataResolver resolver,
+                                 DialectRegistry dialectRegistry, IdGenerator idGenerator) {
+        this.jdbcTemplate = jdbcTemplate;
         this.resolver = resolver;
-        this.dialect = dialect;
+        this.dialectRegistry = dialectRegistry;
+        this.idGenerator = idGenerator;
     }
 
     @Override
     public <T, ID> Repository<T, ID> getRepository(Class<T> entityClass) {
-        return new JdbcRepository<>(entityClass, jdbcTemplate, resolver, dialect);
-    }
-
-    /**
-     * 返回底层 {@link JdbcTemplate}（供高级用法）。
-     *
-     * @return JdbcTemplate，不可为 {@code null}
-     */
-    public JdbcTemplate getJdbcTemplate() {
-        return jdbcTemplate;
+        return new SimpleJdbcRepository<>(jdbcTemplate, resolver, dialectRegistry, idGenerator, entityClass);
     }
 }

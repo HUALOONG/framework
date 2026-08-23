@@ -1,1 +1,9 @@
-cn.jowen.framework.boot.autoconfigure.BootAutoConfiguration
+cn.jowen.framework.boot.autoconfigure.JowenAutoConfiguration
+cn.jowen.framework.boot.autoconfigure.data.JdbcAutoConfiguration
+cn.jowen.framework.boot.autoconfigure.data.MybatisAutoConfiguration
+cn.jowen.framework.boot.autoconfigure.logger.LoggerAutoConfiguration
+cn.jowen.framework.boot.autoconfigure.cache.CacheAutoConfiguration
+cn.jowen.framework.boot.autoconfigure.i18n.I18nAutoConfiguration
+cn.jowen.framework.boot.autoconfigure.extras.ExtrasAutoConfiguration
+cn.jowen.framework.boot.autoconfigure.health.HealthAutoConfiguration
+cn.jowen.framework.boot.autoconfigure.plugin.PluginAutoConfiguration

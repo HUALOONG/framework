@@ -1,8 +1,8 @@
 package cn.jowen.framework.boot.autoconfigure.health;
 
-import cn.jowen.framework.cache.CacheManager;
+import cn.jowen.framework.cache.api.CacheManager;
 import cn.jowen.framework.i18n.api.MessageSource;
-import cn.jowen.framework.plugin.PluginManager;
+import cn.jowen.framework.plugin.api.PluginManager;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.health.contributor.Health;
@@ -14,8 +14,8 @@ import org.springframework.context.ApplicationContext;
  *
  * <p>任一无状态上报失败即标记为 DOWN，便于容器编排探针感知框架整体可用性。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public class BootHealthIndicator implements HealthIndicator {
@@ -42,9 +42,9 @@ public class BootHealthIndicator implements HealthIndicator {
 
         ObjectProvider<PluginManager> pluginManager = context.getBeanProvider(PluginManager.class);
         PluginManager pm = pluginManager.getIfAvailable();
-        if (pm != null) {
-            builder.withDetail("plugin.plugins", pm.all().size());
-        }
+//        if (pm != null) {
+//            builder.withDetail("plugin.plugins", pm.all().size());
+//        }
 
         ObjectProvider<MessageSource> messageSource = context.getBeanProvider(MessageSource.class);
         if (messageSource.getIfAvailable() == null) {

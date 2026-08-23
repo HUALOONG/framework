@@ -1,18 +1,20 @@
 package cn.jowen.framework.plugin.event;
 
-import cn.jowen.framework.plugin.Plugin;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * 插件加载完成事件，在 {@code PluginManager#register} 成功插入后发布。
+ * 插件加载完成事件。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
  */
 @NullMarked
-public final class PluginLoadedEvent extends PluginLifecycleEvent {
+public final class PluginLoadedEvent extends PluginEvent {
+    public PluginLoadedEvent(String pluginId) {
+        super(pluginId, "plugin-loaded");
+    }
 
-    public PluginLoadedEvent(Plugin plugin) {
-        super(plugin);
+    @Override
+    public EventType getEventType() {
+        return EventType.LOADED;
     }
 }

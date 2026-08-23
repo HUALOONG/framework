@@ -17,7 +17,7 @@ Redis）的差异，为上层业务提供统一 `MessageSource` 接口。
 **核心价值**：
 
 | 场景         | 没有本模块                               | 有本模块                                       |
-|:-------------|:-----------------------------------------|:-----------------------------------------------|
+| :----------- | :--------------------------------------- | :--------------------------------------------- |
 | 多语言支持   | 业务代码 if/else 判断语言、硬编码字符串  | 统一 `MessageSource` 接口，代码整洁            |
 | 动态文案更新 | 修改文案需重新打包部署重启               | 数据库/Redis 消息源修改即生效，无需重启        |
 | 参数化消息   | `String.format` / 字符串拼接，易错难维护 | `{0}` `{1}` 占位符自动替换，支持命名参数与 ICU |
@@ -26,7 +26,7 @@ Redis）的差异，为上层业务提供统一 `MessageSource` 接口。
 **与核心模块的边界**：
 
 | 模块               | 定位           | 特点                                   |
-|:-------------------|:---------------|:---------------------------------------|
+| :----------------- | :------------- | :------------------------------------- |
 | **framework-i18n** | **国际化适配** | **统一消息接口、语言上下文、动态刷新** |
 | framework-core     | 基础设施       | SPI、异常、断言                        |
 | framework-cache    | 缓存抽象       | 可选集成加速消息读取                   |
@@ -36,7 +36,7 @@ Redis）的差异，为上层业务提供统一 `MessageSource` 接口。
 ## 二、功能清单与依赖矩阵
 
 | 功能         | 子包        | 核心依赖             | 可选依赖                                                          |
-|:-------------|:------------|:---------------------|:------------------------------------------------------------------|
+| :----------- | :---------- | :------------------- | :---------------------------------------------------------------- |
 | 核心抽象     | api         | framework-core       | —                                                                 |
 | 消息资源存储 | source      | framework-core       | framework-data-jdbc（DB 源）/ framework-cache + Redis（Redis 源） |
 | 区域解析     | locale      | —                    | jakarta.servlet-api（Web 场景）                                   |
@@ -45,7 +45,7 @@ Redis）的差异，为上层业务提供统一 `MessageSource` 接口。
 | 注解         | annotation  | —                    | spring-aop（切面）                                                |
 | 拦截器       | interceptor | —                    | jakarta.servlet-api                                               |
 | 事件         | event       | framework-core Event | —                                                                 |
-| 配置与装配   | config      | Spring Boot 4        | spring-boot-configuration-processor                               |
+| 配置与装配   | —           | Spring Boot 4        | 自动装配在 `framework-boot-autoconfigure`，本模块不引入           |
 | 工具         | support     | framework-core       | —                                                                 |
 
 ---
@@ -72,11 +72,13 @@ framework-i18n
    │                  # I18nResponseInterceptor                                         [已实现]
    ├─ event/          # I18nEvent / ResourceReloadedEvent / ResourceLoadFailedEvent / LocaleChangedEvent /
    │                  # I18nEventListener                                              [已实现]
+   ├─ config/         # I18nProperties / SourceType / ResolverType / FormatterType（纯 POJO，不含 Spring 注解）[已实现]
    └─ support/        # MessageCodeUtils / PropertiesFileParser / PlaceholderResolver / LocaleMatcher [已实现]
 
 config 装配层（framework-boot-autoconfigure）
 └─ cn.jowen.framework.boot.autoconfigure.i18n/
-   # I18nAutoConfiguration / I18nProperties / SourceType / ResolverType / FormatterType / MessageSourceCustomizer [已实现]
+   # I18nAutoConfiguration / MessageSourceCustomizer [已实现]
+   # I18nProperties（extends I18nProperties，带 @ConfigurationProperties）[已实现]
    # I18nRuntimeHints（GraalVM AOT） / I18nMetricsCollector（Micrometer）                [待实现]
 ```
 
@@ -115,7 +117,7 @@ cn.jowen.framework.i18n.api
 `framework.context.mode=threadlocal` 兼容方案 B）， **不再自带 ScopedValue 字段**；与多租户/数据权限/脱敏跳过/trace
 共享同一载体，跨虚拟线程迁移统一走 `ContextSnapshot`。
 
-```java
+```textmate
 // 语义示例（实现细节在 core ContextCarrier；已实现，见 I18nContext）
 public class I18nContext {
     public static final ContextKey<Locale> LOCALE = ContextKey.named("locale", Locale.class);
@@ -254,21 +256,19 @@ cn.jowen.framework.i18n.event
 
 > **监听器注册**：`I18nEventListener` 继承 core `EventListener`，注册时须以匿名类/具名类实现（lambda 无法携带泛型参数，`EventBus` 无法推断事件类型）；core `EventBus` 已支持沿泛型继承链解析事件类型。
 
-#### 4.9 config/ — 配置与装配
+#### 4.9 config/ — 配置属性
 
 ##### 定位
 
-Spring Boot 4 自动装配入口。
+纯 POJO 配置属性，不含任何 Spring 注解。`@ConfigurationProperties` 绑定由
+`framework-boot-autoconfigure` 的 `I18nAutoConfiguration`（`@EnableConfigurationProperties`）完成。
 
 ```textmate
-# 实际位于 framework-boot-autoconfigure 模块
-cn.jowen.framework.boot.autoconfigure.i18n
-├─ I18nAutoConfiguration        # 装配 MessageSource /LocaleResolver /Interceptor /Watcher   [已实现]
-├─ I18nProperties               # @ConfigurationProperties(prefix = "framework.i18n")          [已实现]
-├─ SourceType                   # PROPERTIES /DATABASE /REDIS /COMPOSITE                     [已实现]
-├─ ResolverType                 # ACCEPT_HEADER /COOKIE /SESSION /PARAMETER /FIXED /COMPOSITE [已实现]
-├─ FormatterType                # JAVA_TEXT /NAMED_PARAMETER /ICU                            [已实现]
-└─ MessageSourceCustomizer      # 用户定制回调（多源注册、自定义格式化器）                    [已实现]
+cn.jowen.framework.i18n.config
+├─ I18nProperties               # 配置属性（纯 POJO，前缀 framework.i18n）      [已实现]
+├─ SourceType                   # PROPERTIES / DATABASE                         [已实现]
+├─ ResolverType                 # ACCEPT_HEADER / COOKIE / SESSION / PARAMETER / FIXED / COMPOSITE  [已实现]
+└─ FormatterType                # JAVA_TEXT / NAMED_PARAMETER / ICU             [已实现]
 ```
 
 **注册文件**：
@@ -328,8 +328,9 @@ public class I18nRuntimeHints implements RuntimeHintsRegistrar {
 │  └──────────────────────────────────┬───────────────────┘       │
 │                                     │                           │
 │  ┌──────────────────────────────────▼───────────────────┐       │
-│  │  config（装配，唯一依赖 Spring Boot 的层）           │       │
-│  │  I18nAutoConfiguration ──→ I18nProperties            │       │
+│  │  （config/ 子包不含本模块，自动装配在                │       │
+│  │   framework-boot-autoconfigure/i18n/               │       │
+│  │   I18nAutoConfiguration 中）                       │       │
 │  └──────────────────────────────────────────────────────┘       │
 │                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐  │
@@ -352,7 +353,7 @@ L2（依赖 L1）        source（各实现）/ reload / event
                       ▲
 L3（依赖 L0~L2）     annotation + interceptor（声明式入口）
                       ▲
-L4（依赖 L0~L3）     config（自动装配，唯一依赖 Spring Boot 的层）
+（自动装配由 framework-boot-autoconfigure/i18n/ 承载，本模块不依赖 Spring Boot）
 ```
 
 **模块间规则**：
@@ -401,17 +402,6 @@ L4（依赖 L0~L3）     config（自动装配，唯一依赖 Spring Boot 的层
         <groupId>jakarta.servlet</groupId>
         <artifactId>jakarta.servlet-api</artifactId>
         <scope>provided</scope>
-    </dependency>
-
-    <!-- Spring Boot 自动装配（仅 config 层） -->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-autoconfigure</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-configuration-processor</artifactId>
-        <optional>true</optional>
     </dependency>
 
     <!-- JSpecify 空安全 -->
@@ -537,7 +527,7 @@ public class OrderNotFoundException extends I18nException {
 ## 十、SPI 扩展点汇总
 
 | 扩展点接口                | 所在包 | 用途                                      |
-|:--------------------------|:-------|:------------------------------------------|
+| :------------------------ | :----- | :---------------------------------------- |
 | `MessageSourceCustomizer` | config | 定制消息源组合与格式化器                  |
 | `MessageSource`           | api    | 全新消息源实现（如 Nacos/配置中心）       |
 | `LocaleResolver`          | api    | 自定义区域解析策略（如从 Token/租户解析） |

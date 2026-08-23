@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.notification.config;
 
 import org.jspecify.annotations.NullMarked;
@@ -14,22 +7,30 @@ import org.jspecify.annotations.NullMarked;
  *
  * <p>对应属性前缀 {@code framework.extras.notification.sms}。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public class SmsProperties {
 
-    /** 阿里云 AccessKey ID。 */
+    /**
+     * 阿里云 AccessKey ID。
+     */
     private String accessKeyId;
 
-    /** 阿里云 AccessKey Secret。 */
+    /**
+     * 阿里云 AccessKey Secret。
+     */
     private String accessKeySecret;
 
-    /** 短信签名名称。 */
+    /**
+     * 短信签名名称。
+     */
     private String signName;
 
-    /** 默认模板编码（可在 NotificationRequest.templateCode 覆盖）。 */
+    /**
+     * 默认模板编码（可在 NotificationRequest.templateCode 覆盖）。
+     */
     private String templateCode;
 
     public String getAccessKeyId() {

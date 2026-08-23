@@ -1,12 +1,13 @@
 package cn.jowen.framework.i18n.format;
 
 import cn.jowen.framework.i18n.api.FormatException;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Locale;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * ICU4J {@code com.ibm.icu.text.MessageFormat} 格式化器，占位符语法
@@ -16,8 +17,8 @@ import org.jspecify.annotations.Nullable;
  * {@code com.ibm.icu:icu4j} 时 {@link #format} 抛 {@link FormatException} 并提示引入坐标。
  * 已引入时自动使用 ICU 能力，无需改动调用方。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class IcuMessageFormatter implements MessageFormatter {
@@ -33,14 +34,26 @@ public final class IcuMessageFormatter implements MessageFormatter {
     private IcuMessageFormatter() {
     }
 
-    /** 单例实例。 */
+    /**
+     * 单例实例。
+     */
     public static IcuMessageFormatter getInstance() {
         return INSTANCE;
     }
 
-    /** ICU4J 是否在 classpath 中。 */
+    /**
+     * ICU4J 是否在 classpath 中。
+     */
     public static boolean available() {
         return ICU_TYPE != null;
+    }
+
+    private static @Nullable Class<?> resolveIcuType() {
+        try {
+            return Class.forName(ICU_FORMAT_CLASS, false, IcuMessageFormatter.class.getClassLoader());
+        } catch (ClassNotFoundException ex) {
+            return null;
+        }
     }
 
     @Override
@@ -63,13 +76,5 @@ public final class IcuMessageFormatter implements MessageFormatter {
     @Override
     public String name() {
         return NAME;
-    }
-
-    private static @Nullable Class<?> resolveIcuType() {
-        try {
-            return Class.forName(ICU_FORMAT_CLASS, false, IcuMessageFormatter.class.getClassLoader());
-        } catch (ClassNotFoundException ex) {
-            return null;
-        }
     }
 }

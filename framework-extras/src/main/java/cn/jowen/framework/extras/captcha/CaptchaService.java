@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.captcha;
 
 import org.jspecify.annotations.NullMarked;
@@ -12,8 +5,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * 验证码服务接口。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public interface CaptchaService {
@@ -40,8 +33,8 @@ public interface CaptchaService {
     /**
      * 校验验证码（可控制是否删除）。
      *
-     * @param captchaId    验证码标识
-     * @param code         用户输入的验证码
+     * @param captchaId   验证码标识
+     * @param code        用户输入的验证码
      * @param deleteAfter 校验后是否删除（true 时一次性消费）
      * @return 匹配返回 {@code true}；不存在/已过期/不匹配返回 {@code false}
      */

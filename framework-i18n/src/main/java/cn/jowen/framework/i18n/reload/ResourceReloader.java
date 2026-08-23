@@ -4,10 +4,11 @@ import cn.jowen.framework.core.event.EventBus;
 import cn.jowen.framework.i18n.api.ReloadableMessageSource;
 import cn.jowen.framework.i18n.event.ResourceLoadFailedEvent;
 import cn.jowen.framework.i18n.event.ResourceReloadedEvent;
-import java.time.Duration;
-import java.util.Locale;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.time.Duration;
+import java.util.Locale;
 
 /**
  * 重载执行器。协调 {@link ReloadableMessageSource} 完成资源重载，并在成功/失败时发布事件。
@@ -16,8 +17,8 @@ import org.jspecify.annotations.Nullable;
  * 本执行器负责编排与可观测性：成功发布 {@link ResourceReloadedEvent}（含条目数与耗时），
  * 失败发布 {@link ResourceLoadFailedEvent}（含原因）。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class ResourceReloader {
@@ -40,14 +41,22 @@ public final class ResourceReloader {
         this.eventBus = eventBus;
     }
 
+    private static int countEntries(ReloadableMessageSource source) {
+        // 消息源可选择实现计数能力；未实现时回退为 0（事件中仅作参考）
+        if (source instanceof CountableMessageSource countable) {
+            return countable.messageCount();
+        }
+        return 0;
+    }
+
     /**
      * 触发消息源重载。
      *
      * <p>重载期间新请求继续读取旧快照，重载成功后原子切换；失败不切换（保持旧文案可用），
      * 并发布 {@link ResourceLoadFailedEvent}。
      *
-     * @param source  消息源，不可为 {@code null}
-     * @param locale  本次重载关联的区域，可为 {@code null}（全量重载）
+     * @param source 消息源，不可为 {@code null}
+     * @param locale 本次重载关联的区域，可为 {@code null}（全量重载）
      */
     public void reload(ReloadableMessageSource source, @Nullable Locale locale) {
         long start = System.nanoTime();
@@ -59,7 +68,9 @@ public final class ResourceReloader {
         }
     }
 
-    /** 便捷重载：区域视为 {@code null}（全量重载）。 */
+    /**
+     * 便捷重载：区域视为 {@code null}（全量重载）。
+     */
     public void reload(ReloadableMessageSource source) {
         reload(source, null);
     }
@@ -79,18 +90,14 @@ public final class ResourceReloader {
         }
     }
 
-    private static int countEntries(ReloadableMessageSource source) {
-        // 消息源可选择实现计数能力；未实现时回退为 0（事件中仅作参考）
-        if (source instanceof CountableMessageSource countable) {
-            return countable.messageCount();
-        }
-        return 0;
-    }
-
-    /** 消息源条目计数扩展点（内部接口，消息源按需实现）。 */
+    /**
+     * 消息源条目计数扩展点（内部接口，消息源按需实现）。
+     */
     public interface CountableMessageSource {
 
-        /** 当前缓存的条目总数。 */
+        /**
+         * 当前缓存的条目总数。
+         */
         int messageCount();
     }
 }

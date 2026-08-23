@@ -16,7 +16,7 @@
 **核心价值**：
 
 | 场景             | 没有本模块                     | 有本模块                               |
-|:-----------------|:-------------------------------|:---------------------------------------|
+| :--------------- | :----------------------------- | :------------------------------------- |
 | 数据访问实现切换 | 业务代码绑死 JDBC/MyBatis API  | 面向抽象编程，实现层可替换             |
 | 单元测试         | 需要 Spring 容器/Database 环境 | 纯抽象可 mock，脱离容器测试            |
 | 多数据库         | 每个库方言硬编码               | Dialect SPI + DialectDetector 自动识别 |
@@ -25,7 +25,7 @@
 **与核心模块的边界**：
 
 | 模块                    | 定位             | 特点                               |
-|:------------------------|:-----------------|:-----------------------------------|
+| :---------------------- | :--------------- | :--------------------------------- |
 | **framework-data-core** | **数据访问抽象** | **零实现、零 Spring**              |
 | framework-data-jdbc     | JDBC 实现        | 依赖 data-core，提供轻量 JDBC 落地 |
 | framework-data-mybatis  | MyBatis 实现     | 依赖 data-core，桥接 MyBatis Flex  |
@@ -36,7 +36,7 @@
 ## 二、功能清单与依赖矩阵
 
 | 功能       | 子包        | 核心依赖       | 可选依赖 |
-|:-----------|:------------|:---------------|:---------|
+| :--------- | :---------- | :------------- | :------- |
 | 仓储抽象   | repository  | framework-core | —        |
 | 查询模型   | query       | —              | —        |
 | 分页模型   | page / sort | —              | —        |
@@ -54,18 +54,18 @@
 
 ```text
 framework-data-core
-└─ src/main/java/com/framework/data/core/
-   ├─ repository/     #  仓储抽象（Repository / CrudRepository / PagingRepository）
-   ├─ query/          #  查询模型（QueryWrapper / Condition / Operator）
-   ├─ page/           #  分页（Page / PageRequest）
-   ├─ sort/           #  排序（Sort / Order / Direction）
-   ├─ transaction/    #  事务抽象（TransactionManager SPI / TransactionTemplate）
-   ├─ datasource/     #  数据源抽象（DataSourceRouter / PoolType）
-   ├─ mapping/        #  对象映射（EntityMetadata / RowMapper SPI / TypeHandler）
-   ├─ dialect/        #  方言（DatabaseDialect SPI / DatabaseType）
-   ├─ callback/       #  回调（EntityCallback / ConnectionCallback）
-   ├─ exception/      #  异常体系（DataAccessException 树 + ExceptionTranslator SPI）
-   └─ support/        #  实体基类（EntityBase / VersionedEntity / AuditableEntity）
+└─ src/main/java/cn/jowen/framework/data/core/
+   ├─ callback        # 回调
+   ├─ datasource/     # 数据源抽象（DataSourceRouter / PoolType）
+   ├─ dialect/        # 方言（DatabaseDialect SPI / DatabaseType）
+   ├─ exception/      # 异常体系（DataAccessException 树 + ExceptionTranslator SPI）
+   ├─ mapping/        # 对象映射（EntityMetadata / RowMapper SPI / TypeHandler）
+   ├─ page/           # 分页（Page / PageRequest）
+   ├─ query/          # 查询模型（QueryWrapper / Condition / Operator）
+   ├─ repository/     # 仓储抽象（Repository / CrudRepository / PagingRepository）
+   ├─ sort/           # 排序（Sort / Order / Direction）
+   ├─ support/        # 实体基类（EntityBase / VersionedEntity / AuditableEntity）
+   └─ transaction/    # 事务抽象（TransactionManager SPI / TransactionTemplate）
 ```
 
 ---
@@ -80,15 +80,14 @@ framework-data-core
 
 ```textmate
 cn.jowen.framework.data.core.repository
-├─ Repository<T, ID>        # 顶层接口
-├─ CrudRepository<T, ID>    # CRUD：save /findById /deleteById...
-├─ PagingRepository<T, ID>  # 分页：page(PageRequest, QueryWrapper)
+├─ CrudRepository<T, ID>    # CRUD：save / findById / deleteById...
 ├─ DynamicRepository        # 动态仓储（无实体类）
+├─ PagingRepository<T, ID>  # 分页：page(PageRequest, QueryWrapper)
+├─ Repository<T, ID>        # 顶层接口
 └─ RepositoryFactory        # 仓储工厂（SPI）
 ```
 
-> **禁用约束（冲突修正决议 # 4）**：`Repository/CrudRepository/Page` 等与 Spring Data 命名撞名—— **禁止与 `spring-data-*`
-同用**（import 歧义、AOP 仓储代理互伤）；需 Spring Data 生态时二选一，不得混装。实现层（data-jdbc/data-mybatis）同样遵守。
+> **禁用约束（冲突修正决议 # 4）**：`Repository / CrudRepository / Page` 等与 Spring Data 命名撞名—— **禁止与 `spring-data-*` 同用**（import 歧义、AOP 仓储代理互伤）；需 Spring Data 生态时二选一，不得混装。实现层（data-jdbc/data-mybatis）同样遵守。
 
 #### 4.2 query/ — 查询模型
 
@@ -98,25 +97,25 @@ cn.jowen.framework.data.core.repository
 
 ```textmate
 cn.jowen.framework.data.core.query
-├─ QueryWrapper<T>          # 查询条件：eq /like /in /between /orderBy
-├─ UpdateWrapper<T>         # 更新条件
 ├─ Condition                # 单个条件（column/op/value）
+├─ JoinType                 # 连接类型（INNER/LEFT/RIGHT）
 ├─ Operator                 # 操作符枚举（EQ/NE/GT/LT/IN/LIKE...）
-└─ JoinType                 # 连接类型（INNER/LEFT/RIGHT）
+├─ QueryWrapper<T>          # 查询条件：eq / like / in / between / orderBy
+└─ UpdateWrapper<T>         # 更新条件
 ```
 
 #### 4.3 page/ + sort/ — 分页与排序
 
 ```textmate
 cn.jowen.framework.data.core.page
-├─ Page<T>                  # 分页结果（records/total/pageNo/pageSize）
-├─ PageRequest              # 分页请求
-└─ Pageable                 # 分页能力标记
+├─ Page<T>                  # 分页结果（records / total / pageNo / pageSize）
+├─ Pageable                 # 分页能力标记
+└─ PageRequest              # 分页请求
 
 cn.jowen.framework.data.core.sort
-├─ Sort /Order              # 排序定义
-├─ Direction                # ASC /DESC
-└─ NullHandling             # NULLS_FIRST /NULLS_LAST
+├─ Sort / Order             # 排序定义
+├─ Direction                # ASC / DESC
+└─ NullHandling             # NULLS_FIRST / NULLS_LAST
 ```
 
 #### 4.4 transaction/ — 事务抽象
@@ -127,16 +126,16 @@ cn.jowen.framework.data.core.sort
 
 ```textmate
 cn.jowen.framework.data.core.transaction
-├─ TransactionManager       # 事务管理器（SPI）：begin /commit /rollback
-├─ TransactionDefinition    # 事务定义（传播/隔离/超时/只读）
-├─ TransactionStatus        # 事务状态
-├─ TransactionTemplate      # 编程式事务模板
-├─ TransactionCallback<T>   # 事务回调
+├─ Isolation                # 隔离级别（DEFAULT/READ_COMMITTED...）
 ├─ Propagation              # 传播行为（REQUIRED/REQUIRES_NEW/NESTED...）
-└─ Isolation                # 隔离级别（DEFAULT/READ_COMMITTED...）
+├─ TransactionCallback<T>   # 事务回调
+├─ TransactionDefinition    # 事务定义（传播/隔离/超时/只读）
+├─ TransactionManager       # 事务管理器（SPI）：begin / commit / rollback
+├─ TransactionStatus        # 事务状态
+└─ TransactionTemplate      # 编程式事务模板
 ```
 
-**Spring 场景约定（冲突修正决议 # 6）**：`TransactionManager` 定位为 **实现适配接口**，不定义新的事务语义。Spring 场景下：
+**Spring 场景约定**：`TransactionManager` 定位为 **实现适配接口**，不定义新的事务语义。Spring 场景下：
 
 - 语义（传播/隔离）对齐 spring-tx 的 `Propagation/Isolation`，数值一一对应；
 - 实现层提供 **spring-tx 薄适配**（`SpringTransactionManagerAdapter implements TransactionManager`，内部委托
@@ -148,9 +147,9 @@ cn.jowen.framework.data.core.transaction
 ```textmate
 cn.jowen.framework.data.core.datasource
 ├─ DataSource               # 数据源接口
+├─ DataSourceContext        # 数据源路由选择（基于 core ContextCarrier，虚拟线程友好）
 ├─ DataSourceProperties     # 配置属性
 ├─ DataSourceRouter         # 动态数据源路由（读写分离/多库）
-├─ DataSourceContext        # 数据源路由选择（基于 coreContextCarrier，虚拟线程友好）
 └─ PoolType                 # 连接池类型（HIKARI /DRUID）
 ```
 
@@ -162,13 +161,13 @@ cn.jowen.framework.data.core.datasource
 ```textmate
 cn.jowen.framework.data.core.mapping
 ├─ EntityMetadata<T>        # 实体元数据（Record 承载）
+├─ EntityScanner            # 实体扫描器（SPI）
+├─ JdbcType                 # JDBC 类型枚举
+├─ NamingStrategy           # 命名策略（驼峰↔下划线）
 ├─ PropertyMetadata         # 属性元数据
 ├─ RowMapper<T>             # 行映射器（SPI）
 ├─ TypeHandler<T>           # 类型处理器
-├─ TypeHandlerRegistry      # 类型处理器注册中心
-├─ NamingStrategy           # 命名策略（驼峰↔下划线）
-├─ JdbcType                 # JDBC 类型枚举
-└─ EntityScanner            # 实体扫描器（SPI）
+└─ TypeHandlerRegistry      # 类型处理器注册中心
 ```
 
 #### 4.7 dialect/ — 数据库方言
@@ -184,8 +183,8 @@ cn.jowen.framework.data.core.dialect
 
 ```textmate
 cn.jowen.framework.data.core.callback
-├─ EntityCallback           # 实体生命周期回调（插入前/更新前）
 ├─ ConnectionCallback<T>    # 连接回调
+├─ EntityCallback           # 实体生命周期回调（插入前/更新前）
 └─ StatementCallback<T>     # Statement 回调
 ```
 
@@ -193,24 +192,24 @@ cn.jowen.framework.data.core.callback
 
 ```textmate
 cn.jowen.framework.data.core.exception
-├─ DataAccessException                  # 异常根类
-├─ DuplicateKeyException                # 唯一键冲突
-├─ OptimisticLockException              # 乐观锁失败
 ├─ BadSqlGrammarException               # SQL 语法错误
+├─ DataAccessException                  # 异常根类
 ├─ DataIntegrityViolationException      # 数据完整性违例
-├─ TransientDataAccessException         # 可重试异常
-│  ├─ DeadlockException                 # 死锁
-│  └─ TimeoutException                  # 超时
-└─ ExceptionTranslator                  # 异常转换器（SPI）
+├─ DeadlockException                    # 死锁
+├─ DuplicateKeyException                # 唯一键冲突
+├─ ExceptionTranslator                  # 异常转换器（SPI）
+├─ OptimisticLockException              # 乐观锁失败
+├─ TimeoutException                     # 超时
+└─ TransientDataAccessException         # 可重试异常
 ```
 
 #### 4.10 support/ — 实体基类
 
 ```textmate
 cn.jowen.framework.data.core.support
+├─ AuditableEntity<ID>      # 审计基类（createBy/createTime/updateBy/updateTime）
 ├─ EntityBase<ID>           # 主键基类
-├─ VersionedEntity<ID>      # 乐观锁版本基类（@Version）
-└─ AuditableEntity<ID>      # 审计基类（createBy/createTime/updateBy/updateTime）
+└─ VersionedEntity<ID>      # 乐观锁版本基类（@Version）
 ```
 
 ---
@@ -233,7 +232,7 @@ cn.jowen.framework.data.core.support
 │  DataAccessException ← ExceptionTranslator(SPI)                    │
 │  EntityBase / VersionedEntity / AuditableEntity                    │
 │                                                                    │
-│  ⚠ 零 JDBC 依赖 · 零 Spring 依赖 · 仅 framework-core               │
+│  ⚠ 零 JDBC 依赖 · 零 Spring 依赖 · 仅 framework-core              │
 └────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -301,7 +300,7 @@ transactionTemplate.execute(status ->{
 ## 十、SPI 扩展点汇总
 
 | 扩展点接口                            | 所在包      | 用途             |
-|:--------------------------------------|:------------|:-----------------|
+| :------------------------------------ | :---------- | :--------------- |
 | `RepositoryFactory`                   | repository  | 自定义仓储工厂   |
 | `TransactionManager`                  | transaction | 自定义事务实现   |
 | `RowMapper`                           | mapping     | 自定义结果集映射 |
@@ -315,8 +314,10 @@ transactionTemplate.execute(status ->{
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│  framework-boot (适配编排层)                                 │
-│  └─ DataSource/Jdbc/Mybatis AutoConfiguration                │
+│  framework-boot-autoconfigure（适配编排层）                  │
+│  └─ data/ 子包：DataSourceAutoConfiguration                  │
+│                 DataJdbcAutoConfiguration                    │
+│                 DataMybatisAutoConfiguration                 │
 └──────────────────────────┬───────────────────────────────────┘
                            │
 ┌──────────────────────────▼───────────────────────────────────┐

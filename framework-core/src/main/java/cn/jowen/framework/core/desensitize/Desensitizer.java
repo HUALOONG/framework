@@ -1,20 +1,18 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.core.desensitize;
 
 import cn.jowen.framework.core.spi.ExtensionLoader;
 import cn.jowen.framework.core.util.ReflectionUtils;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * 脱敏执行器，聚合内置策略、SPI 注册的自定义规则与 {@link DesensitizeField} 注解反射脱敏，
@@ -25,18 +23,21 @@ import org.jspecify.annotations.Nullable;
  * Desensitizer.getInstance().mask("13812345678");                    // 内置规则自动识别
  * Desensitizer.getInstance().mask("13812345678", "PHONE");           // 按策略名
  * Desensitizer.getInstance().maskObject(userVO);                     // 按 @DesensitizeField 注解
+ * Desensitizer.getInstance().maskMap(map, "PHONE");                  // Map 值按策略脱敏
  * }</pre>
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class Desensitizer {
 
     private static final Desensitizer INSTANCE = new Desensitizer();
 
-    /** 手动注册的自定义规则（SPI 自动发现的规则同样生效）。 */
-    private final List<DesensitizeRule> extraRules = new ArrayList<>();
+    /**
+     * 手动注册的自定义规则（SPI 自动发现的规则同样生效），线程安全。
+     */
+    private final List<DesensitizeRule> extraRules = Collections.synchronizedList(new ArrayList<>());
 
     private Desensitizer() {
     }
@@ -50,8 +51,16 @@ public final class Desensitizer {
         return INSTANCE;
     }
 
+    private static DesensitizeContext contextOf(DesensitizeField annotation) {
+        DesensitizeStrategies strategy = DesensitizeStrategies.valueOf(annotation.strategy().toUpperCase(Locale.ROOT));
+        int startKeep = annotation.startKeep() >= 0 ? annotation.startKeep() : strategy.defaultStartKeep();
+        int endKeep = annotation.endKeep() >= 0 ? annotation.endKeep() : strategy.defaultEndKeep();
+        String replacement = annotation.replacement().isEmpty() ? "*" : annotation.replacement();
+        return new DesensitizeContext(startKeep, endKeep, replacement, annotation.skip());
+    }
+
     /**
-     * 对文本执行脱敏：先跑内置规则，再跑所有自定义规则（SPI + 手动注册）。
+     * 对文本执行脱敏：遍历所有自定义规则（SPI + 手动注册），按上下文执行。
      *
      * @param text 原文，可为 {@code null}
      * @return 脱敏后文本；{@code null} 原样返回
@@ -60,9 +69,9 @@ public final class Desensitizer {
         if (text == null) {
             return null;
         }
-        String result = MaskPattern.maskAll(text);
+        String result = text;
         for (DesensitizeRule rule : rules()) {
-            result = rule.apply(result);
+            result = rule.apply(result, DesensitizeContext.DEFAULT);
         }
         return result;
     }
@@ -112,8 +121,7 @@ public final class Desensitizer {
             if (annotation == null || field.getType() != String.class) {
                 continue;
             }
-            if (java.lang.reflect.Modifier.isStatic(field.getModifiers())
-                    || java.lang.reflect.Modifier.isFinal(field.getModifiers())) {
+            if (Modifier.isStatic(field.getModifiers()) || Modifier.isFinal(field.getModifiers())) {
                 continue;
             }
             String raw = (String) ReflectionUtils.getFieldValue(target, field.getName());
@@ -128,12 +136,31 @@ public final class Desensitizer {
     }
 
     /**
+     * Map 值脱敏：对 Map 中所有字符串值按给定策略脱敏，返回新 Map（原 Map 不变）。
+     *
+     * @param source   源 Map，可为 {@code null}
+     * @param strategy 策略名，对应 {@link DesensitizeStrategies}
+     * @return 脱敏后的新 Map；{@code source} 为 {@code null} 时返回 {@code null}
+     * @throws DesensitizeException 策略不存在
+     */
+    public @Nullable Map<String, String> maskMap(@Nullable Map<String, String> source, String strategy) {
+        if (source == null || source.isEmpty()) {
+            return source;
+        }
+        Map<String, String> result = new java.util.LinkedHashMap<>(source.size());
+        for (Map.Entry<String, String> entry : source.entrySet()) {
+            result.put(entry.getKey(), Objects.requireNonNull(mask(entry.getValue(), strategy)));
+        }
+        return result;
+    }
+
+    /**
      * 手动注册自定义规则（线程安全）。
      *
      * @param rule 规则，不能为 {@code null}
      */
-    public synchronized void register(DesensitizeRule rule) {
-        if (rule != null && !extraRules.contains(rule)) {
+    public void register(DesensitizeRule rule) {
+        if (!extraRules.contains(rule)) {
             extraRules.add(rule);
         }
     }
@@ -144,14 +171,6 @@ public final class Desensitizer {
         } catch (IllegalArgumentException e) {
             throw new DesensitizeException("未知脱敏策略: " + strategy);
         }
-    }
-
-    private static DesensitizeContext contextOf(DesensitizeField annotation) {
-        DesensitizeStrategies strategy = DesensitizeStrategies.valueOf(annotation.strategy().toUpperCase(Locale.ROOT));
-        int startKeep = annotation.startKeep() >= 0 ? annotation.startKeep() : strategy.defaultStartKeep();
-        int endKeep = annotation.endKeep() >= 0 ? annotation.endKeep() : strategy.defaultEndKeep();
-        String replacement = annotation.replacement().isEmpty() ? "*" : annotation.replacement();
-        return new DesensitizeContext(startKeep, endKeep, replacement, annotation.skip());
     }
 
     private List<DesensitizeRule> rules() {

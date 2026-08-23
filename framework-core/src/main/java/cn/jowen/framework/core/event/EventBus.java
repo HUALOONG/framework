@@ -17,8 +17,8 @@ import java.util.concurrent.Executor;
 /**
  * 进程内事件总线。支持注册监听器并发布事件，可指定 {@link Executor} 实现异步派发。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class EventBus {
@@ -40,51 +40,6 @@ public final class EventBus {
      */
     public EventBus(@Nullable Executor executor) {
         this.executor = executor;
-    }
-
-    /**
-     * 注册监听器，监听其泛型声明的事件类型。
-     *
-     * @param listener 监听器，不可为 {@code null}
-     * @param <E>      事件类型
-     */
-    @SuppressWarnings("unchecked")
-    public <E extends FrameworkEvent> void register(EventListener<E> listener) {
-        Class<?> eventType = resolveEventType(listener);
-        listeners.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>()).add(listener);
-    }
-
-    /**
-     * 发布事件，派发给所有关注的监听器。
-     *
-     * @param event 事件，不可为 {@code null}
-     */
-    @SuppressWarnings("unchecked")
-    public void publish(FrameworkEvent event) {
-        Class<?> type = event.getClass();
-        for (Map.Entry<Class<?>, List<EventListener<?>>> entry : listeners.entrySet()) {
-            if (entry.getKey().isAssignableFrom(type)) {
-                for (EventListener<?> l : entry.getValue()) {
-                    dispatch((EventListener<FrameworkEvent>) l, event);
-                }
-            }
-        }
-    }
-
-    private void dispatch(EventListener<FrameworkEvent> listener, FrameworkEvent event) {
-        if (executor != null) {
-            executor.execute(() -> safeInvoke(listener, event));
-        } else {
-            safeInvoke(listener, event);
-        }
-    }
-
-    private void safeInvoke(EventListener<FrameworkEvent> listener, FrameworkEvent event) {
-        try {
-            listener.onEvent(event);
-        } catch (RuntimeException ex) {
-            throw new SystemException("事件监听器执行失败：" + listener.getClass().getName(), ex);
-        }
     }
 
     private static Class<?> resolveEventType(EventListener<?> listener) {
@@ -142,5 +97,50 @@ public final class EventBus {
             return resolved != null ? resolveType(resolved, bindings) : null;
         }
         return null;
+    }
+
+    /**
+     * 注册监听器，监听其泛型声明的事件类型。
+     *
+     * @param listener 监听器，不可为 {@code null}
+     * @param <E>      事件类型
+     */
+    @SuppressWarnings("unchecked")
+    public <E extends FrameworkEvent> void register(EventListener<E> listener) {
+        Class<?> eventType = resolveEventType(listener);
+        listeners.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>()).add(listener);
+    }
+
+    /**
+     * 发布事件，派发给所有关注的监听器。
+     *
+     * @param event 事件，不可为 {@code null}
+     */
+    @SuppressWarnings("unchecked")
+    public void publish(FrameworkEvent event) {
+        Class<?> type = event.getClass();
+        for (Map.Entry<Class<?>, List<EventListener<?>>> entry : listeners.entrySet()) {
+            if (entry.getKey().isAssignableFrom(type)) {
+                for (EventListener<?> l : entry.getValue()) {
+                    dispatch((EventListener<FrameworkEvent>) l, event);
+                }
+            }
+        }
+    }
+
+    private void dispatch(EventListener<FrameworkEvent> listener, FrameworkEvent event) {
+        if (executor != null) {
+            executor.execute(() -> safeInvoke(listener, event));
+        } else {
+            safeInvoke(listener, event);
+        }
+    }
+
+    private void safeInvoke(EventListener<FrameworkEvent> listener, FrameworkEvent event) {
+        try {
+            listener.onEvent(event);
+        } catch (RuntimeException ex) {
+            throw new SystemException("事件监听器执行失败：" + listener.getClass().getName(), ex);
+        }
     }
 }

@@ -1,16 +1,10 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.core.context;
+
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Objects;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 上下文快照：捕获某一时刻的全部上下文条目（不可变），供跨线程/异步回放。
@@ -24,15 +18,17 @@ import org.jspecify.annotations.Nullable;
  * executor.execute(() -> snapshot.replay(() -> doAsync()));
  * }</pre>
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class ContextSnapshot {
 
     private final Map<ContextKey<?>, Object> values;
 
-    /** 由 {@link ContextCarrier#snapshot()} 构造（包内可见），外部不可直接实例化。 */
+    /**
+     * 由 {@link ContextCarrier#snapshot()} 构造（包内可见），外部不可直接实例化。
+     */
     ContextSnapshot(Map<ContextKey<?>, Object> values) {
         this.values = Map.copyOf(values);
     }
@@ -55,7 +51,9 @@ public final class ContextSnapshot {
         return values;
     }
 
-    /** 快照是否为空。 */
+    /**
+     * 快照是否为空。
+     */
     public boolean isEmpty() {
         return values.isEmpty();
     }

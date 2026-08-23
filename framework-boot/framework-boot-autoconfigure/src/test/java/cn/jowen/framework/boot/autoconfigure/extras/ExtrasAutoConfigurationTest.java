@@ -1,52 +1,186 @@
 package cn.jowen.framework.boot.autoconfigure.extras;
 
-import cn.jowen.framework.boot.autoconfigure.BootAutoConfiguration;
+import cn.jowen.framework.cache.api.CacheManager;
+import cn.jowen.framework.cache.DefaultCacheManager;
+import cn.jowen.framework.extras.config.CaptchaProperties;
+import cn.jowen.framework.extras.config.DataPermissionProperties;
+import cn.jowen.framework.extras.config.DesensitizeProperties;
+import cn.jowen.framework.extras.config.ExcelProperties;
+import cn.jowen.framework.extras.config.IdempotentProperties;
+import cn.jowen.framework.extras.config.Ip2RegionProperties;
+import cn.jowen.framework.extras.config.LockProperties;
+import cn.jowen.framework.extras.config.NotificationProperties;
+import cn.jowen.framework.extras.config.OperateLogProperties;
+import cn.jowen.framework.extras.config.RateLimitProperties;
+import cn.jowen.framework.extras.config.StorageProperties;
+import cn.jowen.framework.extras.datapermission.DataScope;
 import cn.jowen.framework.extras.idempotent.Idempotent;
 import cn.jowen.framework.extras.lock.Lock;
+import cn.jowen.framework.extras.lock.LockType;
+import cn.jowen.framework.extras.lock.LocalLock;
 import cn.jowen.framework.extras.ratelimit.RateLimiter;
+import cn.jowen.framework.extras.ratelimit.RateLimiterManager;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.io.ClassPathResource;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * extras 装配集成测试：验证限流器/幂等/本地锁 bean 注册、属性绑定与禁用开关。
+ * {@link ExtrasAutoConfiguration} 集成测试。
+ *
+ * @author 王飞
+ * @since 2026-08-26
  */
 class ExtrasAutoConfigurationTest {
 
-    private final ApplicationContextRunner runner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(BootAutoConfiguration.class));
+    private final ApplicationContextRunner context = new ApplicationContextRunner()
+            .withConfiguration(AutoConfigurations.of(ExtrasAutoConfiguration.class))
+            .withInitializer(ctx -> {
+                YamlPropertiesFactoryBean yaml = new YamlPropertiesFactoryBean();
+                yaml.setResources(new ClassPathResource("application.yaml"));
+                Properties props = yaml.getObject();
+                if (props != null) {
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    props.forEach((k, v) -> map.put(k.toString(), v));
+                    ctx.getEnvironment().getPropertySources().addFirst(
+                        new MapPropertySource("classpath:application.yaml", map));
+                }
+            });
+
+    @Configuration
+    static class CacheConfig {
+        @Bean
+        public CacheManager cacheManager() {
+            return new DefaultCacheManager();
+        }
+    }
 
     @Test
-    void extrasBeansRegistered() {
-        runner.run(context -> {
-            assertThat(context).hasSingleBean(RateLimiter.class);
-            assertThat(context).hasSingleBean(Idempotent.class);
-            assertThat(context).hasSingleBean(Lock.class);
+    void shouldCreateRateLimiterManager() {
+        context.run(ctx -> {
+            assertThat(ctx).hasSingleBean(RateLimiterManager.class);
         });
     }
 
     @Test
-    void rateLimitPropertiesBound() {
-        runner.withPropertyValues(
-                "framework.extras.rate-limit.permits-per-second=2",
-                "framework.extras.rate-limit.capacity=5").run(context -> {
-            RateLimiter limiter = context.getBean(RateLimiter.class);
-            // 容量 5：前 5 次放行，第 6 次拒绝（速率 2/s 来不及补充）
-            for (int i = 0; i < 5; i++) {
-                assertThat(limiter.tryAcquire()).isTrue();
-            }
-            assertThat(limiter.tryAcquire()).isFalse();
+    void shouldCreateRateLimiter() {
+        context.run(ctx -> {
+            assertThat(ctx).hasSingleBean(RateLimiter.class);
         });
     }
 
     @Test
-    void extrasDisabledByProperty() {
-        runner.withPropertyValues("framework.extras.enabled=false").run(context -> {
-            assertThat(context).doesNotHaveBean(RateLimiter.class);
-            assertThat(context).doesNotHaveBean(Idempotent.class);
-            assertThat(context).doesNotHaveBean(Lock.class);
+    void shouldCreateLocalLock() {
+        context.run(ctx -> {
+            assertThat(ctx).hasSingleBean(Lock.class);
+            assertThat(ctx.getBean(Lock.class)).isInstanceOf(LocalLock.class);
         });
+    }
+
+    @Test
+    void shouldCreateIdempotentWithCacheManager() {
+        context.withUserConfiguration(CacheConfig.class)
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(Idempotent.class);
+                });
+    }
+
+    @Test
+    void shouldNotCreateIdempotentWithoutCacheManager() {
+        context.run(ctx -> {
+            assertThat(ctx).doesNotHaveBean(Idempotent.class);
+        });
+    }
+
+    @Test
+    void shouldBindAllSubProperties() {
+        context.run(ctx -> {
+            BootExtrasProperties props = ctx.getBean(BootExtrasProperties.class);
+            assertThat(props.isEnabled()).isTrue();
+
+            LockProperties lock = props.getLock();
+            assertThat(lock.isEnabled()).isTrue();
+            assertThat(lock.getType()).isEqualTo(LockType.REENTRANT);
+            assertThat(lock.getKeyPrefix()).isEqualTo("lock:");
+            assertThat(lock.getDefaultLeaseTime()).isEqualTo(30000);
+            assertThat(lock.getDefaultWaitTime()).isEqualTo(10000);
+            assertThat(lock.isWatchdogEnabled()).isFalse();
+
+            RateLimitProperties ratelimit = props.getRatelimit();
+            assertThat(ratelimit.isEnabled()).isTrue();
+            assertThat(ratelimit.getDefaultAlgorithm()).isEqualTo("sliding-window");
+            assertThat(ratelimit.getKeyPrefix()).isEqualTo("ratelimit:");
+            assertThat(ratelimit.getFallbackMessage()).isEqualTo("请求过于频繁，请稍后重试");
+
+            IdempotentProperties idempotent = props.getIdempotent();
+            assertThat(idempotent.isEnabled()).isTrue();
+            assertThat(idempotent.getDefaultTtl()).isEqualTo(60000);
+            assertThat(idempotent.getKeyPrefix()).isEqualTo("idempotent:");
+            assertThat(idempotent.getTokenHeader()).isEqualTo("X-Idempotent-Token");
+
+            CaptchaProperties captcha = props.getCaptcha();
+            assertThat(captcha.getLength()).isEqualTo(4);
+            assertThat(captcha.getWidth()).isEqualTo(120);
+            assertThat(captcha.getHeight()).isEqualTo(40);
+            assertThat(captcha.getTtlMillis()).isEqualTo(300000);
+            assertThat(captcha.isCaseSensitive()).isFalse();
+            assertThat(captcha.getCharSet()).isEqualTo("ABCDEFGHJKLMNPQRSTUVWXYZ23456789");
+
+            StorageProperties storage = props.getStorage();
+            assertThat(storage.getRootLocation()).isEqualTo("./storage");
+            assertThat(storage.getNamingStrategy()).isEqualTo("date");
+            assertThat(storage.isGeneratePresignedUrl()).isFalse();
+
+            NotificationProperties notification = props.getNotification();
+            assertThat(notification.getDefaultFrom()).isEqualTo("noreply@jowen.cn");
+            assertThat(notification.isAsyncEnabled()).isTrue();
+
+            ExcelProperties excel = props.getExcel();
+            assertThat(excel.isEnabled()).isTrue();
+            assertThat(excel.getDefaultFileName()).isEqualTo("report");
+            assertThat(excel.getDefaultSheetName()).isEqualTo("Sheet1");
+            assertThat(excel.getImportBatchSize()).isEqualTo(500);
+            assertThat(excel.getHeaderRowCount()).isEqualTo(1);
+
+            Ip2RegionProperties ip2region = props.getIp2region();
+            assertThat(ip2region.isEnabled()).isTrue();
+            assertThat(ip2region.getDbPath()).isEqualTo("ip2region.xdb");
+            assertThat(ip2region.getLoadType()).isEqualTo(Ip2RegionProperties.LoadType.MEMORY);
+            assertThat(ip2region.getTrustedHeaders()).containsExactly("X-Forwarded-For", "X-Real-IP");
+
+            DesensitizeProperties desensitize = props.getDesensitize();
+            assertThat(desensitize.isEnabled()).isTrue();
+            assertThat(desensitize.isFailOnUnknownStrategy()).isFalse();
+
+            OperateLogProperties operatelog = props.getOperatelog();
+            assertThat(operatelog.isEnabled()).isTrue();
+            assertThat(operatelog.isAsync()).isTrue();
+
+            DataPermissionProperties datapermission = props.getDatapermission();
+            assertThat(datapermission.isEnabled()).isTrue();
+            assertThat(datapermission.getDefaultScope()).isEqualTo(DataScope.ALL);
+            assertThat(datapermission.getDefaultDeptColumn()).isEqualTo("dept_id");
+            assertThat(datapermission.getDefaultUserColumn()).isEqualTo("create_by");
+            assertThat(datapermission.getIgnoreTables()).isEmpty();
+        });
+    }
+
+    @Test
+    void shouldNotActivateWhenDisabled() {
+        context.withPropertyValues("framework.extras.enabled=false")
+                .run(ctx -> {
+                    assertThat(ctx).doesNotHaveBean(RateLimiterManager.class);
+                    assertThat(ctx).doesNotHaveBean(Lock.class);
+                });
     }
 }

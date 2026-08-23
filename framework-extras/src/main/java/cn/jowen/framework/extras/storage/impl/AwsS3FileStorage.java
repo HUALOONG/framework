@@ -1,24 +1,14 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.storage.impl;
 
 import cn.jowen.framework.extras.storage.FileInfo;
 import cn.jowen.framework.extras.storage.FileStorage;
-import cn.jowen.framework.extras.storage.StorageException;
 import cn.jowen.framework.extras.storage.config.AwsS3Properties;
-import java.io.InputStream;
-import java.net.URL;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.io.InputStream;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * AWS S3 云存储实现（骨架，兼容 S3 协议）。
@@ -32,8 +22,8 @@ import org.jspecify.annotations.Nullable;
  *   <li>处理 {@code S3Exception} 及其子类（{@code NoSuchKeyException} 等）</li>
  * </ul>
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public final class AwsS3FileStorage implements FileStorage {

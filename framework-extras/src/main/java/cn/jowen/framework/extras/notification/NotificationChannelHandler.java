@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.notification;
 
 import org.jspecify.annotations.NullMarked;
@@ -14,8 +7,8 @@ import org.jspecify.annotations.NullMarked;
  *
  * <p>实现应返回 {@link NotificationResult} 而非抛出异常；未知/失败场景返回 {@code success=false}。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public interface NotificationChannelHandler {

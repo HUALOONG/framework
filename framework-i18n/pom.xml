@@ -34,6 +34,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Spring JDBC：DatabaseMessageSource / DatabasePollingWatcher 需 JdbcTemplate（非 Spring Boot，仅提供 API） -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>

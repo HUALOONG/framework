@@ -1,7 +1,6 @@
 package cn.jowen.framework.data.core.page;
 
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -9,8 +8,8 @@ import java.util.List;
  * 分页结果，含当前页数据、总记录数与分页元信息。
  *
  * @param <T> 元素类型
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class Page<T> {
@@ -87,5 +86,15 @@ public final class Page<T> {
      */
     public boolean isEmpty() {
         return content.isEmpty();
+    }
+
+    /**
+     * 创建空分页结果。
+     *
+     * @param <T> 元素类型
+     * @return 空分页
+     */
+    public static <T> Page<T> empty() {
+        return new Page<>(List.of(), 0, 0, 0);
     }
 }

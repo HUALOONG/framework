@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.desensitize.serializer;
 
 import org.jspecify.annotations.NullMarked;
@@ -23,16 +16,17 @@ import tools.jackson.databind.module.SimpleModule;
  * <p>本模块属于可选能力（依赖 {@code tools.jackson.core:jackson-databind}），
  * 在 {@code framework-extras} 中以 {@code <optional>true</optional>} 引入，不强制业务方依赖 Jackson。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public final class DesensitizeModule extends SimpleModule {
 
-    private static final long serialVersionUID = 1L;
-
-    /** 模块名称。 */
+    /**
+     * 模块名称。
+     */
     public static final String MODULE_NAME = "JowenDesensitizeModule";
+    private static final long serialVersionUID = 1L;
 
     public DesensitizeModule() {
         super(MODULE_NAME);

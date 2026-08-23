@@ -1,16 +1,10 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.storage.registry;
 
 import cn.jowen.framework.extras.storage.FileStorage;
-import java.util.Set;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.util.Set;
 
 /**
  * 云存储注册表 SPI 接口。
@@ -18,8 +12,8 @@ import org.jspecify.annotations.Nullable;
  * <p>聚合所有已注册的云后端 {@link FileStorage}，支持按名称获取。
  * 由 {@code ExtrasBootstrapConfiguration} 统一注入并调用 {@code manager.registerStorage()} 填充。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  * @see DefaultCloudStorageRegistry
  */
 @NullMarked

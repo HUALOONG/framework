@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.excel.converter;
 
 import com.alibaba.excel.converters.Converter;
@@ -22,8 +15,8 @@ import java.time.format.DateTimeParseException;
 /**
  * LocalDateTime 转换器，支持 yyyy-MM-dd HH:mm:ss 格式。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public class LocalDateTimeConverter implements Converter<LocalDateTime> {
@@ -42,7 +35,7 @@ public class LocalDateTimeConverter implements Converter<LocalDateTime> {
 
     @Override
     public LocalDateTime convertToJavaData(ReadCellData<?> cellData, ExcelContentProperty contentProperty,
-            GlobalConfiguration globalConfiguration) {
+                                           GlobalConfiguration globalConfiguration) {
         String text = cellData.getStringValue();
         if (text == null || text.isBlank()) {
             return null;
@@ -56,7 +49,7 @@ public class LocalDateTimeConverter implements Converter<LocalDateTime> {
 
     @Override
     public WriteCellData<?> convertToExcelData(LocalDateTime value, ExcelContentProperty contentProperty,
-            GlobalConfiguration globalConfiguration) {
+                                               GlobalConfiguration globalConfiguration) {
         if (value == null) {
             return new WriteCellData<>("");
         }

@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.desensitize.serializer;
 
 import cn.jowen.framework.core.context.ContextCarrier;
@@ -14,12 +7,6 @@ import cn.jowen.framework.core.desensitize.DesensitizeStrategies;
 import cn.jowen.framework.core.desensitize.Desensitizer;
 import cn.jowen.framework.extras.desensitize.DesensitizeSkipContextKey;
 import cn.jowen.framework.extras.desensitize.annotation.DesensitizeMeta;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.util.Locale;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import tools.jackson.core.JsonGenerator;
@@ -27,6 +14,13 @@ import tools.jackson.databind.BeanProperty;
 import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.introspect.AnnotatedMember;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.util.Locale;
 
 /**
  * 脱敏 JSON 序列化器：在序列化阶段依据字段上的脱敏注解（core 的 {@link DesensitizeField}
@@ -42,19 +36,17 @@ import tools.jackson.databind.introspect.AnnotatedMember;
  * <p>与 Jackson 集成：由 {@link DesensitizeModule} 注册到所有 {@code String} 类型，
  * 字段标注脱敏注解时被 {@link #createContextual} 识别并绑定脱敏元数据。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public final class DesensitizeJsonSerializer extends ValueSerializer<String> {
 
-    /** 已解析的字段脱敏元数据（strategy + 上下文）。 */
-    private record Resolved(String strategy, DesensitizeContext ctx) {
-    }
-
     private final @Nullable Resolved resolved;
 
-    /** 透传构造（无字段注解时原样输出）。 */
+    /**
+     * 透传构造（无字段注解时原样输出）。
+     */
     public DesensitizeJsonSerializer() {
         this(null);
     }
@@ -66,14 +58,6 @@ public final class DesensitizeJsonSerializer extends ValueSerializer<String> {
      */
     public DesensitizeJsonSerializer(@Nullable Resolved resolved) {
         this.resolved = resolved;
-    }
-
-    @Override
-    public ValueSerializer<String> createContextual(SerializationContext ctxt, BeanProperty property) {
-        if (property == null) {
-            return this;
-        }
-        return new DesensitizeJsonSerializer(resolveFieldAnnotation(property));
     }
 
     /**
@@ -127,7 +111,7 @@ public final class DesensitizeJsonSerializer extends ValueSerializer<String> {
     }
 
     private static Resolved buildResolved(String strategy, boolean skip,
-            int startKeep, int endKeep, String replacement) {
+                                          int startKeep, int endKeep, String replacement) {
         DesensitizeStrategies strategyEnum =
                 DesensitizeStrategies.valueOf(strategy.toUpperCase(Locale.ROOT));
         int sk = startKeep >= 0 ? startKeep : strategyEnum.defaultStartKeep();
@@ -140,14 +124,13 @@ public final class DesensitizeJsonSerializer extends ValueSerializer<String> {
     /**
      * 反射读取便捷注解实例的成员值（成员不存在时回退到元注解默认值）。
      *
-     * @param present   便捷注解实例
-     * @param name      成员名
-     * @param fallback  元注解默认值
-     * @param type      成员类型（装箱类）
-     * @param <T>       成员类型
+     * @param present  便捷注解实例
+     * @param name     成员名
+     * @param fallback 元注解默认值
+     * @param type     成员类型（装箱类）
+     * @param <T>      成员类型
      * @return 实例值或默认值
      */
-    @SuppressWarnings("unchecked")
     private static <T> T readMember(Annotation present, String name, T fallback, Class<T> type) {
         try {
             Method method = present.annotationType().getMethod(name);
@@ -156,6 +139,14 @@ public final class DesensitizeJsonSerializer extends ValueSerializer<String> {
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             return fallback;
         }
+    }
+
+    @Override
+    public ValueSerializer<String> createContextual(SerializationContext ctxt, BeanProperty property) {
+        if (property == null) {
+            return this;
+        }
+        return new DesensitizeJsonSerializer(resolveFieldAnnotation(property));
     }
 
     @Override
@@ -176,5 +167,11 @@ public final class DesensitizeJsonSerializer extends ValueSerializer<String> {
         }
         String masked = Desensitizer.getInstance().mask(value, resolved.strategy(), resolved.ctx());
         gen.writeString(masked);
+    }
+
+    /**
+     * 已解析的字段脱敏元数据（strategy + 上下文）。
+     */
+    private record Resolved(String strategy, DesensitizeContext ctx) {
     }
 }

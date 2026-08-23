@@ -1,15 +1,9 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.core.desensitize;
 
-import java.util.regex.Pattern;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.util.regex.Pattern;
 
 /**
  * 内置脱敏策略：按常见敏感数据类型预置保留位数与格式校验。
@@ -22,40 +16,60 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>自定义策略可通过实现 {@link DesensitizeRule} 并注册到 {@link Desensitizer} 扩展。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public enum DesensitizeStrategies {
 
-    /** 手机号：11 位，1[3-9] 开头。 */
+    /**
+     * 手机号：11 位，1[3-9] 开头。
+     */
     PHONE(3, 4, "^(1[3-9]\\d{9})$"),
 
-    /** 身份证号：18 位（含末位 X）。 */
+    /**
+     * 身份证号：18 位（含末位 X）。
+     */
     ID_CARD(3, 4, "^\\d{17}[0-9Xx]$"),
 
-    /** 银行卡号：15-19 位数字。 */
+    /**
+     * 银行卡号：15-19 位数字。
+     */
     BANK_CARD(4, 4, "^\\d{15,19}$"),
 
-    /** 邮箱：仅保留首字符与 @ 后域名。 */
+    /**
+     * 邮箱：仅保留首字符与 @ 后域名。
+     */
     EMAIL(1, 0, "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"),
 
-    /** 中文姓名：仅保留姓氏。 */
+    /**
+     * 中文姓名：仅保留姓氏。
+     */
     NAME(1, 0, "^[\\u4e00-\\u9fa5]{2,4}$"),
 
-    /** 地址：保留前 3 个字符。 */
+    /**
+     * 地址：保留前 3 个字符。
+     */
     ADDRESS(3, 0, null),
 
-    /** 密码/口令：全量脱敏。 */
+    /**
+     * 密码/口令：全量脱敏。
+     */
     PASSWORD(0, 0, null),
 
-    /** 座机号码：区号 + 号码。 */
+    /**
+     * 座机号码：区号 + 号码。
+     */
     FIXED_PHONE(3, 4, "^0\\d{2,3}-?\\d{7,8}$"),
 
-    /** 车牌号：保留省份简称与首字符。 */
+    /**
+     * 车牌号：保留省份简称与首字符。
+     */
     LICENSE_PLATE(3, 2, "^[\\u4e00-\\u9fa5][A-Za-z][A-Za-z0-9]{5,6}$"),
 
-    /** 自定义：默认全量脱敏，由 {@link DesensitizeContext} 覆盖。 */
+    /**
+     * 自定义：默认全量脱敏，由 {@link DesensitizeContext} 覆盖。
+     */
     CUSTOM(0, 0, null);
 
     private final int startKeep;
@@ -68,12 +82,28 @@ public enum DesensitizeStrategies {
         this.regex = regex;
     }
 
-    /** 策略默认开头保留位数。 */
+    /**
+     * 邮箱特殊处理：仅保留首字符与 @ 后域名。
+     */
+    private static String maskEmail(String raw, DesensitizeContext ctx) {
+        int at = raw.indexOf('@');
+        if (at <= 0) {
+            return ctx.mask(raw);
+        }
+        String head = raw.charAt(0) + "***";
+        return head + raw.substring(at);
+    }
+
+    /**
+     * 策略默认开头保留位数。
+     */
     public int defaultStartKeep() {
         return startKeep;
     }
 
-    /** 策略默认末尾保留位数。 */
+    /**
+     * 策略默认末尾保留位数。
+     */
     public int defaultEndKeep() {
         return endKeep;
     }
@@ -129,15 +159,5 @@ public enum DesensitizeStrategies {
             return maskEmail(raw, effective);
         }
         return effective.mask(raw);
-    }
-
-    /** 邮箱特殊处理：仅保留首字符与 @ 后域名。 */
-    private static String maskEmail(String raw, DesensitizeContext ctx) {
-        int at = raw.indexOf('@');
-        if (at <= 0) {
-            return ctx.mask(raw);
-        }
-        String head = raw.charAt(0) + "***";
-        return head + raw.substring(at);
     }
 }

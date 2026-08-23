@@ -15,7 +15,7 @@
 ### 1.2 目标
 
 | 目标       | 说明                                                      |
-|------------|-----------------------------------------------------------|
+| ---------- | --------------------------------------------------------- |
 | 基线统一   | 全框架锁定 Spring Boot 4.x / Spring Framework 7 / Java 21 |
 | 核心纯净   | core 层零 Spring 依赖，可脱离容器做单元测试               |
 | 按需装配   | 模块化自动配置，`@Conditional` 按需生效，无多余 Bean      |
@@ -35,7 +35,7 @@
 ### 2.1 版本矩阵
 
 | 技术栈           | 版本要求                 | 说明                                       |
-|------------------|--------------------------|--------------------------------------------|
+| ---------------- | ------------------------ | ------------------------------------------ |
 | **Java**         | **21 (LTS，强制)**       | **框架编译目标 = 21，不再下探**            |
 | **Spring Boot**  | **4.x**（4.0.7 / 4.1.0） | 主方案基线                                 |
 | Spring Framework | 7.x                      | Spring Boot 4.x 底层框架                   |
@@ -53,7 +53,7 @@
 ### 2.2 Java 21 落地特性（框架直接受益）
 
 | JEP     | 特性                        | 框架应用点                                                                      |
-|---------|-----------------------------|---------------------------------------------------------------------------------|
+| ------- | --------------------------- | ------------------------------------------------------------------------------- |
 | JEP 444 | 虚拟线程（Virtual Threads） | 全框架 IO 路径：Servlet 容器、JDBC、Redis、日志异步写入；连接池参数重调         |
 | JEP 446 | ScopedValue（预览）         | i18n 上下文、TraceContext、租户上下文：虚拟线程间安全传递，替代部分 ThreadLocal |
 | JEP 453 | 结构化并发（预览）          | extras 聚合查询 / 并行任务编排可选使用                                          |
@@ -67,7 +67,7 @@
 ### 2.3 Spring Boot 4.x 关键变化与应对
 
 | Spring Boot 4.x 变化         | 影响                | 框架应对                                                    |
-|------------------------------|---------------------|-------------------------------------------------------------|
+| ---------------------------- | ------------------- | ----------------------------------------------------------- |
 | Spring Framework 7 基线      | 全部模块编译目标    | 统一升级，禁止旧 API                                        |
 | Jakarta EE 11（Servlet 6.1） | web 模块、Tomcat 11 | autoconfigure 适配新 API                                    |
 | Jackson 3（`tools.jackson`） | 所有 JSON 序列化    | 统一封装 `JsonMapper` 工厂，模块间禁止直接 new ObjectMapper |
@@ -152,21 +152,21 @@
 
 ## 四、模块清单总览
 
-| 模块                             | 定位                                    | 外部依赖                | Spring Boot 4.x 适配重点                |
-|----------------------------------|-----------------------------------------|-------------------------|-----------------------------------------|
-| **framework-bom**                | 版本仲裁（只管框架模块）                | 无                      | 继承根 pom，不混三方依赖                |
-| **framework-core**               | 基础设施（SPI/异常/断言/生命周期/事件） | JSpecify                | 空注解                                  |
-| **framework-logger**             | 日志管理（脱敏/追踪/结构化）            | Logback/Log4j2          | MDC 虚拟线程适配 + Micrometer 2.0       |
-| **framework-data**               | 数据访问聚合父模块                      | —                       | 仅 POM 聚合                             |
-| **framework-data-core**          | 数据访问抽象（零实现、零 Spring 依赖）  | 无（仅 framework-core） | 空注解                                  |
-| **framework-data-jdbc**          | JDBC 轻量实现                           | HikariCP/Druid          | 连接池调优 + Jackson 3 + Micrometer 2.0 |
-| **framework-data-mybatis**       | MyBatis Flex 增强实现                   | MyBatis Flex            | Flex 版本兼容 + Jackson 3 + AOT         |
-| **framework-cache**              | 缓存管理（多级/防护/监控）              | Caffeine/Lettuce        | Jackson 3 + Micrometer 2.0 + Actuator   |
-| **framework-i18n**               | 国际化（热加载/多源）                   | ICU4J(可选)             | ScopedValue + Micrometer 2.0            |
-| **framework-plugin**             | 插件化扩展（隔离/热部署）               | framework-core          | 类加载隔离 + Spring 子容器              |
-| **framework-extras**             | 扩展工具集（12 项按需引入）             | core/cache/data 等      | 见 §9.9                                 |
-| **framework-boot-autoconfigure** | 自动装配逻辑                            | Spring Boot 4           | @AutoConfiguration + @Conditional       |
-| **framework-boot-starter**       | Starter 聚合入口                        | 无（仅 POM）            | —                                       |
+| 模块                             | 定位                                                | 外部依赖                | Spring Boot 4.x 适配重点                |
+| -------------------------------- | --------------------------------------------------- | ----------------------- | --------------------------------------- |
+| **framework-bom**                | 版本仲裁（只管框架模块）                            | 无                      | 继承根 pom，不混三方依赖                |
+| **framework-core**               | 基础设施（SPI/异常/断言/生命周期/事件/脱敏/上下文） | JSpecify                | 空注解                                  |
+| **framework-logger**             | 日志管理（脱敏/追踪/结构化）                        | Logback/Log4j2          | MDC 虚拟线程适配 + Micrometer 2.0       |
+| **framework-data**               | 数据访问聚合父模块                                  | —                       | 仅 POM 聚合                             |
+| **framework-data-core**          | 数据访问抽象（零实现、零 Spring 依赖）              | 无（仅 framework-core） | 空注解                                  |
+| **framework-data-jdbc**          | JDBC 轻量实现                                       | HikariCP/Druid          | 连接池调优 + Jackson 3 + Micrometer 2.0 |
+| **framework-data-mybatis**       | MyBatis Flex 增强实现                               | MyBatis Flex            | Flex 版本兼容 + Jackson 3 + AOT         |
+| **framework-cache**              | 缓存管理（多级/防护/监控）                          | Caffeine/Lettuce        | Jackson 3 + Micrometer 2.0 + Actuator   |
+| **framework-i18n**               | 国际化（热加载/多源）                               | ICU4J(可选)             | ScopedValue + Micrometer 2.0            |
+| **framework-plugin**             | 插件化扩展（隔离/热部署）                           | framework-core          | 类加载隔离 + Spring 子容器              |
+| **framework-extras**             | 扩展工具集（12 项按需引入）                         | core/cache/data 等      | 见 §8.9                                 |
+| **framework-boot-autoconfigure** | 自动装配逻辑                                        | Spring Boot 4           | @AutoConfiguration + @Conditional       |
+| **framework-boot-starter**       | Starter 聚合入口                                    | 无（仅 POM）            | —                                       |
 
 ---
 
@@ -207,7 +207,7 @@ autoconfigure 层依赖 core，方向不可颠倒。这样 core 可脱离 Spring
 ### 7.1 虚拟线程（JEP 444）——全框架 IO 重载
 
 | 位置                  | 做法                                                                                        |
-|-----------------------|---------------------------------------------------------------------------------------------|
+| --------------------- | ------------------------------------------------------------------------------------------- |
 | Web 容器              | Tomcat 11 虚拟线程执行器（Spring Boot 4.x 默认支持，`spring.threads.virtual.enabled=true`） |
 | JDBC 连接池           | 连接是稀缺阻塞资源，虚拟线程不能无限放大：`maximumPoolSize` 10~30，`connectionTimeout` 5s   |
 | Redis（Lettuce ≥6.4） | 原生虚拟线程安全，直接复用                                                                  |
@@ -219,7 +219,7 @@ autoconfigure 层依赖 core，方向不可颠倒。这样 core 可脱离 Spring
 ### 7.2 ScopedValue（JEP 446，预览）——上下文传递
 
 | 上下文                               | 现状              | 演进                                                                              |
-|--------------------------------------|-------------------|-----------------------------------------------------------------------------------|
+| ------------------------------------ | ----------------- | --------------------------------------------------------------------------------- |
 | TraceContext（logger）               | ThreadLocal + MDC | 主用 Micrometer ContextSnapshot（Spring Boot 4.x 标准），ScopedValue 作为增强实验 |
 | I18nContext（i18n）                  | ThreadLocal       | **默认改用 ScopedValue**，虚拟线程间天然隔离、零泄漏                              |
 | TenantContext（data-mybatis/extras） | ThreadLocal       | 预留 ScopedValue 适配点                                                           |
@@ -245,20 +245,25 @@ autoconfigure 层依赖 core，方向不可颠倒。这样 core 可脱离 Spring
 
 ### 8.1 framework-core — 基础设施层
 
-**定位**：零依赖基础层，提供 SPI 扩展机制、异常体系、断言工具、生命周期管理、事件机制、通用工具。唯一外部依赖 JSpecify。
+**定位**：零依赖基础层，提供 SPI 扩展机制、异常体系、断言工具、生命周期管理、事件机制、通用工具、数据脱敏内核与上下文传播。唯一外部依赖 JSpecify。
+
+**数据脱敏**：全框架唯一脱敏规则模型与执行器（`Desensitizer`），日志/结果集/JSON 输出各场景只做适配、不重复实现规则。内置 PHONE / ID_CARD / BANK_CARD / EMAIL 等 10 种策略（enum），批量文本正则脱敏由各场景适配层自行实现。
+
+**上下文传播**：`ContextCarrier` 双模式（ScopedValue / ThreadLocal），支持快照捕获与跨线程迁移，为 i18n、多租户、TraceId 等上下文提供统一读写入口。
 
 ```
 cn.jowen.framework.core/
-├─ spi/          ExtensionLoader<T> · @SPI · @Activate
+├─ assertion/    Assert · State
+├─ context/      ContextCarrier · ContextKey · ContextSnapshot · ContextPropagator · ScopedValueBridge
+├─ desensitize/  DesensitizeRule · DesensitizeStrategies · Desensitizer · DesensitizeContext · DesensitizeField · DesensitizeException
+├─ event/        Event · EventListener<E>
 ├─ exception/    FrameworkException · BusinessException · SystemException · ErrorCode
 ├─ lifecycle/    Lifecycle · SmartLifecycle · LifecycleProcessor
-├─ assert_/      Assert · State
-├─ event/        Event · EventListener<E>
+├─ spi/          ExtensionLoader<T> · @SPI · @Activate
 └─ util/         ClassUtils · StringUtils · CollectionUtils · ReflectionUtils
 ```
 
-**Java 21 / Spring Boot 4.x 适配**：包级 `@NullMarked` 空安全标记；`ClassUtils` 优先用 `MethodHandles`/反射内省替代暴力反射；编译目标
-`release=21`。
+**Java 21 / Spring Boot 4.x 适配**：包级 `@NullMarked` 空安全标记；`ClassUtils` 优先用 `MethodHandles`/反射内省替代暴力反射；`ContextCarrier` 双模式（ScopedValue / ThreadLocal）由 `framework.context.mode` 切换；编译目标 `release=21`。
 
 ---
 
@@ -268,12 +273,12 @@ cn.jowen.framework.core/
 
 ```
 cn.jowen.framework.logger/
-├─ facade/      Logger · LoggerFactory · LogLevel
 ├─ adapter/     LoggerAdapter · LogbackAdapter · Log4j2Adapter
-├─ trace/       TraceEnhancer · TraceContext · MdcContextPropagation
-├─ mask/        SensitiveDataMasker · MaskRule · MaskPattern（手机号/身份证/银行卡）
+├─ config/      LoggerProperties
+├─ facade/      Logger · LoggerFactory · LogLevel
 ├─ layout/      StructuredLayout · JsonLogFormatter
-└─ config/      LoggerProperties
+├─ mask/        LogMasker · LogMaskLayout（委托 core Desensitizer 执行）
+└─ trace/       TraceEnhancer · TraceContext · MdcContextPropagation
 ```
 
 **Spring Boot 4.x 适配**：
@@ -290,18 +295,17 @@ cn.jowen.framework.logger/
 
 ```
 cn.jowen.framework.data.core/
-├─ repository/    Repository<T,ID> · CrudRepository · PagingRepository
-│                 DynamicRepository · RepositoryFactory(SPI)
+├─ callback/      EntityCallback · ConnectionCallback · StatementCallback
+├─ datasource/    DataSource · DataSourceProperties · DataSourceRouter · PoolType
+├─ dialect/       DatabaseDialect(SPI) · DatabaseType · DialectDetector(SPI)
+├─ exception/     DataAccessException 体系（DuplicateKey/OptimisticLock/...）+ ExceptionTranslator(SPI)
+├─ mapping/       EntityMetadata · RowMapper(SPI) · TypeHandler · NamingStrategy · EntityScanner(SPI)
 ├─ query/         QueryWrapper<T> · UpdateWrapper · Condition · Operator · JoinType
 ├─ page/          Page<T> · PageRequest · Pageable
+├─ repository/    Repository<T,ID> · CrudRepository · PagingRepository · DynamicRepository · RepositoryFactory(SPI)
 ├─ sort/          Sort · Order · Direction · NullHandling
-├─ transaction/   TransactionManager(SPI) · TransactionTemplate · Propagation · Isolation
-├─ datasource/    DataSource · DataSourceProperties · DataSourceRouter · PoolType
-├─ mapping/       EntityMetadata · RowMapper(SPI) · TypeHandler · NamingStrategy · EntityScanner(SPI)
-├─ dialect/       DatabaseDialect(SPI) · DatabaseType · DialectDetector(SPI)
-├─ callback/      EntityCallback · ConnectionCallback · StatementCallback
-├─ exception/     DataAccessException 体系（DuplicateKey/OptimisticLock/...）+ ExceptionTranslator(SPI)
-└─ support/       EntityBase<ID> · VersionedEntity<ID> · AuditableEntity<ID>
+├─ support/       EntityBase<ID> · VersionedEntity<ID> · AuditableEntity<ID>
+└─ transaction/   TransactionManager(SPI) · TransactionTemplate · Propagation · Isolation
 ```
 
 **Java 21**：EntityMetadata 使用 Record 承载；异常分类用模式匹配 switch。
@@ -314,16 +318,16 @@ cn.jowen.framework.data.core/
 
 ```
 cn.jowen.framework.data.jdbc/
-├─ core/          JdbcTemplate · NamedParameterTemplate · BatchTemplate · SqlRunner
-├─ connection/    ConnectionProvider · HikariConnectionProvider · DruidConnectionProvider
-├─ statement/     PreparedStatementBuilder · SqlBuilder · ParameterBinder
-├─ mapping/       BeanPropertyRowMapper · DefaultTypeHandlers(15+) · CamelCaseNamingStrategy
-├─ dialect/       MySQLDialect · PostgreSQLDialect · OracleDialect · SQLServerDialect · H2Dialect
-├─ transaction/   JdbcTransactionManager · TransactionSynchronizationManager
-├─ repository/    JdbcRepository · SimpleJdbcRepository · IdGenerator（自增/UUID/雪花/Sequence）
-├─ interceptor/   SqlInterceptor · LoggingInterceptor · PerformanceInterceptor · TenantInterceptor
-├─ exception/     SQLExceptionTranslator · SqlStateClassifier
 ├─ config/        JdbcProperties · DataSourceConfiguration
+├─ connection/    ConnectionProvider · HikariConnectionProvider · DruidConnectionProvider
+├─ core/          JdbcTemplate · NamedParameterTemplate · BatchTemplate · SqlRunner
+├─ dialect/       MySQLDialect · PostgreSQLDialect · OracleDialect · SQLServerDialect · H2Dialect
+├─ exception/     SQLExceptionTranslator · SqlStateClassifier
+├─ interceptor/   SqlInterceptor · LoggingInterceptor · PerformanceInterceptor · TenantInterceptor
+├─ mapping/       BeanPropertyRowMapper · DefaultTypeHandlers(15+) · CamelCaseNamingStrategy
+├─ statement/     PreparedStatementBuilder · SqlBuilder · ParameterBinder
+├─ repository/    JdbcRepository · SimpleJdbcRepository · IdGenerator（自增/UUID/雪花/Sequence）
+├─ transaction/   JdbcTransactionManager · TransactionSynchronizationManager
 └─ util/          JdbcUtils · ResultSetExtractor · LobHandler
 ```
 
@@ -344,13 +348,12 @@ cn.jowen.framework.data.jdbc/
 ```
 cn.jowen.framework.data.mybatis/
 ├─ adapter/       FlexRepositoryAdapter · FlexTransactionAdapter · FlexExceptionTranslator
-├─ repository/    FlexRepository · FlexJoinRepository · FlexDynamicRepository
-├─ query/         FlexQueryWrapperTranslator · FlexLambdaQueryBuilder
-├─ extension/     FlexAuditHandler · FlexMaskProcessor · FlexEncryptProcessor
-│                 FlexTenantHandler · FlexSqlAuditListener · FlexLogicDeleteHandler
-├─ exception/     FlexExceptionConverter
 ├─ config/        MybatisFlexAutoConfiguration · MybatisFlexProperties
-└─ codegen/       EntityGenerator · MapperGenerator · TableDefGenerator（可选）
+├─ codegen/       EntityGenerator · MapperGenerator · TableDefGenerator（可选）
+├─ extension/     FlexAuditHandler · FlexMaskProcessor · FlexEncryptProcessor · FlexTenantHandler · FlexSqlAuditListener · FlexLogicDeleteHandler
+├─ exception/     FlexExceptionConverter
+├─ query/         FlexQueryWrapperTranslator · FlexLambdaQueryBuilder
+└─ repository/    FlexRepository · FlexJoinRepository · FlexDynamicRepository
 ```
 
 **Spring Boot 4.x 适配**：MyBatis Flex ≥ 1.11+（需确认 Spring Boot 4.x 自动配置兼容）；`MybatisRuntimeHints` 注册 Mapper 反射与
@@ -364,16 +367,16 @@ cn.jowen.framework.data.mybatis/
 
 ```
 cn.jowen.framework.cache/
+├─ annotation/    @Cacheable · @CachePut · @CacheEvict · @CacheInvalidate · @Caching
 ├─ api/           Cache<K,V> · CacheManager · CacheConfig · CacheException
-├─ local/         CaffeineCache（默认）· ConcurrentMapCache · LoadingLocalCache
+├─ config/        CacheAutoConfiguration · CacheProperties · CacheType(LOCAL/REDIS/MULTI/NONE)
 ├─ distributed/   RedisCache · MemcachedCache
+├─ event/         CacheHitEvent · CacheMissEvent · CachePutEvent · CacheEvictEvent
+├─ interceptor/   CacheInterceptor · CacheKeyGenerator · CacheExpressionEvaluator(SpEL)
+├─ local/         CaffeineCache（默认）· ConcurrentMapCache · LoadingLocalCache
 ├─ multi/         MultiLevelCache · CacheSyncBroadcaster（Redis Pub/Sub 跨节点同步）
 ├─ serialization/ JsonCacheSerializer(Jackson 3) · KryoCacheSerializer · ProtobufCacheSerializer
-├─ annotation/    @Cacheable · @CachePut · @CacheEvict · @CacheInvalidate · @Caching
-├─ interceptor/   CacheInterceptor · CacheKeyGenerator · CacheExpressionEvaluator(SpEL)
-├─ event/         CacheHitEvent · CacheMissEvent · CachePutEvent · CacheEvictEvent
 ├─ stats/         CacheStatsCollector · CacheStatsReporter(Micrometer 2.0) · CacheHealthIndicator
-├─ config/        CacheAutoConfiguration · CacheProperties · CacheType(LOCAL/REDIS/MULTI/NONE)
 └─ support/       CachePenetrationShield · CacheBreakdownShield · CacheAvalancheShield · NullValue
 ```
 
@@ -388,16 +391,15 @@ Actuator。
 
 ```
 cn.jowen.framework.i18n/
-├─ api/           MessageSource · LocaleResolver · I18nContext · I18nException
-├─ source/        PropertiesMessageSource · DatabaseMessageSource · RedisMessageSource
-│                 CompositeMessageSource（多源聚合）
-├─ locale/        AcceptHeader/Cookie/Session/Parameter/Fixed/Composite LocaleResolver
-├─ format/        JavaTextMessageFormatter（默认）· NamedParameterMessageFormatter · IcuMessageFormatter
-├─ reload/        FileWatchResourceWatcher · DatabasePollingWatcher · RedisSubscriptionWatcher
 ├─ annotation/    @I18nMessage · @I18nField · @I18nException
-├─ interceptor/   I18nInterceptor · I18nFieldInterceptor · I18nExceptionInterceptor
-├─ event/         ResourceReloadedEvent · LocaleChangedEvent
+├─ api/           MessageSource · LocaleResolver · I18nContext · I18nException
 ├─ config/        I18nAutoConfiguration · I18nProperties
+├─ event/         ResourceReloadedEvent · LocaleChangedEvent
+├─ format/        JavaTextMessageFormatter（默认）· NamedParameterMessageFormatter · IcuMessageFormatter
+├─ interceptor/   I18nInterceptor · I18nFieldInterceptor · I18nExceptionInterceptor
+├─ locale/        AcceptHeader/Cookie/Session/Parameter/Fixed/Composite LocaleResolver
+├─ reload/        FileWatchResourceWatcher · DatabasePollingWatcher · RedisSubscriptionWatcher
+├─ source/        PropertiesMessageSource · DatabaseMessageSource · RedisMessageSource · CompositeMessageSource（多源聚合）
 └─ support/       MessageCodeUtils · PlaceholderResolver · LocaleMatcher · I18nContextHolder
 ```
 
@@ -412,8 +414,7 @@ cn.jowen.framework.i18n/
 **定位**：插件发现、加载、类加载隔离、生命周期管理、依赖解析、插件间通信。依赖 framework-core，可选 framework-logger；自身不依赖
 Spring，通过 autoconfigure 桥接。
 
-**包结构**：api / descriptor / loader / resolver / lifecycle / registry / extension / context / event / hotswap /
-config / support
+**包结构**：api / descriptor / loader / resolver / lifecycle / registry / extension / context / event / hotswap / config / support
 
 **核心设计**：
 
@@ -447,7 +448,7 @@ framework:
 **定位**：12 项场景化能力，全部按需引入、独立开关（统一 `framework.extras.<feature>.enabled`）。
 
 | 子包           | 能力        | 说明                                                                                     |
-|----------------|-------------|------------------------------------------------------------------------------------------|
+| -------------- | ----------- | ---------------------------------------------------------------------------------------- |
 | lock           | 分布式锁    | Redis（Lettuce+Lua）可重入/公平/读写/联锁/红锁，Watchdog 自动续期，`@Lockable`           |
 | ratelimit      | 接口限流    | 固定窗口/滑动窗口/漏桶/令牌桶，集群维度基于 Redis，`@RateLimit`                          |
 | idempotent     | 幂等控制    | Token 模式 / Key 模式，防重复提交，`@Idempotent`                                         |
@@ -475,11 +476,11 @@ cn.jowen.framework.boot.autoconfigure/
 ├─ cache/     CacheAutoConfiguration
 ├─ i18n/      I18nAutoConfiguration
 ├─ plugin/    PluginAutoConfiguration
-├─ extras/    ExtrasAutoConfiguration          # ✅ M6：限流/幂等/本地锁装配
-├─ health/    HealthAutoConfiguration          # ✅ M6：BootHealthIndicator
-├─ observability/  ObservabilityAutoConfiguration  # ✅ M6：PluginEndpoint
-├─ runtime/   BootRuntimeHints                     # ✅ M6：全模块 AOT RuntimeHints
-└─ web/       FrameworkWebAutoConfiguration             # ⬜ 待实现
+├─ extras/    ExtrasAutoConfiguration
+├─ health/    HealthAutoConfiguration
+├─ observability/  ObservabilityAutoConfiguration
+├─ runtime/   BootRuntimeHints
+└─ web/       WebAutoConfiguration
 ```
 
 **注册文件**：`META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`（装配）、
@@ -494,7 +495,8 @@ cn.jowen.framework.boot.autoconfigure/
 @ConditionalOnBean(DataSource.class)
 @ConditionalOnProperty(prefix = "framework.data", name = "type", havingValue = "jdbc")
 @AutoConfigureAfter(DataSourceAutoConfiguration.class)
-public class DataJdbcAutoConfiguration { ...
+public class DataJdbcAutoConfiguration {
+    ...
 }
 ```
 
@@ -541,7 +543,7 @@ spring-boot-starter），数据访问实现按需另引。
 ## 九、跨模块共性适配清单
 
 | 适配项           | 影响模块                                         | 做法                                                                                       |
-|------------------|--------------------------------------------------|--------------------------------------------------------------------------------------------|
+| ---------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------ |
 | Java 21 编译     | 全部模块                                         | `<maven.compiler.release>21</maven.compiler.release>`，禁止降级编译                        |
 | JSpecify 空安全  | 全部模块                                         | 每个包 `@NullMarked`，可空返回值标 `@Nullable`                                             |
 | Jackson 3 迁移   | data-jdbc / cache / data-mybatis / extras        | `com.fasterxml.jackson` → `tools.jackson`，`ObjectMapper` → `JsonMapper.builder().build()` |
@@ -558,7 +560,7 @@ spring-boot-starter），数据访问实现按需另引。
 ### 10.1 性能
 
 | 项     | 目标                               | 手段                                      |
-|--------|------------------------------------|-------------------------------------------|
+| ------ | ---------------------------------- | ----------------------------------------- |
 | 吞吐   | 虚拟线程下高并发 IO 不因线程数受限 | Spring Boot 4.x 虚拟线程 + 连接池参数重调 |
 | 延迟   | P99 优先                           | 分代 ZGC + 日志/缓存异步化                |
 | 冷启动 | 原生镜像 ≤ 2s                      | GraalVM AOT + 最小化反射扫描              |
@@ -661,7 +663,7 @@ spring:
         <dependency>
             <groupId>cn.jowen.framework</groupId>
             <artifactId>framework-bom</artifactId>
-            <version>1.0.0</version>
+            <version>0.0.1</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -710,10 +712,10 @@ public class OrderService {
 
 ---
 
-## 十三、标准文档模板（11 章，第 20-22 轮确定）
+## 十三、标准文档模板
 
 | 章节                   | 内容                                             |
-|------------------------|--------------------------------------------------|
+| ---------------------- | ------------------------------------------------ |
 | 文档元信息             | 模块名称、标题、关键词、描述                     |
 | 一、模块定位           | 职责 + 核心价值表（有/无对比）+ 与核心模块边界表 |
 | 二、功能清单与依赖矩阵 | 功能/子包/核心依赖/可选依赖                      |
@@ -731,22 +733,22 @@ public class OrderService {
 
 ## 十四、演进路线与里程碑
 
-| 里程碑          | 内容                                   | 出口标准                                                                             | 状态                                                                                                              |
-|-----------------|----------------------------------------|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| M1 基线搭建     | 根 pom + bom + core + logger 落地      | 空应用可启动，日志脱敏生效                                                           | ✅ 完成                                                                                                           |
-| M2 数据访问     | data-core + data-jdbc 实现 + boot 装配 | JDBC CRUD + 事务 + 分页通过测试；空配置自动装配 RepositoryFactory/TransactionManager | ✅ 完成                                                                                                           |
-| M3 MyBatis 集成 | data-mybatis + Flex 适配（可选）       | Flex 查询/审计/多租户可用；**验证 Spring Boot 4.x 兼容**                             | ⏭️ 延后：自研 data-jdbc 已覆盖 JDBC 访问与 SB4 兼容验证，MyBatis/Flex 作为可选适配后续按需补                       |
-| M4 缓存与 i18n  | cache + i18n 落地                      | 多级缓存命中率可观测；i18n 热加载生效                                                | ✅ 完成                                                                                                           |
-| M5 扩展与插件   | extras + plugin                        | 12 项能力按需可用；插件热部署验证                                                    | ✅ 完成（零耦合能力优先落地：限流/幂等/本地锁 + 插件体系注册/加载/自动发现；分布式锁与其余可选能力延后）          |
-| M6 云原生       | AOT 原生镜像 + 虚拟线程压测 + 可观测性 | 全模块 RuntimeHints 齐备，原生镜像启动 ≤ 2s，压测达标                                | 🔄 进行中（可观测性/健康检查/extras 装配 + 全模块 RuntimeHints 已落地；原生镜像构建与虚拟线程压测待演示工程实测） |
-| M7 文档与发布   | 各模块 11 章文档 + BOM 发布            | 全部模块文档齐备，BOM 发布到私服                                                     | ⬜ 待启动                                                                                                         |
+| 里程碑          | 内容                                   | 出口标准                                                                             |
+| --------------- | -------------------------------------- | ------------------------------------------------------------------------------------ |
+| M1 基线搭建     | 根 pom + bom + core + logger 落地      | 空应用可启动，日志脱敏生效                                                           |
+| M2 数据访问     | data-core + data-jdbc 实现 + boot 装配 | JDBC CRUD + 事务 + 分页通过测试；空配置自动装配 RepositoryFactory/TransactionManager |
+| M3 MyBatis 集成 | data-mybatis + Flex 适配（可选）       | Flex 查询/审计/多租户可用；**验证 Spring Boot 4.x 兼容**                             |
+| M4 缓存与 i18n  | cache + i18n 落地                      | 多级缓存命中率可观测；i18n 热加载生效                                                |
+| M5 扩展与插件   | extras + plugin                        | 12 项能力按需可用；插件热部署验证                                                    |
+| M6 云原生       | AOT 原生镜像 + 虚拟线程压测 + 可观测性 | 全模块 RuntimeHints 齐备，原生镜像启动 ≤ 2s，压测达标                                |
+| M7 文档与发布   | 各模块 11 章文档 + BOM 发布            | 全部模块文档齐备，BOM 发布到私服                                                     |
 
 ---
 
 ## 十五、风险与待办
 
 | 事项                              | 说明                                                          |
-|-----------------------------------|---------------------------------------------------------------|
+| --------------------------------- | ------------------------------------------------------------- |
 | MyBatis Flex Spring Boot 4.x 兼容 | 需确认 ≥ 1.11 支持 Spring Boot 4 自动配置，必要时先做兼容验证 |
 | Jackson 3 迁移成本                | `tools.jackson` 包名变更影响所有 JSON 相关模块，需统一封装    |
 | 虚拟线程 + 连接池                 | 连接池参数需按虚拟线程场景重新压测调优                        |

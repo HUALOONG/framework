@@ -1,16 +1,12 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.storage.impl;
 
 import cn.jowen.framework.extras.storage.FileInfo;
 import cn.jowen.framework.extras.storage.FileStorage;
 import cn.jowen.framework.extras.storage.StorageException;
 import cn.jowen.framework.extras.storage.strategy.ObjectNameStrategy;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -20,8 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 本地磁盘文件存储：基于 {@code java.nio.file}，按命名策略生成对象名并落盘。
@@ -29,8 +23,8 @@ import org.jspecify.annotations.Nullable;
  * <p>零外部依赖。对象名经过路径穿越校验，禁止 {@code ..} 与越界访问。
  * {@link #getPresignedUrl(String)} 返回 {@code null}（本地方略不支持预签名）。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public final class LocalFileStorage implements FileStorage {
@@ -59,6 +53,23 @@ public final class LocalFileStorage implements FileStorage {
     public LocalFileStorage(Path rootDir, ObjectNameStrategy naming) {
         this.rootDir = Objects.requireNonNull(rootDir, "rootDir must not be null");
         this.naming = Objects.requireNonNull(naming, "naming must not be null");
+    }
+
+    private static String contentType(Path path) {
+        String name = path.getFileName().toString().toLowerCase(java.util.Locale.ROOT);
+        int dot = name.lastIndexOf('.');
+        if (dot > 0) {
+            String ext = name.substring(dot + 1);
+            String type = EXT_CONTENT_TYPES.get(ext);
+            if (type != null) {
+                return type;
+            }
+        }
+        return "application/octet-stream";
+    }
+
+    private static String etag(java.nio.file.attribute.BasicFileAttributes attrs) {
+        return Long.toHexString(attrs.size()) + "-" + Long.toHexString(attrs.lastModifiedTime().toMillis());
     }
 
     @Override
@@ -167,23 +178,6 @@ public final class LocalFileStorage implements FileStorage {
         } catch (IOException e) {
             throw new StorageException("读取文件元信息失败: " + objectName, e);
         }
-    }
-
-    private static String contentType(Path path) {
-        String name = path.getFileName().toString().toLowerCase(java.util.Locale.ROOT);
-        int dot = name.lastIndexOf('.');
-        if (dot > 0) {
-            String ext = name.substring(dot + 1);
-            String type = EXT_CONTENT_TYPES.get(ext);
-            if (type != null) {
-                return type;
-            }
-        }
-        return "application/octet-stream";
-    }
-
-    private static String etag(java.nio.file.attribute.BasicFileAttributes attrs) {
-        return Long.toHexString(attrs.size()) + "-" + Long.toHexString(attrs.lastModifiedTime().toMillis());
     }
 
     private Path resolve(String objectName) {

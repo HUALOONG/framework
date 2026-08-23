@@ -16,7 +16,7 @@
 **与核心模块的边界**：
 
 | 模块                 | 定位       | 特点                       |
-|:---------------------|:-----------|:---------------------------|
+| :------------------- | :--------- | :------------------------- |
 | framework-core       | 基础设施   | SPI、异常、断言            |
 | framework-data-*     | 数据访问   | 仓储、查询、事务           |
 | framework-cache      | 缓存管理   | 多级缓存、注解             |
@@ -34,7 +34,7 @@
 ## 二、功能清单与依赖矩阵
 
 | 功能        | 子包           | 核心依赖             | 可选依赖                            |
-|:------------|:---------------|:---------------------|:------------------------------------|
+| :---------- | :------------- | :------------------- | :---------------------------------- |
 | 分布式锁    | lock           | framework-cache      | Redis（Lettuce）                    |
 | 接口限流    | ratelimit      | framework-cache      | Redis（Lettuce）                    |
 | 幂等控制    | idempotent     | framework-cache      | Redis（Lettuce）                    |
@@ -55,8 +55,8 @@
 
 ```text
 framework-extras
-└─ src/main/java/com/framework/extras/
-   ├─ lock/            # 分布式锁：DistributedLock / DistributedLockManager / RedisDistributedLock / LocalDistributedLock / @Lockable / LockInterceptor / LockType / LockProperties
+└─ src/main/java/cn/jowen/framework/extras/
+   ├─ lock/            # 分布式锁：DistributedLock / DistributedLockManager / RedisDistributedLock / LocalDistributedLock / LocalLock / @Lockable / LockInterceptor / LockType / LockProperties / LockException
    ├─ ratelimit/       # 接口限流：RateLimiter / RateLimiterManager / algorithm/* / @RateLimit / RateLimitInterceptor / RateLimitAlgorithm / RateLimitScope / RateLimitProperties
    ├─ idempotent/      # 幂等控制：IdempotentValidator / RedisIdempotentValidator / LocalIdempotentValidator / @Idempotent / IdempotentInterceptor / IdempotentTokenGenerator / IdempotentMode / IdempotentProperties
    ├─ storage/         # 文件存储：FileStorage / FileInfo / FileStorageManager / impl/* / strategy/* / @StorageConfig / StorageProperties
@@ -67,7 +67,7 @@ framework-extras
    ├─ desensitize/     # 数据脱敏：annotation/* / DesensitizeType / handler/* / serializer/* / condition/* / DesensitizeProperties
    ├─ operatelog/      # 操作日志：@OperateLog / OperateLogRecord / OperateLogHandler / handler/* / OperateLogInterceptor / OperateLogContext / OperateStatus / OperateLogProperties
    ├─ datapermission/  # 数据权限：@DataPermission / DataPermissionRule / rule/* / DataPermissionInterceptor / DataPermissionContext / UserInfo / DataScope / DataPermissionProperties
-   ├─ config/          # 统一配置与自动装配：ExtrasAutoConfiguration / ExtrasProperties / 各功能 AutoConfiguration
+   ├─ config/          # 配置属性与工厂类（不含 AutoConfiguration，装配由 boot-autoconfigure 承载）
    └─ support/         # 跨模块编排工具（定位见下，不含通用工具复制）
 ```
 
@@ -83,11 +83,7 @@ framework-extras
 
 ```textmate
 cn.jowen.framework.extras.lock
-├─ DistributedLock            # 接口：lock / 
-
-lock(waitTime) / tryLock / 
-
-tryLock(wait, lease) / unlock / isLocked / isHeldByCurrentThread / forceUnlock
+├─ DistributedLock            # 接口：lock / lock(waitTime) / tryLock / tryLock(wait, lease) / unlock / isLocked / isHeldByCurrentThread / forceUnlock
 ├─ DistributedLockManager     # 管理器：getLock / getFairLock / getReadLock / getWriteLock / getMultiLock / getRedLock
 ├─ RedisDistributedLock       # Redis 实现：Lettuce + Lua 脚本；可重入（Hash lockCount）；Watchdog 自动续期（默认 30s）；公平锁（List 等待队列）
 ├─ LocalDistributedLock       # 本地实现（单机兜底）：ReentrantLock / ReadWriteLock
@@ -338,9 +334,9 @@ public void createUser(User user) { ...}
 
 ```textmate
 cn.jowen.framework.extras.datapermission
-├─ @DataPermission             # enabled / deptColumn（dept_id）/userColumn（create_by）/ignoreTables
-├─ DataPermissionRule          # 接口：getExpression(TableInfo, mappedStatementId) ->Expression
-├─ rule/                       # DeptDataPermissionRule（本人/本部门/本部门及子部门/全部）/UserDataPermissionRule / CustomDataPermissionRule
+├─ rule/                       # DeptDataPermissionRule（本人/本部门/本部门及子部门/全部）/ UserDataPermissionRule / CustomDataPermissionRule
+├─ @DataPermission             # enabled / deptColumn（dept_id）/ userColumn（create_by）/ ignoreTables
+├─ DataPermissionRule          # 接口：getExpression(TableInfo, mappedStatementId) -> Expression
 ├─ DataPermissionInterceptor   # 拦截 SQL →解析注解 →取用户权限范围 →改写 SQL追加条件
 ├─ DataPermissionContext       # setCurrentUser / getCurrentUser / ignore / restore（基于 core ContextCarrier）
 ├─ UserInfo                    # userId / deptId / deptIds / dataScope
@@ -348,24 +344,20 @@ cn.jowen.framework.extras.datapermission
 └─ DataPermissionProperties    # enabled / defaultDeptColumn / defaultUserColumn / ignoreTables
 ```
 
-**上下文统一（冲突修正决议 # 3）**：`DataPermissionContext` / `OperateLogContext` / 脱敏跳过上下文均读写
-`core.context.ContextCarrier`（默认 ScopedValue，`framework.context.mode=threadlocal` 兼容切换），与 i18n / data-mybatis /
-logger 共享同一套机制；跨虚拟线程迁移用 `ContextSnapshot`。
+**上下文统一（冲突修正决议 # 3）**：`DataPermissionContext` / `OperateLogContext` / 脱敏跳过上下文均读写`core.context.ContextCarrier`（默认 ScopedValue，`framework.context.mode=threadlocal` 兼容切换），与 i18n / data-mybatis / logger 共享同一套机制；跨虚拟线程迁移用 `ContextSnapshot`。
 
 #### 4.12 config/ — 配置属性与工厂
 
 ##### 定位
 
-**只保留 `@ConfigurationProperties` 与工厂类，不含任何 `*AutoConfiguration`**（冲突修正决议 # 2：AutoConfiguration 类全部上移
-`framework-boot-autoconfigure`，此处不再定义、不再写 `AutoConfiguration.imports` 注册文件）。
+**只保留 `@ConfigurationProperties` 与工厂类，不含任何 `*AutoConfiguration`**（冲突修正决议 # 2：AutoConfiguration 类全部上移 `framework-boot-autoconfigure`，此处不再定义、不再写 `AutoConfiguration.imports` 注册文件）。
 
 ```textmate
 cn.jowen.framework.extras.config
-├─ ExtrasProperties          # 总开关 framework.extras.enabled + 各功能 Properties 聚合
-├─ LockProperties / RateLimitProperties / IdempotentProperties / StorageProperties
-│   # 各功能配置绑定（@ConfigurationProperties 前缀 framework.extras .<feature>.*）
+├─ ExtrasProperties          # 总开关（纯 POJO，@ConfigurationProperties 由 boot-autoconfigure 绑定）
+├─ LockProperties / RateLimitProperties / IdempotentProperties / StorageProperties # 各功能配置属性（纯 POJO）
 ├─ NotificationProperties / ExcelProperties / CaptchaProperties / Ip2RegionProperties
-├─ DesensitizeProperties     # 薄绑定：转发 framework.desensitize .*（core 统一前缀）
+├─ DesensitizeProperties
 ├─ OperateLogProperties / DataPermissionProperties
 └─ *Factory                  # 各功能 Bean 工厂（被 boot-autoconfigure 引用装配）
 ```
@@ -393,45 +385,45 @@ cn.jowen.framework.extras.support
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                      framework-extras                            │
-│                                                                  │
+│                      framework-extras                           │
+│                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │              config（统一装配层）                           │  │
+│  │              config（统一装配层）                         │  │
 │  │  ExtrasAutoConfiguration ──→ ExtrasProperties             │  │
-│  │  ├─ Lock / RateLimit / Idempotent / Captcha              │  │
+│  │  ├─ Lock / RateLimit / Idempotent / Captcha               │  │
 │  │  │   └─ @ConditionalOnClass(CacheManager)                 │  │
-│  │  ├─ Storage / Notification / Excel / Ip2Region           │  │
+│  │  ├─ Storage / Notification / Excel / Ip2Region            │  │
 │  │  │   └─ @ConditionalOnClass(对应 SDK)                     │  │
-│  │  ├─ Desensitize（@ConditionalOnClass(JsonMapper)）       │  │
+│  │  ├─ Desensitize（@ConditionalOnClass(JsonMapper)）        │  │
 │  │  └─ OperateLog / DataPermission / Support                 │  │
 │  └────────────┬──────────────────────────────────────────────┘  │
-│               │ 按功能依赖                                       │
+│               │ 按功能依赖                                      │
 │  ┌────────────▼──────────────────────────────────────────────┐  │
 │  │  lock      │  ratelimit │  idempotent │  captcha          │  │
 │  │  @Lockable │  @RateLimit│  @Idempotent│  CaptchaService   │  │
 │  └────────────┬──────────────────────────────────────────────┘  │
-│               ▼ 复用存储底座                                     │
+│               ▼ 复用存储底座                                    │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │              framework-cache（CacheManager）              │  │
 │  └───────────────────────────────────────────────────────────┘  │
-│                                                                  │
-│  ┌────────────┐ ┌────────────┐ ┌───────────┐ ┌──────────────┐  │
-│  │  storage   │ │notification│ │   excel   │ │  ip2region   │  │
-│  │  FileStor. │ │Notification│ │ ExcelSvc  │ │ IpRegionSvc  │  │
-│  │  Local/    │ │ Email/SMS/ │ │ EasyExcel │ │ xdb 离线库   │  │
-│  │  MinIO/OSS │ │ DingTalk/  │ │           │ │              │  │
-│  │  / S3       │ │ WeCom/Web  │ │           │ │              │  │
-│  └────────────┘ └────────────┘ └───────────┘ └──────────────┘  │
-│                                                                  │
-│  ┌────────────┐ ┌────────────┐ ┌──────────────┐               │
-│  │desensitize│ │ operatelog │ │ datapermission│               │
-│  │ @Phone... │ │ @OperateLog│ │ @DataPermis.  │               │
-│  │ Jackson 3 │ │ 异步写入    │ │ MyBatis 拦截  │               │
-│  └────────────┘ └────────────┘ └──────────────┘               │
-│                                                                  │
+│                                                                 │
+│  ┌────────────┐ ┌────────────┐ ┌───────────┐ ┌──────────────┐   │
+│  │  storage   │ │notification│ │   excel   │ │  ip2region   │   │
+│  │  FileStor. │ │Notification│ │ ExcelSvc  │ │ IpRegionSvc  │   │
+│  │  Local/    │ │ Email/SMS/ │ │ EasyExcel │ │ xdb 离线库   │   │
+│  │  MinIO/OSS │ │ DingTalk/  │ │           │ │              │   │
+│  │  / S3      │ │ WeCom/Web  │ │           │ │              │   │
+│  └────────────┘ └────────────┘ └───────────┘ └──────────────┘   │
+│                                                                 │
+│  ┌────────────┐ ┌────────────┐ ┌────────────────┐               │
+│  │desensitize │ │ operatelog │ │ datapermission │               │
+│  │ @Phone...  │ │ @OperateLog│ │ @DataPermis.   │               │
+│  │ Jackson 3  │ │ 异步写入   │ │ MyBatis 拦截   │               │
+│  └────────────┘ └────────────┘ └────────────────┘               │
+│                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │  framework-core（SPI/Event/Exception）· Spring Boot 4.x   │  │
-│  │  Jackson 3 · Micrometer 2.0 · 虚拟线程（ScopedValue）      │  │
+│  │  Jackson 3 · Micrometer 2.0 · 虚拟线程（ScopedValue）     │  │
 │  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -654,7 +646,7 @@ framework:
 #### 9.2 功能启用条件汇总
 
 | 功能        | 启用条件                                                         | 核心依赖               |
-|:------------|:-----------------------------------------------------------------|:-----------------------|
+| :---------- | :--------------------------------------------------------------- | :--------------------- |
 | 分布式锁    | `framework.extras.lock.enabled=true` + classpath 有 CacheManager | framework-cache        |
 | 接口限流    | `framework.extras.ratelimit.enabled=true` + CacheManager         | framework-cache        |
 | 幂等控制    | `framework.extras.idempotent.enabled=true` + CacheManager        | framework-cache        |
@@ -683,7 +675,7 @@ public Order createOrder(OrderCreateRequest request) { ...}
 ## 十、SPI 扩展点汇总
 
 | 功能     | 扩展点接口                                | 用途                                   |
-|:---------|:------------------------------------------|:---------------------------------------|
+| :------- | :---------------------------------------- | :------------------------------------- |
 | 分布式锁 | `DistributedLock`                         | 自定义锁实现                           |
 | 限流     | `RateLimiter`                             | 自定义限流算法                         |
 | 幂等     | `IdempotentValidator`                     | 自定义幂等校验                         |
@@ -700,30 +692,29 @@ public Order createOrder(OrderCreateRequest request) { ...}
 ## 十一、与整体框架的关系
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
+┌───────────────────────────────────────────────────────────────┐
 │                    业务应用（Application）                    │
-│  组合使用 @Lockable / @RateLimit / @Idempotent / @OperateLog │
-└──────────────────────────┬──────────────────────────────────┘
+│  组合使用 @Lockable / @RateLimit / @Idempotent / @OperateLog  │
+└──────────────────────────┬────────────────────────────────────┘
                            │
-┌──────────────────────────▼──────────────────────────────────┐
+┌──────────────────────────▼────────────────────────────────────┐
 │              framework-boot（适配编排层）                     │
-│  ExtrasAutoConfiguration（framework.extras.enabled）        │
-│  ├─ 按功能开关注册 Bean 与 AOP 拦截器                       │
-│  └─ 各功能 Properties 绑定                                  │
-└──────────────────────────┬──────────────────────────────────┘
+│  ExtrasAutoConfiguration（framework.extras.enabled）          │
+│  ├─ 按功能开关注册 Bean 与 AOP 拦截器                         │
+│  └─ 各功能 Properties 绑定                                    │
+└──────────────────────────┬────────────────────────────────────┘
                            │ 按需
-┌──────────────────────────▼──────────────────────────────────┐
+┌──────────────────────────▼────────────────────────────────────┐
 │              framework-extras（工具集）                       │
-│  lock / ratelimit / idempotent / storage / notification     │
-│  excel / captcha / ip2region / desensitize / operatelog     │
-│  datapermission                                             │
-└───────┬──────────────────────────────┬──────────────────────┘
-        │ 复用存储底座                  │ 可选依赖
-┌───────▼───────────────┐  ┌───────────▼─────────────────────┐
-│  framework-cache      │  │  MinIO/OSS/S3/EasyExcel/ICU/    │
+│  lock / ratelimit / idempotent / storage / notification       │
+│  excel / captcha / ip2region / desensitize / operatelog       │
+│  datapermission                                               │
+└───────┬──────────────────────────────┬────────────────────────┘
+        │ 复用存储底座                 │ 可选依赖
+┌───────▼─────────────────┐  ┌─────────▼──────────────────────────┐
+│  framework-cache        │  │  MinIO/OSS/S3/EasyExcel/ICU/       │
 │  （锁/限流/幂等/验证码）│  │  Jakarta Mail/ip2region（optional）│
-└───────────────────────┘  └─────────────────────────────────┘
+└─────────────────────────┘  └────────────────────────────────────┘
 ```
 
-**依赖方向**：业务 → extras（注解/API）→ cache/core（底座）+ 按需第三方 SDK。extras
-是框架的"业务武器库"，与数据访问、缓存、国际化正交，独立演进、独立开关。
+**依赖方向**：业务 → extras（注解/API）→ cache/core（底座）+ 按需第三方 SDK。extras 是框架的"业务武器库"，与数据访问、缓存、国际化正交，独立演进、独立开关。

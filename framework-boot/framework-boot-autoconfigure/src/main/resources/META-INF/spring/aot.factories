@@ -1,2 +1,2 @@
 org.springframework.aot.hint.RuntimeHintsRegistrar=\
-cn.jowen.framework.boot.autoconfigure.BootRuntimeHints
+cn.jowen.framework.boot.autoconfigure.JowenRuntimeHints

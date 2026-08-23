@@ -1,6 +1,9 @@
 package cn.jowen.framework.i18n.reload;
 
 import cn.jowen.framework.i18n.api.ReloadableMessageSource;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.ClosedWatchServiceException;
@@ -12,8 +15,6 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.time.Duration;
 import java.util.Locale;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 文件系统热加载监听器。基于 {@link WatchService} 监听目录下 {@code *.properties} 文件变更
@@ -22,8 +23,8 @@ import org.jspecify.annotations.Nullable;
  * <p>变更文件以 {@code basename[_语言[_国家]].properties} 命名，重载由底层消息源按区域
  * 重新加载；不匹配 {@code *.properties} 的文件变更被忽略。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class FileWatchResourceWatcher implements ResourceWatcher {
@@ -48,7 +49,7 @@ public final class FileWatchResourceWatcher implements ResourceWatcher {
      * @param debounce  去抖窗口：窗口内多次变更合并为一次重载，不可为 {@code null}
      */
     public FileWatchResourceWatcher(Path directory, ReloadableMessageSource target,
-            ResourceReloader reloader, Duration debounce) {
+                                    ResourceReloader reloader, Duration debounce) {
         if (!java.nio.file.Files.isDirectory(directory)) {
             throw new IllegalArgumentException("监听目录不存在或不是目录: " + directory);
         }
@@ -109,7 +110,9 @@ public final class FileWatchResourceWatcher implements ResourceWatcher {
         return running;
     }
 
-    /** 监听目录。 */
+    /**
+     * 监听目录。
+     */
     public Path getDirectory() {
         return directory;
     }

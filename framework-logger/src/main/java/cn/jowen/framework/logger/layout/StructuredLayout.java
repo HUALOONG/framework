@@ -10,29 +10,18 @@ import java.util.Arrays;
 /**
  * 结构化日志布局。当前提供文本行格式（含时间戳/级别/logger/消息），JSON 输出待 Jackson 3 集成后扩展。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class StructuredLayout {
-
     /**
-     * 将一行日志格式化为文本。占位符 {@code {} } 由调用方已填充。
+     * 将占位符 {@code {} } 填充到模板。
      *
-     * @param loggerName logger 名，不可为 {@code null}
-     * @param level      级别，不可为 {@code null}
-     * @param message    消息（已填充占位符），可为 {@code null}
-     * @param args       原始参数，可为 {@code null}
-     * @return 格式化文本，不可为 {@code null}
+     * @param template 模板，不可为 {@code null}
+     * @param args     参数，可为 {@code null}
+     * @return 填充后文本，不可为 {@code null}
      */
-    public String formatText(String loggerName, LogLevel level, @Nullable String message, @Nullable Object[] args) {
-        String msg = message != null ? message : "";
-        if (args.length > 0) {
-            msg = fillPlaceholders(msg, args);
-        }
-        return String.format("%s [%s] %s - %s%n", Instant.now(), level, loggerName, msg);
-    }
-
     private static String fillPlaceholders(String template, Object[] args) {
         StringBuilder sb = new StringBuilder();
         int argIdx = 0;
@@ -53,5 +42,22 @@ public final class StructuredLayout {
             sb.append(' ').append(Arrays.toString(Arrays.copyOfRange(args, argIdx, args.length)));
         }
         return sb.toString();
+    }
+
+    /**
+     * 将一行日志格式化为文本。占位符 {@code {} } 由调用方已填充。
+     *
+     * @param loggerName logger 名，不可为 {@code null}
+     * @param level      级别，不可为 {@code null}
+     * @param message    消息（已填充占位符），可为 {@code null}
+     * @param args       原始参数，可为 {@code null}
+     * @return 格式化文本，不可为 {@code null}
+     */
+    public String formatText(String loggerName, LogLevel level, @Nullable String message, @Nullable Object[] args) {
+        String msg = message != null ? message : "";
+        if (args.length > 0) {
+            msg = fillPlaceholders(msg, args);
+        }
+        return String.format("%s [%s] %s - %s%n", Instant.now(), level, loggerName, msg);
     }
 }

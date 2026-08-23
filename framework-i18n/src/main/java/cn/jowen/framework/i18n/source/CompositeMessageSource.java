@@ -13,15 +13,32 @@ import java.util.Locale;
 /**
  * 聚合消息源。按注册顺序委托多个子源，命中即返回；支持热加载全部子源。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class CompositeMessageSource implements ReloadableMessageSource {
 
     private final List<MessageSource> sources = new ArrayList<>();
 
-    /** 追加子源（顺序即优先级）。 */
+    /**
+     * 便捷方法：格式化消息。
+     *
+     * @param pattern 消息模板
+     * @param args    参数
+     * @param locale  区域
+     * @return 格式化结果
+     */
+    static String format(String pattern, @Nullable Object @Nullable [] args, Locale locale) {
+        if (args == null || args.length == 0) {
+            return pattern;
+        }
+        return new MessageFormat(pattern, locale).format(args);
+    }
+
+    /**
+     * 追加子源（顺序即优先级）。
+     */
     public void add(MessageSource source) {
         sources.add(source);
     }
@@ -54,20 +71,5 @@ public final class CompositeMessageSource implements ReloadableMessageSource {
                 reloadable.reload();
             }
         }
-    }
-
-    /**
-     * 便捷方法：格式化消息。
-     *
-     * @param pattern 消息模板
-     * @param args    参数
-     * @param locale  区域
-     * @return 格式化结果
-     */
-    static String format(String pattern, @Nullable Object @Nullable [] args, Locale locale) {
-        if (args == null || args.length == 0) {
-            return pattern;
-        }
-        return new MessageFormat(pattern, locale).format(args);
     }
 }

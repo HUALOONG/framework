@@ -6,13 +6,15 @@ import org.jspecify.annotations.NullMarked;
  * 消息未找到异常。在需要严格模式（找不到编码即抛错）的场景抛出，例如
  * {@code MessageSource.getMessageRequired}。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public class MessageNotFoundException extends I18nException {
 
-    /** 未找到的消息编码。 */
+    /**
+     * 未找到的消息编码。
+     */
     private final String code;
 
     public MessageNotFoundException(String code) {
@@ -20,7 +22,9 @@ public class MessageNotFoundException extends I18nException {
         this.code = code;
     }
 
-    /** 返回未找到的消息编码。 */
+    /**
+     * 返回未找到的消息编码。
+     */
     public String getCode() {
         return code;
     }

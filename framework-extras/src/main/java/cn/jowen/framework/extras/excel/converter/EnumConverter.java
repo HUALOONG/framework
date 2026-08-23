@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.excel.converter;
 
 import com.alibaba.excel.converters.Converter;
@@ -21,8 +14,8 @@ import java.lang.reflect.Field;
  * 枚举转换器，支持通过枚举名（name）进行转换。
  *
  * @param <T> 枚举类型
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public class EnumConverter<T extends Enum<T>> implements Converter<T> {
@@ -42,7 +35,7 @@ public class EnumConverter<T extends Enum<T>> implements Converter<T> {
     @Override
     @SuppressWarnings("unchecked")
     public T convertToJavaData(ReadCellData<?> cellData, ExcelContentProperty contentProperty,
-            GlobalConfiguration globalConfiguration) {
+                               GlobalConfiguration globalConfiguration) {
         String text = cellData.getStringValue();
         if (text == null || text.isBlank()) {
             return null;
@@ -66,7 +59,7 @@ public class EnumConverter<T extends Enum<T>> implements Converter<T> {
 
     @Override
     public WriteCellData<String> convertToExcelData(T value, ExcelContentProperty contentProperty,
-            GlobalConfiguration globalConfiguration) {
+                                                    GlobalConfiguration globalConfiguration) {
         if (value == null) {
             return new WriteCellData<>("");
         }

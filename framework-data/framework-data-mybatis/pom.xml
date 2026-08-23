@@ -13,4 +13,61 @@
     <artifactId>framework-data-mybatis</artifactId>
     <packaging>jar</packaging>
     <description>framework-data-core 的 MyBatis Flex 增强实现，提供类型安全查询、多表关联、数据脱敏/加密、多租户与 SQL 审计能力</description>
+
+    <dependencies>
+        <!-- 抽象层：data-core 契约 -->
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-data-core</artifactId>
+        </dependency>
+
+        <!-- 日志门面：SQL 审计/多租户/代码生成等日志输出 -->
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-logger</artifactId>
+        </dependency>
+
+        <!-- 核心 ORM：MyBatis Flex -->
+        <dependency>
+            <groupId>com.mybatis-flex</groupId>
+            <artifactId>mybatis-flex-core</artifactId>
+        </dependency>
+
+        <!-- 注解处理器：MyBatis Flex TableDef 生成 -->
+        <dependency>
+            <groupId>com.mybatis-flex</groupId>
+            <artifactId>mybatis-flex-processor</artifactId>
+        </dependency>
+
+        <!-- 代码生成（可选） -->
+        <dependency>
+            <groupId>com.mybatis-flex</groupId>
+            <artifactId>mybatis-flex-codegen</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- 脱敏规则来自 core，此处传递 -->
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-core</artifactId>
+        </dependency>
+
+        <!-- 测试依赖 -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

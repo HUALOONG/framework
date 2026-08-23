@@ -4,10 +4,11 @@ import cn.jowen.framework.i18n.api.MessageSource;
 import cn.jowen.framework.i18n.api.ReloadableMessageSource;
 import cn.jowen.framework.i18n.format.FormatterRegistry;
 import cn.jowen.framework.i18n.format.MessageFormatter;
-import java.util.Locale;
-import java.util.Objects;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.util.Locale;
+import java.util.Objects;
 
 /**
  * 消息源抽象基类：统一解析流程（按区域精确 → 语言 → 默认回退）与参数化格式化，
@@ -20,13 +21,15 @@ import org.jspecify.annotations.Nullable;
  *   <li>按默认区域（无后缀）查找。</li>
  * </ol>
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public abstract class AbstractMessageSource implements MessageSource, ReloadableMessageSource {
 
-    /** 默认格式化器注册表。 */
+    /**
+     * 默认格式化器注册表。
+     */
     protected final FormatterRegistry formatterRegistry = new FormatterRegistry();
 
     private @Nullable MessageFormatter formatter;
@@ -63,7 +66,7 @@ public abstract class AbstractMessageSource implements MessageSource, Reloadable
             return raw;
         }
         if (!locale.getCountry().isEmpty()) {
-            raw = loadRaw(code, new Locale(locale.getLanguage()));
+            raw = loadRaw(code, Locale.of(locale.getLanguage()));
             if (raw != null) {
                 return raw;
             }
@@ -89,7 +92,9 @@ public abstract class AbstractMessageSource implements MessageSource, Reloadable
         this.formatter = Objects.requireNonNull(formatter, "formatter must not be null");
     }
 
-    /** 设置格式化器名称（从注册表取）。 */
+    /**
+     * 设置格式化器名称（从注册表取）。
+     */
     public void setFormatter(String name) {
         MessageFormatter found = formatterRegistry.get(name);
         if (found == null) {

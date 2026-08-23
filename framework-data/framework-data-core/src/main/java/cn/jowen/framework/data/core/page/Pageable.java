@@ -5,8 +5,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * 分页请求，含页码、大小与排序。页码从 0 开始。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class Pageable {
@@ -62,7 +62,9 @@ public final class Pageable {
         return sort;
     }
 
-    /** 返回起始偏移量（用于 SQL LIMIT 偏移）。 */
+    /**
+     * 返回起始偏移量（用于 SQL LIMIT 偏移）。
+     */
     public long getOffset() {
         return (long) page * size;
     }

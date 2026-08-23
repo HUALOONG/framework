@@ -16,7 +16,7 @@
 **核心价值**：
 
 | 场景            | 没有本模块                                           | 有本模块                                            |
-|:----------------|:-----------------------------------------------------|:----------------------------------------------------|
+| :-------------- | :--------------------------------------------------- | :-------------------------------------------------- |
 | 模块接入 Spring | 每个模块各自引 spring-boot-autoconfigure、各自写装配 | 全部收敛到本模块单点装配                            |
 | 按需启用        | 手动 @Import 或全量装配                              | @ConditionalOn* 声明式按需                          |
 | 装配顺序        | 手工维护顺序                                         | @AutoConfigureAfter/Before 显式声明                 |
@@ -25,7 +25,7 @@
 **关键架构决策（Boot 依赖收敛）**：
 
 | 决策                          | 内容                                                                                                                                         |
-|:------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------|
+| :---------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
 | ① Boot 壳依赖单点化           | `spring-boot-autoconfigure` 等 Boot 依赖**只进本模块**，其他模块均不直接引用                                                                 |
 | ② Spring Framework 无法全排除 | `spring-context`（plugin 子容器）、`spring-expression`（cache/extras SpEL）、`mybatis-spring` 仍需按需引入，但仅作 optional/compile 局部依赖 |
 | ③ AutoConfiguration 类上移    | 原各实现模块内的 AutoConfiguration 类统一上移到本模块，实现模块保持纯能力                                                                    |
@@ -34,7 +34,7 @@
 **与核心模块的边界**：
 
 | 模块                             | 定位           | 特点                                 |
-|:---------------------------------|:---------------|:-------------------------------------|
+| :------------------------------- | :------------- | :----------------------------------- |
 | **framework-boot-autoconfigure** | **装配编排层** | **唯一的 Boot 依赖汇聚点、按需装配** |
 | framework-*-starter              | 聚合入口       | 仅 POM，无代码                       |
 | 各实现模块                       | 纯能力         | 零 Spring 依赖（实现层）或 minimal   |
@@ -44,7 +44,7 @@
 ## 二、功能清单与依赖矩阵
 
 | 功能        | 子包          | 依赖                             | 说明                                                    |
-|:------------|:--------------|:---------------------------------|:--------------------------------------------------------|
+| :---------- | :------------ | :------------------------------- | :------------------------------------------------------ |
 | 总装配入口  | 根包          | 全部模块                         | BootAutoConfiguration + Registrar                       |
 | Logger 装配 | logger        | framework-logger                 | 日志/脱敏/追踪/MDC                                      |
 | 数据装配    | data          | framework-data-core/jdbc/mybatis | DataSource / JDBC / MyBatis                             |
@@ -63,19 +63,19 @@
 
 ```text
 framework-boot-autoconfigure
-└─ src/main/java/com/framework/boot/autoconfigure/
-   ├─ BootAutoConfiguration.java          # 总入口（@Import 各功能装配类）
-   ├─ BootAutoConfigurationRegistrar.java # 编程式注册（条件注册辅助）
-   ├─ logger/        # LoggerAutoConfiguration
-   ├─ data/          # DataSourceAutoConfiguration / DataJdbcAutoConfiguration / DataMybatisAutoConfiguration
-   ├─ cache/         # CacheAutoConfiguration
-   ├─ i18n/          # I18nAutoConfiguration
-   ├─ plugin/        # PluginAutoConfiguration
-   ├─ extras/        # ExtrasAutoConfiguration（引用 extras.config.*Factory 逐功能装配）
-   ├─ health/        # HealthAutoConfiguration（HealthIndicator 聚合）
-   ├─ observability/ # ObservabilityAutoConfiguration（MeterBinder 聚合）
-   ├─ web/           # WebAutoConfiguration（拦截器/过滤器注册）
-   └─ bridge/        # EventBridgeAutoConfiguration（core.event ↔ Spring 事件双向桥接）
+└─ src/main/java/cn/jowen/framework/boot/autoconfigure/
+   ├─ bridge/                              # EventBridgeAutoConfiguration（core.event ↔ Spring 事件双向桥接）
+   ├─ cache/                               # CacheAutoConfiguration
+   ├─ data/                                # DataSourceAutoConfiguration / DataJdbcAutoConfiguration / DataMybatisAutoConfiguration
+   ├─ extras/                              # ExtrasAutoConfiguration（引用 extras.config.*Factory 逐功能装配）
+   ├─ health/                              # HealthAutoConfiguration（HealthIndicator 聚合）
+   ├─ i18n/                                # I18nAutoConfiguration
+   ├─ logger/                              # LoggerAutoConfiguration
+   ├─ plugin/                              # PluginAutoConfiguration
+   ├─ observability/                       # ObservabilityAutoConfiguration（MeterBinder 聚合）
+   ├─ web/                                 # WebAutoConfiguration（拦截器/过滤器注册）
+   ├─ JowenAutoConfiguration.java          # 总入口（@Import 各功能装配类）
+   └─ JowenAutoConfigurationRegistrar.java # 编程式注册（条件注册辅助）
 
 # 资源
 src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
@@ -108,12 +108,12 @@ src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoCo
     WebAutoConfiguration.class,
     EventBridgeAutoConfiguration.class
 })
-public class BootAutoConfiguration {
+public class JowenAutoConfiguration {
     // 框架级公共 Bean（如 Marker、公共 MeterBinder）
 }
 ```
 
-**Registrar 的职责**：`BootAutoConfigurationRegistrar` 处理无法用注解表达的编程式注册（如扫描用户配置的 Customizer
+**Registrar 的职责**：`JowenAutoConfigurationRegistrar` 处理无法用注解表达的编程式注册（如扫描用户配置的 Customizer
 Bean、动态注册模块装配类），在 `registerBeanDefinitions` 中按配置决定注册哪些装配。
 
 #### 4.2 logger/ — Logger 装配
@@ -392,38 +392,38 @@ cn.jowen.framework.boot.autoconfigure.bridge
 ## 五、核心类关系图
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│              framework-boot-autoconfigure                        │
-│                                                                  │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │   META-INF/spring/...AutoConfiguration.imports             │  │
-│  │   └─ cn.jowen.framework.boot.autoconfigure.BootAutoConfig. │  │
-│  └─────────────────────────┬─────────────────────────────────┘  │
-│                            │ @AutoConfiguration                 │
-│  ┌─────────────────────────▼─────────────────────────────────┐  │
-│  │              BootAutoConfiguration（总入口）           │  │
-│  │  @ConditionalOnProperty("framework.enabled")              │  │
-│  │  @Import(11 个装配类)                                     │  │
-│  └──┬────────┬────────┬────────┬────────┬────────┬───────────┘  │
-│     │        │        │        │        │        │              │
-│  ┌──▼───┐ ┌──▼─────┐ ┌▼──────┐ ┌▼─────┐ ┌▼──────┐ ┌▼────────┐ │
-│  │logger│ │ data   │ │ cache │ │ i18n │ │plugin │ │ extras  │ │
-│  │Logger│ │DS/Jdbc│ │Cache- │ │MsgSrc│ │Plugin│ │委托 Extra│ │
-│  │Bootstrap│Mybatis│ │Manager│ │Locale│ │Manager│ │sAutoCfg │ │
-│  └──────┘ └────────┘ └───────┘ └──────┘ └──────┘ └─────────┘ │
-│     │        │        │        │        │        │              │
-│  ┌──▼───────┴──▼───────▼───────▼────────▼────────▼─────────┐  │
-│  │  health（聚合 HealthIndicator）+ observability（聚合      │  │
-│  │  MeterBinder）+ web（拦截器注册）                        │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                  │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  依赖汇聚点（唯一）                                        │  │
-│  │  spring-boot-autoconfigure · spring-context(optional)     │  │
-│  │  spring-expression(optional) · spring-boot-actuator(opt)  │  │
-│  │  + framework-logger/data-*/cache/i18n/plugin/extras       │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│              framework-boot-autoconfigure                          │
+│                                                                    │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │   META-INF/spring/...AutoConfiguration.imports               │  │
+│  │   └─ cn.jowen.framework.boot.autoconfigure.BootAutoConfig.   │  │
+│  └─────────────────────────┬────────────────────────────────────┘  │
+│                            │ @AutoConfiguration                    │
+│  ┌─────────────────────────▼────────────────────────────────────┐  │
+│  │              BootAutoConfiguration（总入口）                 │  │
+│  │  @ConditionalOnProperty("framework.enabled")                 │  │
+│  │  @Import(11 个装配类)                                        │  │
+│  └──┬───────────┬────────┬─────────┬────────┬─────────┬─────────┘  │
+│     │           │        │         │        │         │            │
+│  ┌──▼──────┐ ┌──▼─────┐ ┌▼──────┐ ┌▼─────┐ ┌▼──────┐ ┌▼─────────┐  │
+│  │logger   │ │ data   │ │ cache │ │ i18n │ │plugin │ │ extras   │  │
+│  │Logger   │ │DS/Jdbc │ │Cache- │ │MsgSrc│ │Plugin │ │委托 Extra│  │
+│  │Bootstrap│ │Mybatis │ │Manager│ │Locale│ │Manager│ │sAutoCfg  │  │
+│  └─────────┘ └────────┘ └───────┘ └──────┘ └───────┘ └──────────┘  │
+│     │         │          │         │        │         │            │
+│  ┌──▼─────────▼──────────▼─────────▼────────▼─────────▼─────────┐  │
+│  │  health（聚合 HealthIndicator）+ observability（聚合         │  │
+│  │  MeterBinder）+ web（拦截器注册）                            │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│                                                                    │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │  依赖汇聚点（唯一）                                          │  │
+│  │  spring-boot-autoconfigure · spring-context(optional)        │  │
+│  │  spring-expression(optional) · spring-boot-actuator(opt)     │  │
+│  │  + framework-logger/data-*/cache/i18n/plugin/extras          │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -431,12 +431,11 @@ cn.jowen.framework.boot.autoconfigure.bridge
 ## 六、分层依赖规则
 
 ```text
-L0（零依赖）        framework-core
+L0（零依赖）         framework-core
                       ▲
 L1（依赖 L0）        framework-logger / framework-data-core
                       ▲
-L2（依赖 L0+L1）     framework-data-jdbc / framework-data-mybatis
-                    framework-cache / framework-i18n
+L2（依赖 L0+L1）     framework-data-jdbc / framework-data-mybatis / framework-cache / framework-i18n
                       ▲
 L3（依赖 L0~L2）     framework-plugin / framework-extras
                       ▲
@@ -592,10 +591,10 @@ framework:
     <groupId>cn.jowen.framework</groupId>
     <artifactId>framework-boot-starter</artifactId>
 </dependency>
-        <!-- 按需补充实现 -->
+<!-- 按需补充实现 -->
 <dependency>
-<groupId>cn.jowen.framework</groupId>
-<artifactId>framework-data-mybatis</artifactId>
+    <groupId>cn.jowen.framework</groupId>
+    <artifactId>framework-data-mybatis</artifactId>
 </dependency>
 ```
 
@@ -631,7 +630,7 @@ public class BizAutoConfiguration { ...
 ## 十、SPI 扩展点汇总
 
 | 扩展点                           | 所在包        | 用途                                                        |
-|:---------------------------------|:--------------|:------------------------------------------------------------|
+| :------------------------------- | :------------ | :---------------------------------------------------------- |
 | 各模块 `*Customizer`             | 对应装配类    | 定制 CacheManager / MessageSource / FlexGlobalConfig 等构建 |
 | `@ConditionalOnMissingBean` 覆盖 | 全部装配类    | 用户 Bean 让位机制                                          |
 | `BootAutoConfigurationRegistrar` | 根包          | 编程式动态注册装配                                          |

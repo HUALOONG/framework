@@ -5,8 +5,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * 实体元信息解析器，将实体类解析为 {@link EntityMetadata}。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public interface EntityMetadataResolver {

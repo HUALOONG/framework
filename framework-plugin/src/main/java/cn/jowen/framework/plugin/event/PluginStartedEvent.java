@@ -1,18 +1,20 @@
 package cn.jowen.framework.plugin.event;
 
-import cn.jowen.framework.plugin.Plugin;
 import org.jspecify.annotations.NullMarked;
 
 /**
  * 插件启动完成事件。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
  */
 @NullMarked
-public final class PluginStartedEvent extends PluginLifecycleEvent {
+public final class PluginStartedEvent extends PluginEvent {
+    public PluginStartedEvent(String pluginId) {
+        super(pluginId, "plugin-started");
+    }
 
-    public PluginStartedEvent(Plugin plugin) {
-        super(plugin);
+    @Override
+    public EventType getEventType() {
+        return EventType.STARTED;
     }
 }

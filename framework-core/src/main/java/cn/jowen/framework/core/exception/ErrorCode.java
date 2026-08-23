@@ -8,8 +8,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>实现类通常为枚举，提供 {@code code()} 与 {@code message()} 两个维度：
  * {@code code} 用于前端精确识别错误类型，{@code message} 为默认可读信息（支持后续国际化替换）。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public interface ErrorCode {

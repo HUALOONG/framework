@@ -5,8 +5,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * 事务状态，用于判断是否需要回滚与是否已完成。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public interface TransactionStatus {

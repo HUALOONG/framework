@@ -1,17 +1,11 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.core.lifecycle;
+
+import org.jspecify.annotations.NullMarked;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * 生命周期处理器：统一管理一组 {@link Lifecycle}，支持按阶段排序的批量启动/停止。
@@ -26,27 +20,34 @@ import org.jspecify.annotations.NullMarked;
  *   <li>线程安全：内部使用 {@link CopyOnWriteArrayList}，可随时注册/移除，不影响正在进行的启停遍历。</li>
  * </ul>
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class LifecycleProcessor {
-
-    private final List<Lifecycle> lifecycles = new CopyOnWriteArrayList<>();
 
     private static final Comparator<Lifecycle> PHASE_ASC =
             Comparator.comparingInt(LifecycleProcessor::phaseOf).reversed()
                     .reversed() // 保持可读：按 phase 升序
                     .thenComparing(System::identityHashCode);
+    private final List<Lifecycle> lifecycles = new CopyOnWriteArrayList<>();
 
-    /** 注册一个生命周期组件。 */
+    private static int phaseOf(Lifecycle lifecycle) {
+        return lifecycle instanceof SmartLifecycle smart ? smart.getPhase() : SmartLifecycle.DEFAULT_PHASE;
+    }
+
+    /**
+     * 注册一个生命周期组件。
+     */
     public void addLifecycle(Lifecycle lifecycle) {
         if (lifecycle != null) {
             lifecycles.add(lifecycle);
         }
     }
 
-    /** 移除一个生命周期组件。 */
+    /**
+     * 移除一个生命周期组件。
+     */
     public void removeLifecycle(Lifecycle lifecycle) {
         lifecycles.remove(lifecycle);
     }
@@ -90,7 +91,9 @@ public final class LifecycleProcessor {
         }
     }
 
-    /** 是否全部已注册的 {@link SmartLifecycle} 均在运行中（无 SmartLifecycle 时返回 true）。 */
+    /**
+     * 是否全部已注册的 {@link SmartLifecycle} 均在运行中（无 SmartLifecycle 时返回 true）。
+     */
     public boolean isRunning() {
         return lifecycles.stream()
                 .filter(SmartLifecycle.class::isInstance)
@@ -98,18 +101,18 @@ public final class LifecycleProcessor {
                 .allMatch(SmartLifecycle::isRunning);
     }
 
-    /** 当前管理的全部组件（拷贝）。 */
+    /**
+     * 当前管理的全部组件（拷贝）。
+     */
     public List<Lifecycle> getLifecycles() {
         return new ArrayList<>(lifecycles);
     }
 
-    /** 已注册组件数量。 */
+    /**
+     * 已注册组件数量。
+     */
     public int size() {
         return lifecycles.size();
-    }
-
-    private static int phaseOf(Lifecycle lifecycle) {
-        return lifecycle instanceof SmartLifecycle smart ? smart.getPhase() : SmartLifecycle.DEFAULT_PHASE;
     }
 
     private List<Lifecycle> sorted() {

@@ -1,6 +1,6 @@
 package cn.jowen.framework.extras.idempotent;
 
-import cn.jowen.framework.cache.Cache;
+import cn.jowen.framework.cache.api.Cache;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.concurrent.TimeUnit;
@@ -10,8 +10,8 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>典型场景：表单重复提交、消息重复消费。令牌在 {@code ttl} 内有效，过期后允许再次执行。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class Idempotent {
@@ -31,6 +31,13 @@ public final class Idempotent {
     }
 
     /**
+     * 便捷单位构造。
+     */
+    public static Idempotent of(Cache<String, Boolean> store, long ttl, TimeUnit unit) {
+        return new Idempotent(store, unit.toMillis(ttl));
+    }
+
+    /**
      * 尝试占用令牌。
      *
      * @param key 业务唯一键（如 请求ID+用户ID），不可为 {@code null}
@@ -40,18 +47,17 @@ public final class Idempotent {
         return store.putIfAbsent(key, Boolean.TRUE);
     }
 
-    /** @param key 释放已占用的令牌，允许后续重试 */
+    /**
+     * @param key 释放已占用的令牌，允许后续重试
+     */
     public void release(String key) {
         store.evict(key);
     }
 
-    /** @return 令牌 TTL（毫秒） */
+    /**
+     * @return 令牌 TTL（毫秒）
+     */
     public long ttlMillis() {
         return ttlMillis;
-    }
-
-    /** 便捷单位构造。 */
-    public static Idempotent of(Cache<String, Boolean> store, long ttl, TimeUnit unit) {
-        return new Idempotent(store, unit.toMillis(ttl));
     }
 }

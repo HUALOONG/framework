@@ -1,15 +1,16 @@
 package cn.jowen.framework.i18n.format;
 
-import java.util.Locale;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.util.Locale;
 
 /**
  * 消息格式化器。将带占位符的消息模板与参数数组结合产出最终文案，与具体消息源解耦，
  * 通过 {@link FormatterRegistry} 按名称注册与获取。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public interface MessageFormatter {

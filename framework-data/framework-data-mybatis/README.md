@@ -36,18 +36,19 @@ QueryWrapper / TransactionManager / DataSourceRouter / ExceptionTranslator）与
 
 ## 二、功能清单与依赖矩阵
 
-| 功能         | 子包       | 核心依赖                 | 可选依赖                            |
-|:-------------|:-----------|:-------------------------|:------------------------------------|
-| 适配桥接     | adapter    | data-core + MyBatis Flex | —                                   |
-| 增强仓储     | repository | data-core                | —                                   |
-| 查询模型转换 | query      | data-core                | —                                   |
-| 企业级扩展   | extension  | MyBatis Flex             | Jackson 3（审计 JSON）              |
-| 异常转换     | exception  | data-core                | —                                   |
-| 配置与装配   | config     | Spring Boot 4            | spring-boot-configuration-processor |
-| 代码生成     | codegen    | MyBatis Flex generator   | FreeMarker                          |
+| 功能         | 子包       | 核心依赖                 | 可选依赖                                                                  |
+|:-------------|:-----------|:-------------------------|:--------------------------------------------------------------------------|
+| 适配桥接     | adapter    | data-core + MyBatis Flex | —                                                                         |
+| 增强仓储     | repository | data-core                | —                                                                         |
+| 查询模型转换 | query      | data-core                | —                                                                         |
+| 企业级扩展   | extension  | MyBatis Flex             | Jackson 3（审计 JSON）                                                    |
+| 异常转换     | exception  | data-core                | —                                                                         |
+| 自动装配     | —          | —                        | 由 `framework-boot-autoconfigure` 统一提供 `MybatisFlexAutoConfiguration` |
+| 代码生成     | codegen    | MyBatis Flex generator   | FreeMarker                                                                |
 
 **Spring Boot 4.x 兼容性风险项**：MyBatis Flex ≥ 1.11 需确认已适配 Spring Boot 4 / Spring Framework 7 自动配置机制（
-`@AutoConfiguration` 迁移与 `AutoConfiguration.imports` 注册方式）；若 1.11 未完全适配，由本模块 config 子包自建兼容装配作为兜底。
+`@AutoConfiguration` 迁移与 `AutoConfiguration.imports` 注册方式）；若 1.11 未完全适配，由
+`framework-boot-autoconfigure` 模块的 `data/` 子包自建兼容装配作为兜底。
 
 ---
 
@@ -55,13 +56,13 @@ QueryWrapper / TransactionManager / DataSourceRouter / ExceptionTranslator）与
 
 ```text
 framework-data-mybatis
-└─ src/main/java/com/framework/data/mybatis/
+└─ src/main/java/cn/jowen/framework/data/mybatis/
    ├─ adapter/        # 核心适配层：FlexRepositoryAdapter / FlexTransactionAdapter / FlexDataSourceAdapter / FlexExceptionTranslator
    ├─ repository/     # 增强仓储：FlexRepository / FlexJoinRepository / FlexDynamicRepository / FlexRepositoryFactory / IdGeneratorAdapter
    ├─ query/          # 查询模型转换：FlexQueryWrapperTranslator / FlexLambdaQueryBuilder / ConditionMapper
    ├─ extension/      # 企业级扩展：FlexAuditHandler / FlexMaskProcessor / FlexEncryptProcessor / FlexTenantHandler / FlexSqlAuditListener / FlexLogicDeleteHandler / ExtensionRegistry
    ├─ exception/      # 异常转换：FlexExceptionConverter / FlexOptimisticLockException
-   ├─ config/         # 配置：MybatisFlexAutoConfiguration / MybatisFlexProperties / FlexGlobalConfigCustomizer / MapperScanConfiguration
+   ├─ config/         # 配置：MybatisFlexProperties / FlexGlobalConfigCustomizer（自动装配由 boot-autoconfigure 承载）
    └─ codegen/        # 代码生成（可选）：EntityGenerator / MapperGenerator / TableDefGenerator / GeneratorConfig
 ```
 
@@ -77,12 +78,12 @@ framework-data-mybatis
 
 ```textmate
 cn.jowen.framework.data.mybatis.adapter
-├─FlexRepositoryAdapter<T, ID>      #Repository<T, ID> → BaseMapper<T> 适配
-│   ├─findById /findList /insert /update /delete
-│   └─通过 FlexRepositoryFactory 获取 BaseMapper 后转译调用
-├─FlexTransactionAdapter            # TransactionManager 适配 →FlexTransactionManager（Spring 事务）
-├─FlexDataSourceAdapter             # DataSourceRouter 适配 →DynamicDataSource（多数据源路由）
-└─FlexExceptionTranslator           # ExceptionTranslator 适配 →统一框架异常体系
+├─ FlexRepositoryAdapter<T, ID>      # Repository<T, ID> → BaseMapper<T> 适配
+│   ├─ findById / findList / insert / update / delete
+│   └─ 通过 FlexRepositoryFactory 获取 BaseMapper 后转译调用
+├─ FlexTransactionAdapter            # TransactionManager 适配 →FlexTransactionManager（Spring 事务）
+├─ FlexDataSourceAdapter             # DataSourceRouter 适配 →DynamicDataSource（多数据源路由）
+└─ FlexExceptionTranslator           # ExceptionTranslator 适配 →统一框架异常体系
 ```
 
 **适配规则**：
@@ -99,11 +100,11 @@ cn.jowen.framework.data.mybatis.adapter
 
 ```textmate
 cn.jowen.framework.data.mybatis.repository
-├─FlexRepository<T, ID>             #完整功能仓储（CRUD +分页 +条件 +批量）
-├─FlexJoinRepository<T>             #多表关联查询仓储（Flex QueryWrapper join）
-├─FlexDynamicRepository             #无实体动态仓储（Map/JSON 数据源）
-├─FlexRepositoryFactory             #仓储工厂：注入 BaseMapper、注册自定义扩展
-└─IdGeneratorAdapter                #主键生成适配（雪花 /自增 /自定义 SPI）
+├─ FlexRepository<T, ID>             #完整功能仓储（CRUD +分页 +条件 +批量）
+├─ FlexJoinRepository<T>             #多表关联查询仓储（Flex QueryWrapper join）
+├─ FlexDynamicRepository             #无实体动态仓储（Map/JSON 数据源）
+├─ FlexRepositoryFactory             #仓储工厂：注入 BaseMapper、注册自定义扩展
+└─ IdGeneratorAdapter                #主键生成适配（雪花 /自增 /自定义 SPI）
 ```
 
 **使用示意**：
@@ -133,13 +134,13 @@ List<User> users = userRepository.selectList(
 
 ```textmate
 cn.jowen.framework.data.mybatis.query
-├─FlexQueryWrapperTranslator        #data-core QueryWrapper → Flex QueryWrapper
-│   ├─条件转换：eq/ne/gt/ge/lt/le/in/between/like
-│   ├─排序转换：orderBy/orderByDesc
-│   ├─分页转换：limit/offset →Page
-│   └─联表转换：join 条件 → Flex join 模型
-├─FlexLambdaQueryBuilder            # Lambda 类型安全查询入口（静态工厂）
-└─ConditionMapper                   # 条件操作符映射（框架枚举 ↔ Flex 枚举）
+├─ FlexQueryWrapperTranslator        #data-core QueryWrapper → Flex QueryWrapper
+│   ├─ 条件转换：eq/ne/gt/ge/lt/le/in/between/like
+│   ├─ 排序转换：orderBy/orderByDesc
+│   ├─ 分页转换：limit/offset →Page
+│   └─ 联表转换：join 条件 → Flex join 模型
+├─ FlexLambdaQueryBuilder            # Lambda 类型安全查询入口（静态工厂）
+└─ ConditionMapper                   # 条件操作符映射（框架枚举 ↔ Flex 枚举）
 ```
 
 **设计要点**：翻译器保持纯函数、无状态，单测覆盖每种操作符的往返一致性；业务层直接使用 `FlexLambdaQueryBuilder` 时绕过翻译器，降低开销。
@@ -152,13 +153,13 @@ cn.jowen.framework.data.mybatis.query
 
 ```textmate
 cn.jowen.framework.data.mybatis.extension
-├─FlexAuditHandler               #数据审计：记录 insert / update 前后快照（审计表落库）
-├─FlexMaskProcessor              #数据脱敏：查询结果按注解脱敏（@Mask委托 core.Desensitizer）
-├─FlexEncryptProcessor           #字段加密：写入加密、读取解密（@Encrypt 字段级）
-├─FlexTenantHandler              #多租户：自动追加 tenant_id 条件（ContextCarrier 驱动）
-├─FlexSqlAuditListener           #SQL 审计日志：慢 SQL /全量 SQL 输出（SLF4J +Micrometer 2.0）
-├─FlexLogicDeleteHandler         #逻辑删除增强：@LogicDelete 字段自动改写
-└─ExtensionRegistry              #扩展注册中心：统一注册/排序/去重
+├─ FlexAuditHandler               #数据审计：记录 insert / update 前后快照（审计表落库）
+├─ FlexMaskProcessor              #数据脱敏：查询结果按注解脱敏（@Mask委托 core.Desensitizer）
+├─ FlexEncryptProcessor           #字段加密：写入加密、读取解密（@Encrypt 字段级）
+├─ FlexTenantHandler              #多租户：自动追加 tenant_id 条件（ContextCarrier 驱动）
+├─ FlexSqlAuditListener           #SQL 审计日志：慢 SQL /全量 SQL 输出（SLF4J +Micrometer 2.0）
+├─ FlexLogicDeleteHandler         #逻辑删除增强：@LogicDelete 字段自动改写
+└─ ExtensionRegistry              #扩展注册中心：统一注册/排序/去重
 ```
 
 **上下文统一（冲突修正决议 #3）**：多租户上下文、脱敏跳过上下文、数据权限上下文统一读写 `core.context.ContextCarrier`（默认
@@ -185,33 +186,27 @@ MyBatis 异常 → 框架统一异常体系。
 
 ```textmate
 cn.jowen.framework.data.mybatis.exception
-├─FlexExceptionConverter            #MyBatisExceptionTranslator：PersistenceException →DataAccessException
-└─FlexOptimisticLockException       #乐观锁冲突异常（@Version 字段更新影响行数为 0时抛出）
+├─ FlexExceptionConverter            #MyBatisExceptionTranslator：PersistenceException →DataAccessException
+└─ FlexOptimisticLockException       #乐观锁冲突异常（@Version 字段更新影响行数为 0时抛出）
 ```
 
-**转换规则**：优先复用 data-core exception 的既有分类（连接/约束/唯一冲突/乐观锁）；MyBatis 特有异常（如 SQL 语法）归入
-`DataAccessResourceFailure` 或 `InvalidDataAccessResourceUsageException`。
+**转换规则**：优先复用 data-core exception 的既有分类（连接/约束/唯一冲突/乐观锁）；MyBatis 特有异常（如 SQL 语法）归入 `DataAccessResourceFailure` 或 `InvalidDataAccessResourceUsageException`。
 
-#### 4.6 config/ — 配置与装配
+#### 4.6 config/ — 配置属性
 
 ##### 定位
 
-Spring Boot 4 自动装配 + 配置属性绑定 + Mapper 扫描。
+配置属性绑定与定制回调（自动装配由 `framework-boot-autoconfigure` 模块的 `data/` 子包统一承载）。
 
 ```textmate
 cn.jowen.framework.data.mybatis.config
-├─MybatisFlexAutoConfiguration       #自动装配：SqlSessionFactory /FlexGlobalConfig /拦截器链
-├─MybatisFlexProperties              #@ConfigurationProperties(prefix = "framework.data.mybatis")
-├─FlexGlobalConfigCustomizer         #全局配置定制回调（用户可覆写）
-└─MapperScanConfiguration            #@MapperScan 兼容注册（含 MapperFactoryBean 定制）
+├─ MybatisFlexProperties          #@ConfigurationProperties(prefix = "framework.data.mybatis")
+└─ FlexGlobalConfigCustomizer     #全局配置定制回调（用户可覆写）
 ```
 
-**注册文件**：
-
-```text
-# META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
-cn.jowen.framework.data.mybatis.config.MybatisFlexAutoConfiguration
-```
+> **注意**：`MybatisFlexAutoConfiguration` / `MapperScanConfiguration` 等自动装配类**不在此模块**，统一由
+> `framework-boot-autoconfigure` 模块的 `data/` 子包（`MybatisAutoConfiguration`）承载，
+> 注册文件位于 `framework-boot-autoconfigure` 的 `META-INF/spring/...AutoConfiguration.imports`。
 
 **Spring Boot 4.x 适配要点**：
 
@@ -241,10 +236,10 @@ public class MybatisRuntimeHints implements RuntimeHintsRegistrar {
 
 ```textmate
 cn.jowen.framework.data.mybatis.codegen
-├─EntityGenerator          #生成实体类（JSpecify 空注解、@Table 元数据）
-├─MapperGenerator          #生成 Mapper 接口（继承 FlexBaseMapper）
-├─TableDefGenerator        #生成 TableDef（Lambda 类型安全引用）
-└─GeneratorConfig          #生成配置（表名/包名/命名策略/输出目录）
+├─ EntityGenerator          #生成实体类（JSpecify 空注解、@Table 元数据）
+├─ MapperGenerator          #生成 Mapper 接口（继承 FlexBaseMapper）
+├─ TableDefGenerator        #生成 TableDef（Lambda 类型安全引用）
+└─ GeneratorConfig          #生成配置（表名/包名/命名策略/输出目录）
 ```
 
 **设计要点**：codegen 仅作为独立入口暴露，不参与运行时装配；生成产物可二次人工修改，不做强制覆盖。
@@ -258,14 +253,11 @@ cn.jowen.framework.data.mybatis.codegen
 │                    framework-data-mybatis                       │
 │                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │                  config（装配层）                         │  │
-│  │  MybatisFlexAutoConfiguration ──→ MybatisFlexProperties   │  │
-│  │  ├─ SqlSessionFactory（Spring Boot 4.x 适配）             │  │
-│  │  ├─ FlexGlobalConfig（拦截器链注册）                      │  │
-│  │  ├─ RuntimeHints（GraalVM AOT）                           │  │
-│  │  └─ MapperScanConfiguration（@MapperScan）                │  │
+│  │  config（配置属性，仅 Properties/Customizer）             │  │
+│  │  MybatisFlexProperties ─→ FlexGlobalConfigCustomizer      │  │
 │  └─────────────────────────┬─────────────────────────────────┘  │
-│                            │ 注入                               │
+│                            │ 由 framework-boot-autoconfigure   │
+│                            │ 的 data/DataMybatisAutoConfiguration 装配注入  │
 │  ┌─────────────────────────▼─────────────────────────────────┐  │
 │  │                 repository（仓储层）                      │  │
 │  │  FlexRepositoryFactory ──→ FlexRepository / FlexJoinRepo  │  │
@@ -305,7 +297,7 @@ L1（依赖 L0）        framework-data-mybatis 内部：adapter → repository 
                       ▲
 L2（依赖 L1）        extension / exception（横切扩展）
                       ▲
-L3（依赖 L0~L2）     config（自动装配，唯一依赖 Spring Boot 的层）
+L3（依赖 L0~L2）     config（配置属性，装配逻辑在 boot-autoconfigure）
                       ▲
 L4（独立）           codegen（可选，不参与运行时）
 ```
@@ -313,7 +305,8 @@ L4（独立）           codegen（可选，不参与运行时）
 **模块间规则**：
 
 - 本模块依赖 `framework-data-core`（compile）、`MyBatis Flex`（compile）；
-- 仅 `config` 子包依赖 Spring Boot 自动装配机制，其余子包保持框架抽象中立；
+- `config` 子包仅提供 `@ConfigurationProperties` 与定制回调，**不含任何 `*AutoConfiguration`**；自动装配由
+  `framework-boot-autoconfigure` 的 `data/DataMybatisAutoConfiguration` 统一承载；
 - 与 `framework-data-jdbc` 互斥或并存：同一 `DataSource` 可被两实现共用（jdbc 处理简单场景、mybatis 处理复杂场景），事务管理器共用一份。
 
 ---
@@ -333,23 +326,11 @@ L4（独立）           codegen（可选，不参与运行时）
     <dependency>
         <groupId>com.mybatis-flex</groupId>
         <artifactId>mybatis-flex-core</artifactId>
-        <version>1.11.0</version>
-    </dependency>
-    <dependency>
-        <groupId>com.mybatis-flex</groupId>
-        <artifactId>mybatis-flex-spring-boot4-starter</artifactId>
-        <version>1.11.0</version>
     </dependency>
 
-    <!-- Spring Boot 自动装配（仅 config 子包使用） -->
     <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-autoconfigure</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-configuration-processor</artifactId>
-        <optional>true</optional>
+        <groupId>com.mybatis-flex</groupId>
+        <artifactId>mybatis-flex-processor</artifactId>
     </dependency>
 
     <!-- JSpecify 空安全 -->
@@ -526,5 +507,4 @@ public class UserService {
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**依赖方向**：业务 → mybatis → data-core（契约）→ Spring Boot（装配/事务）。业务代码只感知 data-core 契约与本模块仓储 API，不感知
-MyBatis 内部细节，为未来实现替换（如 JPA 适配）保留余地。
+**依赖方向**：业务 → mybatis → data-core（契约）→ Spring Boot（装配/事务）。业务代码只感知 data-core 契约与本模块仓储 API，不感知 MyBatis 内部细节，为未来实现替换（如 JPA 适配）保留余地。

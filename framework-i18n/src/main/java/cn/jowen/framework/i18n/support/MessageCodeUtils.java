@@ -7,13 +7,15 @@ import org.jspecify.annotations.Nullable;
  * 消息编码工具：编码规范化（点分/下划线）、前缀拼接、模块命名空间管理。
  * 约定编码格式为 {@code 模块.域.业务编码}，如 {@code user.validate.nameRequired}。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class MessageCodeUtils {
 
-    /** 编码分隔符。 */
+    /**
+     * 编码分隔符。
+     */
     public static final char SEPARATOR = '.';
 
     private MessageCodeUtils() {

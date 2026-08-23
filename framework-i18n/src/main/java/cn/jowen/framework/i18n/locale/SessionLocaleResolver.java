@@ -3,16 +3,17 @@ package cn.jowen.framework.i18n.locale;
 import cn.jowen.framework.i18n.api.LocaleResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import java.util.Locale;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.util.Locale;
 
 /**
  * 会话区域解析器：从 HttpSession（属性名默认 {@code locale}）解析区域。
  * 上下文须为 {@link HttpServletRequest}；会话或属性缺失返回 {@code null}。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class SessionLocaleResolver implements LocaleResolver {

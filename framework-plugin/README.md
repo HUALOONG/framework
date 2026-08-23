@@ -67,7 +67,7 @@
 
 ```text
 framework-plugin
-└─ src/main/java/com/framework/plugin/
+└─ src/main/java/cn/jowen/framework/plugin/
    ├─ api/            # Plugin / PluginContext / PluginManager / PluginState
    ├─ descriptor/     # PluginDescriptor / PluginVersion / PluginDependency / VersionRange / ExtensionPointDescriptor / ExtensionDescriptor / PluginConfigurationDescriptor / PluginDescriptorLoader
    ├─ loader/         # PluginClassLoader / SharedClassLoader / PluginLoader / PluginInfo / ClassLoadingStrategy
@@ -115,7 +115,7 @@ cn.jowen.framework.plugin.api
 │   └─ registerExtensionPoint(ExtensionPoint point)
 └─ PluginState             #状态枚举
     ├─ CREATED /STARTING /STARTED
-    ├─ STOPPING /STOPPED /FAILED /DISABLED
+    └─ STOPPING /STOPPED /FAILED /DISABLED
 ```
 
 #### 4.2 descriptor/ — 插件描述与元数据
@@ -370,7 +370,7 @@ cn.jowen.framework.plugin.hotswap
 
 ```textmate
 cn.jowen.framework.plugin.config
-└─ PluginProperties             #@ConfigurationProperties(prefix = "framework.plugin")
+└─ PluginProperties             # 配置属性（纯 POJO，@ConfigurationProperties 由 boot-autoconfigure 绑定）
 ```
 
 **装配约定**：
@@ -398,42 +398,40 @@ cn.jowen.framework.plugin.support
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                     framework-plugin                              │
-│                                                                  │
+│                     framework-plugin                            │
+│                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │                  config（装配层，Spring 桥接）              │  │
-│  │  PluginAutoConfiguration ──→ PluginProperties             │  │
-│  │  ├─ PluginManager / Registry / LifecycleManager          │  │
-│  │  ├─ PluginHealthIndicator + PluginEndpoint（Actuator）    │  │
-│  │  └─ PluginHotSwapManager + CommandLineRunner             │  │
+│  │                  config（纯 POJO，不含装配逻辑）          │  │
+│  │  PluginProperties（纯 POJO，@EnableConfigurationProperties │  │
+│  │    在 boot-autoconfigure 中绑定）                         │  │
 │  └─────────────────────────┬─────────────────────────────────┘  │
-│                            │ 创建                                 │
+│                            │ 创建                               │
 │  ┌─────────────────────────▼─────────────────────────────────┐  │
-│  │                api（核心抽象层）                            │  │
+│  │                api（核心抽象层）                          │  │
 │  │  Plugin ◄── PluginManager                                 │  │
 │  │  PluginContext / PluginState                              │  │
 │  └───────┬───────────────┬───────────────┬───────────────────┘  │
-│          │               │               │                       │
-│  ┌───────▼──────┐ ┌──────▼───────┐ ┌─────▼──────────┐        │
-│  │  descriptor  │ │    loader    │ │   resolver     │        │
-│  │  PluginDesc  │ │  PluginClass │ │  Dependency    │        │
-│  │  PluginVer   │ │  Loader      │ │  Resolver      │        │
-│  │  VersionRange│ │  SharedClass │ │  VersionArbit  │        │
-│  │              │ │  Loader      │ │  rator / Graph │        │
-│  └──────────────┘ └──────────────┘ └────────────────┘        │
-│                                                                  │
+│          │               │               │                      │
+│  ┌───────▼──────┐ ┌──────▼───────┐ ┌─────▼──────────┐           │
+│  │  descriptor  │ │    loader    │ │   resolver     │           │
+│  │  PluginDesc  │ │  PluginClass │ │  Dependency    │           │
+│  │  PluginVer   │ │  Loader      │ │  Resolver      │           │
+│  │  VersionRange│ │  SharedClass │ │  VersionArbit  │           │
+│  │              │ │  Loader      │ │  rator / Graph │           │
+│  └──────────────┘ └──────────────┘ └────────────────┘           │
+│                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │        lifecycle + registry + extension + context        │  │
-│  │  LifecycleManager → StateTransition / HealthChecker      │  │
-│  │  PluginRegistry → ExtensionRegistry → ExtensionPoint     │  │
-│  │  @Extension → Scanner → Factory → DefaultPluginContext   │  │
+│  │        lifecycle + registry + extension + context         │  │
+│  │  LifecycleManager → StateTransition / HealthChecker       │  │
+│  │  PluginRegistry → ExtensionRegistry → ExtensionPoint      │  │
+│  │  @Extension → Scanner → Factory → DefaultPluginContext    │  │
 │  │  PluginSpringContextFactory（可选子容器）                 │  │
 │  └───────────────────────────────────────────────────────────┘  │
-│                                                                  │
+│                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │         hotswap（热部署）+ event（事件）+ support（工具）    │  │
+│  │         hotswap（热部署）+ event（事件）+ support（工具） │  │
 │  └───────────────────────────────────────────────────────────┘  │
-│                                                                  │
+│                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │  framework-core（SPI/Event/Lifecycle/Assert）             │  │
 │  │  spring-context（可选，仅子容器模式）                     │  │
@@ -655,26 +653,26 @@ POST /actuator/plugins/{pluginId}/restart   # 重启
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│                    业务应用（Application）                    │
+│                    业务应用（Application）                  │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
-│           framework-boot（适配编排层）                        │
+│           framework-boot（适配编排层）                      │
 │  PluginAutoConfiguration（framework.plugin.enabled）        │
-│  ├─ PluginManager / Registry / LifecycleManager            │
+│  ├─ PluginManager / Registry / LifecycleManager             │
 │  ├─ PluginHealthIndicator + PluginEndpoint → Actuator       │
 │  └─ CommandLineRunner → ApplicationReady 后加载插件         │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
-│              framework-plugin（插件系统，零 Spring 核心）     │
+│              framework-plugin（插件系统，零 Spring 核心）   │
 │  PluginManager / PluginClassLoader / LifecycleManager       │
 │  ExtensionRegistry / DependencyResolver / HotSwapManager    │
 └──────────────────────────┬──────────────────────────────────┘
                            │ 按需
 ┌──────────────────────────▼──────────────────────────────────┐
-│  framework-core（SPI/Event）· spring-context（可选子容器）   │
-│  Spring Boot 4.x（@AutoConfiguration / Actuator）            │
+│  framework-core（SPI/Event）· spring-context（可选子容器）  │
+│  Spring Boot 4.x（@AutoConfiguration / Actuator）           │
 └─────────────────────────────────────────────────────────────┘
 ```
 

@@ -15,23 +15,46 @@
     <description>框架自有插件体系，支持插件发现、加载、类加载隔离、依赖解析、生命周期管理与热部署，核心零 Spring 依赖，经自动装配层桥接 Spring</description>
 
     <dependencies>
+        <!-- 框架内依赖 -->
         <dependency>
             <groupId>cn.jowen.framework</groupId>
             <artifactId>framework-core</artifactId>
         </dependency>
-
-        <!-- Spring optional：仅 config 包下使用，其他模块不引入 Spring API -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-logger</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <!-- Spring 子容器（可选能力，核心不依赖） -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
             <optional>true</optional>
         </dependency>
 
+        <!-- Actuator（健康检查 + 端点，可选） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- plugin.yaml 支持（可选） -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- JSpecify 空安全 -->
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
+        <!-- 测试 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>

@@ -9,8 +9,8 @@ import java.util.function.Supplier;
 /**
  * 对象判空与默认值工具。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class ObjectUtils {
@@ -21,9 +21,9 @@ public final class ObjectUtils {
     /**
      * 当对象为 {@code null} 时返回默认值。
      *
-     * @param obj   原对象，可为 {@code null}
+     * @param obj        原对象，可为 {@code null}
      * @param defaultObj 默认值，可为 {@code null}
-     * @param <T>   类型
+     * @param <T>        类型
      * @return 原对象或默认值
      */
     public static <T> @Nullable T defaultIfNull(@Nullable T obj, @Nullable T defaultObj) {
@@ -33,9 +33,9 @@ public final class ObjectUtils {
     /**
      * 当对象为 {@code null} 时通过供应器获取默认值（惰性求值）。
      *
-     * @param obj       原对象，可为 {@code null}
-     * @param supplier  默认值供应器，不可为 {@code null}
-     * @param <T>       类型
+     * @param obj      原对象，可为 {@code null}
+     * @param supplier 默认值供应器，不可为 {@code null}
+     * @param <T>      类型
      * @return 原对象或默认值
      */
     public static <T> T defaultIfNull(@Nullable T obj, Supplier<? extends T> supplier) {

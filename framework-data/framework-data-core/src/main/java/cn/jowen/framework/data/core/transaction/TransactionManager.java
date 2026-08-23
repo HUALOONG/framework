@@ -5,8 +5,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * 事务管理器抽象。实现层桥接 Spring/JDBC 的事务资源。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public interface TransactionManager {

@@ -9,8 +9,8 @@ import java.util.Map;
 /**
  * 集合判空与基础操作工具。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class CollectionUtils {

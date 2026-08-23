@@ -1,29 +1,21 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.captcha.generator;
 
-import cn.jowen.framework.extras.captcha.CaptchaProperties;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
+import cn.jowen.framework.extras.config.CaptchaProperties;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.security.SecureRandom;
 import java.util.Random;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 图形验证码生成器：基于 JDK {@link BufferedImage} 渲染字符 + 干扰线 + 噪点。
  *
  * <p>零外部依赖，可直接 {@code new} 出来使用。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public final class ImageCaptchaGenerator implements CaptchaGenerator {

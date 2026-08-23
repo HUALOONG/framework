@@ -3,18 +3,25 @@ package cn.jowen.framework.plugin.hotswap;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * 插件热部署策略接口。
+ * 热部署策略枚举。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
  */
 @NullMarked
-public interface HotSwapStrategy {
+public enum HotSwapStrategy {
 
     /**
-     * 当插件 jar 文件发生变化时回调。
-     *
-     * @param fileName 变化的 jar 文件名，不可为 {@code null}
+     * 默认策略：停止旧插件，重新加载新 jar。
      */
-    void onPluginChange(String fileName);
+    RESTART,
+
+    /**
+     * 仅重新加载类（需要 JVM HotSwap 支持）。
+     */
+    RELOAD_CLASSES,
+
+    /**
+     * 手动策略：等待人工干预。
+     */
+    MANUAL
 }

@@ -16,7 +16,7 @@
 **核心价值**：
 
 | 场景         | 没有本模块                 | 有本模块                           |
-|:-------------|:---------------------------|:-----------------------------------|
+| :----------- | :------------------------- | :--------------------------------- |
 | 框架能力扩展 | 硬编码、改框架源码         | SPI + @Activate 按需激活扩展       |
 | 异常处理     | 各模块自定义异常，风格不一 | 统一异常体系 + 错误码规范          |
 | 参数校验     | 手写 if/throw              | Assert / State 链式断言            |
@@ -25,7 +25,7 @@
 **与核心模块的边界**：
 
 | 模块                | 定位         | 特点                        |
-|:--------------------|:-------------|:----------------------------|
+| :------------------ | :----------- | :-------------------------- |
 | **framework-core**  | **基础设施** | **零依赖、SPI、异常、断言** |
 | framework-logger    | 日志管理     | 依赖 core，提供日志门面     |
 | framework-data-core | 数据抽象     | 依赖 core，提供数据访问抽象 |
@@ -35,11 +35,11 @@
 ## 二、功能清单与依赖矩阵
 
 | 功能                         | 子包        | 核心依赖 | 可选依赖 |
-|:-----------------------------|:------------|:---------|:---------|
+| :--------------------------- | :---------- | :------- | :------- |
 | SPI 扩展机制                 | spi         | —        | —        |
 | 异常体系                     | exception   | —        | —        |
 | 生命周期管理                 | lifecycle   | —        | —        |
-| 断言工具                     | assert_     | —        | —        |
+| 断言工具                     | assertion   | —        | —        |
 | 事件机制                     | event       | —        | —        |
 | 通用工具                     | util        | —        | —        |
 | 数据脱敏内核                 | desensitize | —        | —        |
@@ -51,15 +51,15 @@
 
 ```text
 framework-core
-└─ src/main/java/com/framework/core/
-   ├─ spi/                    # SPI 扩展机制
+└─ src/main/java/cn/jowen/framework/core/
+   ├─ assertion/              # 断言工具
+   ├─ context/                # 上下文传播（ContextCarrier，ScopedValue/ThreadLocal）
+   ├─ desensitize/            # 数据脱敏内核（规则模型+执行器+注解）
+   ├─ event/                  # 事件机制
    ├─ exception/              # 异常体系
    ├─ lifecycle/              # 生命周期
-   ├─ assertion/              # 断言工具
-   ├─ event/                  # 事件机制
-   ├─ util/                   # 通用工具（不含脱敏，见 desensitize）
-   ├─ desensitize/            # 数据脱敏内核（规则模型+执行器+注解）
-   └─ context/                # 上下文传播（ContextCarrier，ScopedValue/ThreadLocal）
+   ├─ spi/                    # SPI 扩展机制
+   └─ util/                   # 通用工具（不含脱敏，见 desensitize）
 ```
 
 ---
@@ -118,14 +118,14 @@ cn.jowen.framework.core.lifecycle
 └─ LifecycleProcessor              # 生命周期处理器：管理一组 Lifecycle
 ```
 
-#### 4.4 assert_/ — 断言工具
+#### 4.4 assertion/ — 断言工具
 
 ##### 定位
 
 参数与状态校验，失败抛出带错误码的异常。
 
 ```textmate
-cn.jowen.framework.core.assert_
+cn.jowen.framework.core.assertion
 ├─ Assert                          # 参数断言：notNull / hasText / isTrue / notEmpty...
 └─ State                           # 状态断言：checkState / checkNotNull...
 ```
@@ -160,8 +160,7 @@ cn.jowen.framework.core.util
 
 ##### 定位
 
-**全框架唯一脱敏规则模型与执行器**。logger.mask（日志脱敏）、data-mybatis `@Mask`（结果集脱敏）、extras.desensitize（JSON
-输出脱敏）、data-jdbc SQL 脱敏 **全部只做场景适配，不再各自实现规则**。解决冲突修正决议 #1（原 4 套规则体系互不通用）。
+**全框架唯一脱敏规则模型与执行器**。logger.mask（日志脱敏）、data-mybatis `@Mask`（结果集脱敏）、extras.desensitize（JSON 输出脱敏）、data-jdbc SQL 脱敏 **全部只做场景适配，不再各自实现规则**。。
 
 ```textmate
 cn.jowen.framework.core.desensitize
@@ -178,17 +177,15 @@ cn.jowen.framework.core.desensitize
 1. **规则与场景解耦**：规则只回答"怎么脱"，场景适配层回答"何时对谁脱"（日志 → 结果集 → JSON 输出）。
 2. **注解统一**：各模块适配注解（`@Mask` / `@Desensitize`）声明 `strategy` 后 **委托 `Desensitizer` 执行**，不复制规则实现。
 3. **SPI 扩展**：`DesensitizeRule` 实现类经 `ExtensionLoader` 注册，业务自定义策略全局生效（日志/结果集/JSON 一处定义、处处生效）。
-4. **线程安全**：`Desensitizer` 无状态、不可变策略注册表，虚拟线程下无共享可变状态。
+4. **线程安全**：手动注册规则集合使用 `Collections.synchronizedList` 保证线程安全；SPI 发现的规则不可变，读写分离。
 
-**Java 21 适配**：内置策略用 Record 实现（`record PhoneRule(int keep...) implements DesensitizeRule`），switch 模式匹配分派策略。
+**Java 21 适配**：内置策略为不可变 enum，策略校验与脱敏逻辑均在策略枚举内部完成。
 
 #### 4.8 context/ — 上下文传播（ContextCarrier）
 
 ##### 定位
 
-**全框架唯一上下文传播机制**。统一
-i18n（Locale）、data-mybatis（多租户/数据权限/脱敏）、extras（DataPermission/OperateLog）、data-core（DataSourceContext）、logger（TraceId）的上下文读写。解决冲突修正决议
-#3（原 5 套 ScopedValue/ThreadLocal 实现并存）。
+**全框架唯一上下文传播机制**。统一 i18n（Locale）、data-mybatis（多租户/数据权限/脱敏）、extras（DataPermission/OperateLog）、data-core（DataSourceContext）、logger（TraceId）的上下文读写。
 
 ```textmate
 cn.jowen.framework.core.context
@@ -226,7 +223,7 @@ cn.jowen.framework.core.context
 │  lifecycle (Lifecycle / SmartLifecycle)                  │
 │     └─ LifecycleProcessor                                │
 │                                                          │
-│  assert_ (Assert / State) ──→ 抛出 exception             │
+│  assertion (Assert / State) ──→ 抛出 exception           │
 │                                                          │
 │  event (Event / EventListener)                           │
 │                                                          │
@@ -240,7 +237,6 @@ cn.jowen.framework.core.context
 │                                                          │
 │  ⚠ 唯一依赖：JSpecify（@NullMarked 空安全）             │
 └──────────────────────────────────────────────────────────┘
-```
 
 ---
 
@@ -280,7 +276,7 @@ L3               framework-boot-autoconfigure / extras / plugin
 core 层本身不读取配置；唯一例外是 `context` 子包的模式选择（由 boot-autoconfigure 注入，不直接读配置文件）：
 
 | 键                       | 默认值        | 说明                                                                    |
-|:-------------------------|:--------------|:------------------------------------------------------------------------|
+| :----------------------- | :------------ | :---------------------------------------------------------------------- |
 | `framework.context.mode` | `scopedvalue` | 上下文模式：`scopedvalue`（Java 21 ScopedValue）/ `threadlocal`（兼容） |
 
 ---
@@ -304,7 +300,7 @@ ExtensionLoader<DataPermissionRule> loader = ExtensionLoader.get(DataPermissionR
 ## 十、SPI 扩展点汇总
 
 | 扩展点接口                     | 所在包      | 用途                                                      |
-|:-------------------------------|:------------|:----------------------------------------------------------|
+| :----------------------------- | :---------- | :-------------------------------------------------------- |
 | `ExtensionLoader<T>`           | spi         | 框架级服务发现（各模块实现复用）                          |
 | `ErrorCode`                    | exception   | 自定义错误码枚举                                          |
 | `Lifecycle` / `SmartLifecycle` | lifecycle   | 自定义组件生命周期                                        |

@@ -13,21 +13,29 @@ import org.jspecify.annotations.NullMarked;
  *   <li>{@link #MANUAL}：仅手动触发（{@code ResourceReloader#reload}），用于配置中心回调等。</li>
  * </ul>
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public enum ReloadStrategy {
 
-    /** 定时轮询（数据库版本号变更检测）。 */
+    /**
+     * 定时轮询（数据库版本号变更检测）。
+     */
     POLLING,
 
-    /** 文件系统监听（本地 *.properties 文件变更）。 */
+    /**
+     * 文件系统监听（本地 *.properties 文件变更）。
+     */
     WATCH,
 
-    /** 订阅通知（Redis Pub/Sub 等）。 */
+    /**
+     * 订阅通知（Redis Pub/Sub 等）。
+     */
     SUBSCRIBE,
 
-    /** 手动触发。 */
+    /**
+     * 手动触发。
+     */
     MANUAL
 }

@@ -1,5 +1,7 @@
 package cn.jowen.framework.cache;
 
+import cn.jowen.framework.cache.api.Cache;
+import cn.jowen.framework.cache.api.CacheStats;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -11,8 +13,8 @@ import java.util.Optional;
  *
  * @param <K> 键类型
  * @param <V> 值类型
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public abstract class AbstractCache<K, V> implements Cache<K, V> {
@@ -79,18 +81,28 @@ public abstract class AbstractCache<K, V> implements Cache<K, V> {
         return doSize();
     }
 
-    /** 实际读取值（不含统计），未命中返回 {@code null}。 */
+    /**
+     * 实际读取值（不含统计），未命中返回 {@code null}。
+     */
     protected abstract @Nullable V doGet(K key);
 
-    /** 实际写入。 */
+    /**
+     * 实际写入。
+     */
     protected abstract void doPut(K key, V value);
 
-    /** 实际移除。 */
+    /**
+     * 实际移除。
+     */
     protected abstract void doEvict(K key);
 
-    /** 实际清空。 */
+    /**
+     * 实际清空。
+     */
     protected abstract void doClear();
 
-    /** @return 当前条目数 */
+    /**
+     * @return 当前条目数
+     */
     protected abstract long doSize();
 }

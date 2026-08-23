@@ -1,16 +1,10 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.captcha;
+
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Objects;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 验证码生成结果。
@@ -19,12 +13,12 @@ import org.jspecify.annotations.Nullable;
  * @param imageBase64 图片 Base64 数据（含 {@code data:image/png;base64,} 前缀）
  * @param expiresIn   有效期（毫秒）
  * @param extra       扩展字段（SLIDER/SMS 等后续能力预留，本轮恒为空）
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public record CaptchaResult(String captchaId, String imageBase64, long expiresIn,
-        @Nullable Map<String, Object> extra) {
+                            @Nullable Map<String, Object> extra) {
 
     public CaptchaResult {
         Objects.requireNonNull(captchaId, "captchaId must not be null");

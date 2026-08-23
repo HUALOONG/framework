@@ -1,147 +1,360 @@
 package cn.jowen.framework.core.lifecycle;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
- * {@link LifecycleProcessor} 生命周期处理器测试。
+ * {@link LifecycleProcessor} 测试。
  */
 class LifecycleProcessorTest {
 
     @Test
-    void startAll_ordersByPhaseAsc() {
-        List<String> events = new ArrayList<>();
-        LifecycleProcessor processor = new LifecycleProcessor();
-        processor.addLifecycle(new RecordingSmart(10, "slow", events));
-        processor.addLifecycle(new RecordingSmart(-10, "fast", events));
-        processor.addLifecycle(new RecordingSmart(0, "middle", events));
+    void add_and_size() {
+        LifecycleProcessor proc = new LifecycleProcessor();
+        Lifecycle lc = new Lifecycle() {
+            @Override
+            public void afterPropertiesSet() {
+            }
 
-        processor.startAll();
-
-        assertThat(events).containsExactly("start:fast", "start:middle", "start:slow");
+            @Override
+            public void destroy() {
+            }
+        };
+        proc.addLifecycle(lc);
+        assertThat(proc.size()).isEqualTo(1);
     }
 
     @Test
-    void stopAll_ordersByPhaseDesc() {
-        List<String> events = new ArrayList<>();
-        LifecycleProcessor processor = new LifecycleProcessor();
-        processor.addLifecycle(new RecordingSmart(10, "slow", events));
-        processor.addLifecycle(new RecordingSmart(-10, "fast", events));
-
-        processor.stopAll();
-
-        assertThat(events).containsExactly("stop:slow", "stop:fast");
+    void addNull_ignored() {
+        LifecycleProcessor proc = new LifecycleProcessor();
+        proc.addLifecycle(null);
+        assertThat(proc.size()).isEqualTo(0);
     }
 
     @Test
-    void nonSmart_initializedAndDestroyed() {
-        List<String> events = new ArrayList<>();
-        LifecycleProcessor processor = new LifecycleProcessor();
-        processor.addLifecycle(new RecordingInit("bean", events));
+    void removeLifecycle() {
+        LifecycleProcessor proc = new LifecycleProcessor();
+        Lifecycle lc = new Lifecycle() {
+            @Override
+            public void afterPropertiesSet() {
+            }
 
-        processor.startAll();
-        processor.stopAll();
-
-        assertThat(events).containsExactly("init:bean", "destroy:bean");
+            @Override
+            public void destroy() {
+            }
+        };
+        proc.addLifecycle(lc);
+        proc.removeLifecycle(lc);
+        assertThat(proc.size()).isEqualTo(0);
     }
 
     @Test
-    void autoStartupFalse_notStartedOnStartAll() {
-        List<String> events = new ArrayList<>();
-        LifecycleProcessor processor = new LifecycleProcessor();
-        processor.addLifecycle(new RecordingSmart(0, "manual", events) {
+    void startAll_normalLifecycle() {
+        LifecycleProcessor proc = new LifecycleProcessor();
+        boolean[] initialized = {false};
+        proc.addLifecycle(new Lifecycle() {
+            @Override
+            public void afterPropertiesSet() {
+                initialized[0] = true;
+            }
+
+            @Override
+            public void destroy() {
+            }
+        });
+
+        proc.startAll();
+        assertThat(initialized[0]).isTrue();
+    }
+
+    @Test
+    void startAll_smartLifecycle_byPhaseAsc() {
+        LifecycleProcessor proc = new LifecycleProcessor();
+        List<Integer> order = new ArrayList<>();
+
+        SmartLifecycle highPhase = new SmartLifecycle() {
+            @Override
+            public void start() {
+                order.add(getPhase());
+            }
+
+            @Override
+            public void stop() {
+            }
+
+            @Override
+            public boolean isRunning() {
+                return true;
+            }
+
+            @Override
+            public int getPhase() {
+                return 2;
+            }
+
+            @Override
+            public void afterPropertiesSet() {
+            }
+
+            @Override
+            public void destroy() {
+            }
+        };
+
+        SmartLifecycle lowPhase = new SmartLifecycle() {
+            @Override
+            public void start() {
+                order.add(getPhase());
+            }
+
+            @Override
+            public void stop() {
+            }
+
+            @Override
+            public boolean isRunning() {
+                return true;
+            }
+
+            @Override
+            public int getPhase() {
+                return 0;
+            }
+
+            @Override
+            public void afterPropertiesSet() {
+            }
+
+            @Override
+            public void destroy() {
+            }
+        };
+
+        proc.addLifecycle(highPhase);
+        proc.addLifecycle(lowPhase);
+
+        proc.startAll();
+        assertThat(order).containsExactly(0, 2);
+    }
+
+    @Test
+    void startAll_nonAutoStartup_skipped() {
+        LifecycleProcessor proc = new LifecycleProcessor();
+        boolean[] started = {false};
+
+        proc.addLifecycle(new SmartLifecycle() {
+            @Override
+            public void start() {
+                started[0] = true;
+            }
+
+            @Override
+            public void stop() {
+            }
+
+            @Override
+            public boolean isRunning() {
+                return true;
+            }
+
             @Override
             public boolean isAutoStartup() {
                 return false;
             }
+
+            @Override
+            public void afterPropertiesSet() {
+            }
+
+            @Override
+            public void destroy() {
+            }
         });
 
-        processor.startAll();
-
-        assertThat(events).isEmpty();
+        proc.startAll();
+        assertThat(started[0]).isFalse();
     }
 
     @Test
-    void isRunning_reflectsAllSmart() {
-        LifecycleProcessor processor = new LifecycleProcessor();
-        processor.addLifecycle(new RecordingSmart(0, "a", new ArrayList<>()));
-        processor.addLifecycle(new RecordingSmart(0, "b", new ArrayList<>()));
-        assertThat(processor.isRunning()).isFalse();
+    void stopAll_smartLifecycle_byPhaseDesc() {
+        LifecycleProcessor proc = new LifecycleProcessor();
+        List<Integer> order = new ArrayList<>();
 
-        processor.startAll();
-        assertThat(processor.isRunning()).isTrue();
+        proc.addLifecycle(new SmartLifecycle() {
+            @Override
+            public void start() {
+            }
 
-        processor.stopAll();
-        assertThat(processor.isRunning()).isFalse();
+            @Override
+            public void stop() {
+                order.add(getPhase());
+            }
+
+            @Override
+            public boolean isRunning() {
+                return true;
+            }
+
+            @Override
+            public int getPhase() {
+                return 2;
+            }
+
+            @Override
+            public void afterPropertiesSet() {
+            }
+
+            @Override
+            public void destroy() {
+            }
+        });
+
+        proc.addLifecycle(new SmartLifecycle() {
+            @Override
+            public void start() {
+            }
+
+            @Override
+            public void stop() {
+                order.add(getPhase());
+            }
+
+            @Override
+            public boolean isRunning() {
+                return true;
+            }
+
+            @Override
+            public int getPhase() {
+                return 0;
+            }
+
+            @Override
+            public void afterPropertiesSet() {
+            }
+
+            @Override
+            public void destroy() {
+            }
+        });
+
+        proc.stopAll();
+        assertThat(order).containsExactly(2, 0);
     }
 
-    /** 记录事件的 SmartLifecycle。 */
-    static class RecordingSmart implements SmartLifecycle {
-        private final int phase;
-        private final String name;
-        private final List<String> events;
-        private boolean running;
+    @Test
+    void stopAll_normalLifecycle_destroy() {
+        LifecycleProcessor proc = new LifecycleProcessor();
+        boolean[] destroyed = {false};
 
-        RecordingSmart(int phase, String name, List<String> events) {
-            this.phase = phase;
-            this.name = name;
-            this.events = events;
-        }
+        proc.addLifecycle(new Lifecycle() {
+            @Override
+            public void afterPropertiesSet() {
+            }
 
-        @Override
-        public void start() {
-            running = true;
-            events.add("start:" + name);
-        }
+            @Override
+            public void destroy() {
+                destroyed[0] = true;
+            }
+        });
 
-        @Override
-        public void stop() {
-            running = false;
-            events.add("stop:" + name);
-        }
-
-        @Override
-        public boolean isRunning() {
-            return running;
-        }
-
-        @Override
-        public int getPhase() {
-            return phase;
-        }
-
-        @Override
-        public void afterPropertiesSet() {
-            // 初始化无额外动作
-        }
-
-        @Override
-        public void destroy() {
-            // 销毁无额外动作
-        }
+        proc.stopAll();
+        assertThat(destroyed[0]).isTrue();
     }
 
-    /** 记录事件的普通 Lifecycle（仅初始化/销毁）。 */
-    static class RecordingInit implements Lifecycle {
-        private final String name;
-        private final List<String> events;
+    @Test
+    void isRunning_allSmartRunning_returnsTrue() {
+        LifecycleProcessor proc = new LifecycleProcessor();
+        proc.addLifecycle(new SmartLifecycle() {
+            @Override
+            public void start() {
+            }
 
-        RecordingInit(String name, List<String> events) {
-            this.name = name;
-            this.events = events;
-        }
+            @Override
+            public void stop() {
+            }
 
-        @Override
-        public void afterPropertiesSet() {
-            events.add("init:" + name);
-        }
+            @Override
+            public boolean isRunning() {
+                return true;
+            }
 
-        @Override
-        public void destroy() {
-            events.add("destroy:" + name);
-        }
+            @Override
+            public void afterPropertiesSet() {
+            }
+
+            @Override
+            public void destroy() {
+            }
+        });
+
+        assertThat(proc.isRunning()).isTrue();
+    }
+
+    @Test
+    void isRunning_oneNotRunning_returnsFalse() {
+        LifecycleProcessor proc = new LifecycleProcessor();
+        proc.addLifecycle(new SmartLifecycle() {
+            @Override
+            public void start() {
+            }
+
+            @Override
+            public void stop() {
+            }
+
+            @Override
+            public boolean isRunning() {
+                return false;
+            }
+
+            @Override
+            public void afterPropertiesSet() {
+            }
+
+            @Override
+            public void destroy() {
+            }
+        });
+
+        assertThat(proc.isRunning()).isFalse();
+    }
+
+    @Test
+    void isRunning_noSmartLifecycle_returnsTrue() {
+        LifecycleProcessor proc = new LifecycleProcessor();
+        proc.addLifecycle(new Lifecycle() {
+            @Override
+            public void afterPropertiesSet() {
+            }
+
+            @Override
+            public void destroy() {
+            }
+        });
+
+        assertThat(proc.isRunning()).isTrue();
+    }
+
+    @Test
+    void getLifecycles_returnsCopy() {
+        LifecycleProcessor proc = new LifecycleProcessor();
+        Lifecycle lc = new Lifecycle() {
+            @Override
+            public void afterPropertiesSet() {
+            }
+
+            @Override
+            public void destroy() {
+            }
+        };
+        proc.addLifecycle(lc);
+        List<Lifecycle> copy = proc.getLifecycles();
+        copy.clear();
+        assertThat(proc.size()).isEqualTo(1);
     }
 }

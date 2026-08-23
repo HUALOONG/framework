@@ -1,7 +1,7 @@
 package cn.jowen.framework.cache;
 
+import cn.jowen.framework.cache.api.Cache;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 缓存构建器。流式构造 {@link LocalCache} 或 {@link LayeredCache}。
@@ -12,8 +12,8 @@ import org.jspecify.annotations.Nullable;
  * Cache<String, User> layered = CacheBuilder.layered("user", local, redis).nullTtl(5_000L).build();
  * }</pre>
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class CacheBuilder {
@@ -50,7 +50,9 @@ public final class CacheBuilder {
         return new LayeredCacheBuilder<>(name, local, backup);
     }
 
-    /** 本地缓存构建器。 */
+    /**
+     * 本地缓存构建器。
+     */
     @NullMarked
     public static final class LocalCacheBuilder<K, V> {
         private final String name;
@@ -61,13 +63,17 @@ public final class CacheBuilder {
             this.ttlMillis = ttlMillis;
         }
 
-        /** @return 本地缓存实例，不可为 {@code null} */
+        /**
+         * @return 本地缓存实例，不可为 {@code null}
+         */
         public LocalCache<K, V> build() {
             return new LocalCache<>(name, ttlMillis);
         }
     }
 
-    /** 组合缓存构建器。 */
+    /**
+     * 组合缓存构建器。
+     */
     @NullMarked
     public static final class LayeredCacheBuilder<K, V> {
         private final String name;
@@ -81,13 +87,17 @@ public final class CacheBuilder {
             this.backup = backup;
         }
 
-        /** @param nullTtlMillis 空值占位 TTL（毫秒），{@code <=0} 不缓存空值 @return this */
+        /**
+         * @param nullTtlMillis 空值占位 TTL（毫秒），{@code <=0} 不缓存空值 @return this
+         */
         public LayeredCacheBuilder<K, V> nullTtl(long nullTtlMillis) {
             this.nullTtlMillis = nullTtlMillis;
             return this;
         }
 
-        /** @return 组合缓存实例，不可为 {@code null} */
+        /**
+         * @return 组合缓存实例，不可为 {@code null}
+         */
         public LayeredCache<K, V> build() {
             return new LayeredCache<>(name, local, backup, nullTtlMillis);
         }

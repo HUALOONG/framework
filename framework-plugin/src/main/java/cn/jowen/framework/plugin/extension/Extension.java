@@ -9,16 +9,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 标记类为实现某个扩展点的实现。与 {@link ExtensionPoint} 配合使用。
+ * 扩展实现标注。绑定到 core {@code @SPI} 的 name（String）。
  *
  * <p>示例：
  * <pre>{@code
- * @Extension(point = DataTransformer.class, order = 10)
- * public class UpperCaseTransformer implements DataTransformer { ... }
+ * @Extension(id = "alipay-provider", extensionPoint = "payment.provider", order = 10)
+ * public class AlipayPaymentProvider implements PaymentProvider { ... }
  * }</pre>
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
  */
 @NullMarked
 @Documented
@@ -27,23 +26,22 @@ import java.lang.annotation.Target;
 public @interface Extension {
 
     /**
-     * 所属扩展点接口，不可为 {@code null}。
-     *
-     * @return 扩展点接口类型
+     * 扩展实现唯一标识。
      */
-    Class<?> point();
+    String id();
 
     /**
-     * 扩展实现名。为空时使用类名小写作为默认名。
-     *
-     * @return 实现名
+     * 所属扩展点 id（对应 core {@code @SPI} 的 name），不可为 {@code null}。
      */
-    String name() default "";
+    String extensionPoint();
 
     /**
      * 排序权重，数值越小优先级越高。
-     *
-     * @return 排序值
      */
     int order() default 0;
+
+    /**
+     * 扩展属性。
+     */
+    String[] properties() default {};
 }

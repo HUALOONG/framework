@@ -3,7 +3,6 @@ package cn.jowen.framework.data.core.repository;
 import cn.jowen.framework.data.core.page.Page;
 import cn.jowen.framework.data.core.page.Pageable;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,8 +12,8 @@ import java.util.Optional;
  *
  * @param <T>  实体类型
  * @param <ID> 主键类型
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public interface Repository<T, ID> {

@@ -1,17 +1,20 @@
 package cn.jowen.framework.boot.autoconfigure.i18n;
 
-import cn.jowen.framework.boot.autoconfigure.BootAutoConfiguration;
+import cn.jowen.framework.boot.autoconfigure.JowenAutoConfiguration;
 import cn.jowen.framework.i18n.api.LocaleResolver;
 import cn.jowen.framework.i18n.api.MessageSource;
-import cn.jowen.framework.i18n.source.CompositeMessageSource;
-import cn.jowen.framework.i18n.source.PropertiesMessageSource;
+import cn.jowen.framework.i18n.config.FormatterType;
+import cn.jowen.framework.i18n.config.ResolverType;
+import cn.jowen.framework.i18n.config.SourceType;
 import cn.jowen.framework.i18n.format.IcuMessageFormatter;
 import cn.jowen.framework.i18n.format.JavaTextMessageFormatter;
 import cn.jowen.framework.i18n.format.MessageFormatter;
 import cn.jowen.framework.i18n.format.NamedParameterMessageFormatter;
 import cn.jowen.framework.i18n.locale.FixedLocaleResolver;
 import cn.jowen.framework.i18n.source.AbstractMessageSource;
+import cn.jowen.framework.i18n.source.CompositeMessageSource;
 import cn.jowen.framework.i18n.source.DatabaseMessageSource;
+import cn.jowen.framework.i18n.source.PropertiesMessageSource;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -37,29 +40,38 @@ import java.util.Locale;
  *   <li>formatter：对 {@link AbstractMessageSource} 子源生效。</li>
  * </ul>
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
-@AutoConfiguration(after = BootAutoConfiguration.class)
+@AutoConfiguration(after = JowenAutoConfiguration.class)
 @ConditionalOnClass(name = "cn.jowen.framework.i18n.source.CompositeMessageSource")
 @ConditionalOnProperty(prefix = "framework.i18n", name = "enabled", matchIfMissing = true)
-@EnableConfigurationProperties(I18nProperties.class)
+@EnableConfigurationProperties(BootI18nProperties.class)
 public class I18nAutoConfiguration {
+
+    private static void applyFormatter(AbstractMessageSource source, FormatterType type) {
+        MessageFormatter formatter = switch (type) {
+            case NAMED_PARAMETER -> NamedParameterMessageFormatter.getInstance();
+            case ICU -> IcuMessageFormatter.getInstance();
+            case JAVA_TEXT -> JavaTextMessageFormatter.getInstance();
+        };
+        source.setFormatter(formatter);
+    }
 
     /**
      * 消息源（组合包装，便于扩展多源）。
      *
-     * @param properties  配置，不可为 {@code null}
+     * @param properties   配置，不可为 {@code null}
      * @param jdbcTemplate JdbcTemplate（DATABASE 源时注入，可为 {@code null}）
-     * @param customizers 消息源定制器（可选）
+     * @param customizers  消息源定制器（可选）
      * @return 消息源，不可为 {@code null}
      */
     @Bean("frameworkMessageSource")
     @ConditionalOnMissingBean(name = "frameworkMessageSource")
-    public MessageSource messageSource(I18nProperties properties,
-            @Autowired(required = false) JdbcTemplate jdbcTemplate,
-            @Autowired(required = false) List<MessageSourceCustomizer> customizers) {
+    public MessageSource messageSource(BootI18nProperties properties,
+                                       @Autowired(required = false) JdbcTemplate jdbcTemplate,
+                                       @Autowired(required = false) List<MessageSourceCustomizer> customizers) {
         CompositeMessageSource composite = new CompositeMessageSource();
         if (properties.getSource() == SourceType.DATABASE && jdbcTemplate != null) {
             DatabaseMessageSource dbSource = new DatabaseMessageSource(jdbcTemplate);
@@ -84,7 +96,7 @@ public class I18nAutoConfiguration {
      */
     @Bean("frameworkLocaleResolver")
     @ConditionalOnMissingBean(name = "frameworkLocaleResolver")
-    public LocaleResolver localeResolver(I18nProperties properties) {
+    public LocaleResolver localeResolver(BootI18nProperties properties) {
         Locale fallback = properties.getDefaultLocale().isEmpty()
                 ? Locale.getDefault()
                 : Locale.forLanguageTag(properties.getDefaultLocale().replace('_', '-'));
@@ -100,14 +112,5 @@ public class I18nAutoConfiguration {
             }
             return fallback;
         };
-    }
-
-    private static void applyFormatter(AbstractMessageSource source, FormatterType type) {
-        MessageFormatter formatter = switch (type) {
-            case NAMED_PARAMETER -> NamedParameterMessageFormatter.getInstance();
-            case ICU -> IcuMessageFormatter.getInstance();
-            case JAVA_TEXT -> JavaTextMessageFormatter.getInstance();
-        };
-        source.setFormatter(formatter);
     }
 }

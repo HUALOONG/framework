@@ -1,15 +1,16 @@
 package cn.jowen.framework.i18n.event;
 
-import java.util.Locale;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.util.Locale;
 
 /**
  * 语言环境切换事件。当区域解析器将新 Locale 写入上下文（如请求拦截器解析完成）时发布，
  * 供审计、指标或联动业务（如重新查询本地化文案）消费。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public class LocaleChangedEvent extends I18nEvent {
@@ -30,12 +31,16 @@ public class LocaleChangedEvent extends I18nEvent {
         this.current = current;
     }
 
-    /** 切换前的区域（可为 {@code null}）。 */
+    /**
+     * 切换前的区域（可为 {@code null}）。
+     */
     public @Nullable Locale getPrevious() {
         return previous;
     }
 
-    /** 切换后的区域（不可为 {@code null}）。 */
+    /**
+     * 切换后的区域（不可为 {@code null}）。
+     */
     public Locale getCurrent() {
         return current;
     }

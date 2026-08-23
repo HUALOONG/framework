@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.notification.channel;
 
 import cn.jowen.framework.extras.notification.NotificationChannel;
@@ -17,18 +10,19 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.jspecify.annotations.NullMarked;
+
 import java.io.IOException;
 import java.util.Objects;
 import java.util.UUID;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Webhook 通用通知渠道处理器（基于 OkHttp）。
  *
  * <p>将通知内容以 HTTP POST JSON 方式发送到指定 URL；依赖 {@code com.squareup.okhttp3:okhttp}（optional）。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public final class WebhookNotificationHandler implements NotificationChannelHandler {

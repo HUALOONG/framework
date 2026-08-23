@@ -7,9 +7,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.NullMarked;
+
 import java.io.IOException;
 import java.util.Locale;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * 响应语言头拦截器（Servlet Filter）：在响应上写入 {@code Content-Language}
@@ -18,13 +19,15 @@ import org.jspecify.annotations.NullMarked;
  * <p>区域取自 {@link I18nContext#getCurrentLocale()}，
  * 无请求区域时写入系统默认语言标签。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public class I18nResponseInterceptor implements Filter {
 
-    /** 响应语言头名称。 */
+    /**
+     * 响应语言头名称。
+     */
     public static final String CONTENT_LANGUAGE = "Content-Language";
 
     @Override

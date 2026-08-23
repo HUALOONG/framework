@@ -1,19 +1,13 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.core.assertion;
 
 import cn.jowen.framework.core.exception.ErrorCode;
 import cn.jowen.framework.core.exception.SystemException;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 状态断言工具：校验系统/内部运行状态，失败抛出 {@link SystemException}。
@@ -22,8 +16,8 @@ import org.jspecify.annotations.Nullable;
  * 本类面向"系统状态"前置条件，如组件生命周期、内部一致性、环境约束等，
  * 失败属于系统级错误，不应由调用方捕获修复。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class State {
@@ -97,7 +91,7 @@ public final class State {
      * @throws SystemException 当 {@code collection} 为 null 或为空
      */
     public static <T extends Collection<?>> T checkNotEmpty(@Nullable T collection, @Nullable ErrorCode code,
-            @Nullable String message) {
+                                                            @Nullable String message) {
         if (collection == null || collection.isEmpty()) {
             fail(code, message);
         }
@@ -114,7 +108,7 @@ public final class State {
      * @throws SystemException 当 {@code map} 为 null 或为空
      */
     public static <T extends Map<?, ?>> T checkNotEmpty(@Nullable T map, @Nullable ErrorCode code,
-            @Nullable String message) {
+                                                        @Nullable String message) {
         if (map == null || map.isEmpty()) {
             fail(code, message);
         }

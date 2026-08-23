@@ -1,20 +1,21 @@
 package cn.jowen.framework.i18n.format;
 
 import cn.jowen.framework.i18n.api.FormatException;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 命名参数格式化器，占位符语法 {@code {name}} / {@code {age}}，参数以 {@link Map} 形式传入。
  * 未提供的参数名按空字符串处理；模板含非法占位符（未闭合的 {@code {}}）时抛
  * {@link FormatException}。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class NamedParameterMessageFormatter implements MessageFormatter {
@@ -28,7 +29,9 @@ public final class NamedParameterMessageFormatter implements MessageFormatter {
     private NamedParameterMessageFormatter() {
     }
 
-    /** 单例实例。 */
+    /**
+     * 单例实例。
+     */
     public static NamedParameterMessageFormatter getInstance() {
         return INSTANCE;
     }

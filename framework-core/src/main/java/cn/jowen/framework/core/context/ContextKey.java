@@ -1,15 +1,9 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.core.context;
 
-import java.util.Objects;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.util.Objects;
 
 /**
  * 上下文键：以"名称 + 值类型"唯一定位一个上下文条目。
@@ -20,8 +14,8 @@ import org.jspecify.annotations.Nullable;
  * }</pre>
  *
  * @param <T> 值的类型
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class ContextKey<T> {
@@ -51,12 +45,16 @@ public final class ContextKey<T> {
         return new ContextKey<>(name, type);
     }
 
-    /** 键名称。 */
+    /**
+     * 键名称。
+     */
     public String name() {
         return name;
     }
 
-    /** 值类型。 */
+    /**
+     * 值类型。
+     */
     public Class<T> type() {
         return type;
     }

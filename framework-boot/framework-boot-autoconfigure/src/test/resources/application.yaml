@@ -1,0 +1,176 @@
+# ==============================================================
+# Jowen Framework Boot AutoConfigure 测试配置
+# 覆盖所有 @ConfigurationProperties 绑定类及其嵌套属性
+# ==============================================================
+
+framework:
+
+  # ----------------------------------------------------------
+  # 数据层
+  # ----------------------------------------------------------
+
+  data:
+
+    # framework.data.jdbc.*  →  BootJdbcProperties (extends JdbcProperties)
+    jdbc:
+      sql-log-enabled: true
+      slow-sql-threshold: 1000
+      tenant-enabled: false
+      tenant-column: tenant_id
+
+    # framework.data.datasource.*  →  BootDataSourceProperties (extends DataSourceProperties)
+    datasource:
+      name: primary
+      url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1
+      driverClassName: org.h2.Driver
+      username: sa
+      password: sa
+      poolType: hikari
+      maximum-pool-size: 20
+      connection-timeout: 5000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      read-only: false
+      secondary:
+        - name: replica1
+          url: jdbc:h2:mem:replica1
+          username: sa
+          password: sa
+
+    # framework.data.mybatis.*  →  BootMybatisFlexProperties (extends MybatisFlexProperties)
+    mybatis:
+      url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1
+      username: sa
+      password: sa
+      driverClassName: org.h2.Driver
+      maximum-pool-size: 20
+      connection-timeout: 5000
+      mapper-locations: classpath*:/mapper/**/*Mapper.xml
+      type-aliases-package: ""
+      audit-enabled: false
+      encrypt-enabled: false
+      tenant-enabled: false
+      sql-audit-enabled: false
+      logic-delete-enabled: false
+      optimistic-lock-enabled: false
+
+  # ----------------------------------------------------------
+  # 日志
+  # ----------------------------------------------------------
+
+  # framework.logger.*  →  BootLoggerProperties (extends LoggerProperties)
+  logger:
+    enabled: true
+    async-enabled: true
+    level: debug
+    format: text
+    desensitize-enabled: true
+
+  # ----------------------------------------------------------
+  # 缓存
+  # ----------------------------------------------------------
+
+  # framework.cache.*  →  BootCacheProperties (extends CacheProperties)
+  cache:
+    enabled: true
+    metrics: true
+
+  # ----------------------------------------------------------
+  # 国际化
+  # ----------------------------------------------------------
+
+  # framework.i18n.*  →  BootI18nProperties (extends I18nProperties)
+  i18n:
+    enabled: true
+    source: PROPERTIES
+    basename: messages
+    resolver: PARAMETER
+    formatter: JAVA_TEXT
+    default-locale: ""
+    reload-interval-seconds: 0
+
+  # ----------------------------------------------------------
+  # 扩展能力
+  # ----------------------------------------------------------
+
+  # framework.extras.*  →  BootExtrasProperties (extends ExtrasProperties)
+  extras:
+    enabled: true
+
+    # 分布式锁  framework.extras.lock.*
+    lock:
+      enabled: true
+      type: REENTRANT
+      key-prefix: "lock:"
+      default-lease-time: 30000
+      default-wait-time: 10000
+      watchdog-enabled: false
+
+    # 接口限流  framework.extras.ratelimit.*
+    ratelimit:
+      enabled: true
+      default-algorithm: sliding-window
+      key-prefix: "ratelimit:"
+      fallback-message: "请求过于频繁，请稍后重试"
+
+    # 幂等控制  framework.extras.idempotent.*
+    idempotent:
+      enabled: true
+      default-ttl: 60000
+      key-prefix: "idempotent:"
+      token-header: X-Idempotent-Token
+
+    # 验证码  framework.extras.captcha.*
+    captcha:
+      length: 4
+      width: 120
+      height: 40
+      ttl-millis: 300000
+      case-sensitive: false
+      char-set: "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+    # 文件存储  framework.extras.storage.*
+    storage:
+      root-location: ./storage
+      naming-strategy: date
+      generate-presigned-url: false
+
+    # 消息通知  framework.extras.notification.*
+    notification:
+      default-from: noreply@jowen.cn
+      async-enabled: true
+
+    # Excel 处理  framework.extras.excel.*
+    excel:
+      enabled: true
+      default-file-name: report
+      default-sheet-name: Sheet1
+      import-batch-size: 500
+      header-row-count: 1
+
+    # IP 地域解析  framework.extras.ip2region.*
+    ip2region:
+      enabled: true
+      db-path: ip2region.xdb
+      load-type: MEMORY
+      trusted-headers:
+        - X-Forwarded-For
+        - X-Real-IP
+
+    # 数据脱敏  framework.extras.desensitize.*
+    desensitize:
+      enabled: true
+      fail-on-unknown-strategy: false
+
+    # 操作日志  framework.extras.operatelog.*
+    operatelog:
+      enabled: true
+      async: true
+
+    # 数据权限  framework.extras.datapermission.*
+    datapermission:
+      enabled: true
+      default-scope: ALL
+      default-dept-column: dept_id
+      default-user-column: create_by
+      ignore-tables: []

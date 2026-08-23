@@ -1,69 +1,50 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.config;
 
-import cn.jowen.framework.extras.captcha.CaptchaProperties;
 import cn.jowen.framework.extras.captcha.CaptchaService;
 import cn.jowen.framework.extras.captcha.LocalCaptchaService;
 import cn.jowen.framework.extras.datapermission.DataPermissionContext;
-import cn.jowen.framework.extras.datapermission.DataPermissionProperties;
+import cn.jowen.framework.extras.datapermission.aop.DataPermissionAspect;
 import cn.jowen.framework.extras.desensitize.serializer.DesensitizeModule;
-import cn.jowen.framework.extras.desensitize.DesensitizeProperties;
+import cn.jowen.framework.extras.excel.ExcelService;
 import cn.jowen.framework.extras.notification.LocalNotificationService;
 import cn.jowen.framework.extras.notification.NotificationChannelHandler;
-import cn.jowen.framework.extras.notification.NotificationProperties;
 import cn.jowen.framework.extras.notification.NotificationService;
-import cn.jowen.framework.extras.notification.config.DingTalkProperties;
+import cn.jowen.framework.extras.notification.channel.EmailNotificationHandler;
+import cn.jowen.framework.extras.notification.channel.WebhookNotificationHandler;
 import cn.jowen.framework.extras.notification.config.EmailProperties;
-import cn.jowen.framework.extras.notification.config.SmsProperties;
 import cn.jowen.framework.extras.notification.config.WebhookProperties;
-import cn.jowen.framework.extras.notification.config.WeChatWorkProperties;
 import cn.jowen.framework.extras.operatelog.OperateLogDispatcher;
 import cn.jowen.framework.extras.operatelog.OperateLogHandler;
-import cn.jowen.framework.extras.operatelog.OperateLogProperties;
 import cn.jowen.framework.extras.operatelog.aop.OperateLogAspect;
 import cn.jowen.framework.extras.storage.FileStorage;
 import cn.jowen.framework.extras.storage.FileStorageManager;
-import cn.jowen.framework.extras.storage.StorageProperties;
 import cn.jowen.framework.extras.storage.config.AliyunOssProperties;
 import cn.jowen.framework.extras.storage.config.AwsS3Properties;
 import cn.jowen.framework.extras.storage.config.MinioProperties;
 import cn.jowen.framework.extras.storage.impl.AliyunOssFileStorage;
 import cn.jowen.framework.extras.storage.impl.AwsS3FileStorage;
+import cn.jowen.framework.extras.storage.impl.DefaultFileStorageManager;
 import cn.jowen.framework.extras.storage.impl.LocalFileStorage;
 import cn.jowen.framework.extras.storage.impl.MinioFileStorage;
-import cn.jowen.framework.extras.storage.registry.DefaultCloudStorageRegistry;
 import cn.jowen.framework.extras.storage.strategy.DatePathStrategy;
 import cn.jowen.framework.extras.storage.strategy.HashStrategy;
 import cn.jowen.framework.extras.storage.strategy.ObjectNameStrategy;
 import cn.jowen.framework.extras.storage.strategy.OriginalNameStrategy;
 import cn.jowen.framework.extras.storage.strategy.UuidStrategy;
-import cn.jowen.framework.extras.datapermission.aop.DataPermissionAspect;
-import cn.jowen.framework.extras.storage.impl.DefaultFileStorageManager;
-import cn.jowen.framework.extras.notification.channel.EmailNotificationHandler;
-import cn.jowen.framework.extras.notification.channel.WebhookNotificationHandler;
-import cn.jowen.framework.extras.excel.ExcelProperties;
-import cn.jowen.framework.extras.excel.ExcelService;
-import cn.jowen.framework.extras.ip2region.Ip2RegionProperties;
-import cn.jowen.framework.extras.ip2region.IpRegionService;
+import com.aliyun.oss.OSSClientBuilder;
+import io.minio.MinioClient;
 import jakarta.mail.Message;
 import okhttp3.OkHttpClient;
-import io.minio.MinioClient;
-import com.aliyun.oss.OSSClientBuilder;
-import software.amazon.awssdk.services.s3.S3Client;
-import java.nio.file.Path;
-import java.util.List;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.services.s3.S3Client;
+
+import java.nio.file.Path;
+import java.util.List;
 
 /**
  * framework-extras 装配配置类。
@@ -75,8 +56,8 @@ import org.springframework.context.annotation.Configuration;
  * <p>未提供 {@code @ConfigurationProperties} 绑定逻辑（由 boot-autoconfigure 层处理）。
  * 各 Properties POJO 仅作为普通容器 Bean 注册，供后续注入使用。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  * @see EnableExtras
  */
 @NullMarked

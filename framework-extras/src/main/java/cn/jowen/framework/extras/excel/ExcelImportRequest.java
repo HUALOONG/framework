@@ -1,21 +1,15 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.excel;
 
-import java.io.InputStream;
 import org.jspecify.annotations.NullMarked;
+
+import java.io.InputStream;
 
 /**
  * Excel 导入请求参数。
  *
  * @param <T> 数据行类型
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public record ExcelImportRequest<T>(

@@ -19,8 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>支持：按名获取（{@link #getExtension(String)}）、默认实现（接口 {@link SPI#value()}）、自动激活集合（带 {@link Activate} 的实现，按权重排序）。
  *
  * @param <T> 扩展点接口类型
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class ExtensionLoader<T> {
@@ -49,6 +49,15 @@ public final class ExtensionLoader<T> {
             throw new SystemException("SPI 扩展点必须是接口：" + type);
         }
         return (ExtensionLoader<T>) LOADERS.computeIfAbsent(type, ExtensionLoader::new);
+    }
+
+    private static boolean contains(String[] arr, String value) {
+        for (String s : arr) {
+            if (s.equals(value)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -139,14 +148,5 @@ public final class ExtensionLoader<T> {
         }));
         activatedCache = result;
         return result;
-    }
-
-    private static boolean contains(String[] arr, String value) {
-        for (String s : arr) {
-            if (s.equals(value)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

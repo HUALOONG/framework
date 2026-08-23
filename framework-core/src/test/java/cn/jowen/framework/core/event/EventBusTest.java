@@ -1,55 +1,110 @@
 package cn.jowen.framework.core.event;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import cn.jowen.framework.core.exception.SystemException;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.*;
+
+/**
+ * {@link EventBus} 测试。
+ */
 class EventBusTest {
 
-    /** 测试事件。 */
-    static class TestEvent extends FrameworkEvent {
+    static class OrderEvent extends FrameworkEvent {
+        final String orderId;
+
+        OrderEvent(String orderId) {
+            super();
+            this.orderId = orderId;
+        }
     }
 
-    /** 测试事件（子类）。 */
-    static class SubEvent extends TestEvent {
+    static class PaymentEvent extends OrderEvent {
+        PaymentEvent(String orderId) {
+            super(orderId);
+        }
     }
 
-    /** 泛型父接口，模拟框架层扩展监听器（如 I18nEventListener）。 */
-    interface TestEventListener<E extends TestEvent> extends EventListener<E> {
-    }
-
-    /** 通过泛型父接口注册，事件类型应能沿继承链解析。 */
-    static class RecordingListener implements TestEventListener<TestEvent> {
-        final AtomicInteger count = new AtomicInteger();
+    static class SubscribableListener implements EventListener<OrderEvent> {
+        final List<OrderEvent> events = new ArrayList<>();
 
         @Override
-        public void onEvent(TestEvent event) {
-            count.incrementAndGet();
+        public void onEvent(OrderEvent event) {
+            events.add(event);
         }
     }
 
     @Test
-    void resolvesEventTypeThroughGenericSuperInterface() {
+    void register_and_publish_sync() {
         EventBus bus = new EventBus();
-        RecordingListener listener = new RecordingListener();
+        SubscribableListener listener = new SubscribableListener();
         bus.register(listener);
 
-        bus.publish(new SubEvent());
+        bus.publish(new OrderEvent("o1"));
+        bus.publish(new OrderEvent("o2"));
 
-        assertThat(listener.count).hasValue(1);
+        assertThat(listener.events).hasSize(2);
+        assertThat(listener.events.getFirst().orderId).isEqualTo("o1");
     }
 
     @Test
-    void dispatchesToSubclassEventListeners() {
+    void publish_toParentTypeListener() {
         EventBus bus = new EventBus();
-        RecordingListener listener = new RecordingListener();
+        SubscribableListener listener = new SubscribableListener();
         bus.register(listener);
 
-        // 子类事件应命中监听父类事件的监听器
-        bus.publish(new SubEvent());
-        bus.publish(new TestEvent());
+        bus.publish(new PaymentEvent("o1"));
+        assertThat(listener.events).hasSize(1);
+        assertThat(listener.events.getFirst().orderId).isEqualTo("o1");
+    }
 
-        assertThat(listener.count).hasValue(2);
+    @Test
+    void multipleListeners() {
+        EventBus bus = new EventBus();
+        SubscribableListener l1 = new SubscribableListener();
+        SubscribableListener l2 = new SubscribableListener();
+        bus.register(l1);
+        bus.register(l2);
+
+        bus.publish(new OrderEvent("o1"));
+        assertThat(l1.events).hasSize(1);
+        assertThat(l2.events).hasSize(1);
+    }
+
+    @Test
+    void publish_async() throws InterruptedException {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        EventBus bus = new EventBus(executor);
+        SubscribableListener listener = new SubscribableListener();
+        bus.register(listener);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        bus.publish(new OrderEvent("o1"));
+        latch.await(2, TimeUnit.SECONDS);
+
+        assertThat(listener.events).hasSize(1);
+        executor.shutdownNow();
+    }
+
+    @Test
+    void listenerThrows_wrappedInSystemException() {
+        EventBus bus = new EventBus();
+        bus.register(new EventListener<OrderEvent>() {
+            @Override
+            public void onEvent(OrderEvent event) {
+                throw new RuntimeException("boom");
+            }
+        });
+
+        assertThatThrownBy(() -> bus.publish(new OrderEvent("o1")))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("事件监听器执行失败");
     }
 }

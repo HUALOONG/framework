@@ -8,8 +8,8 @@ import java.util.Locale;
 /**
  * 消息源。零耦合的国际化消息解析抽象，不依赖 Servlet 或 Spring。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public interface MessageSource {

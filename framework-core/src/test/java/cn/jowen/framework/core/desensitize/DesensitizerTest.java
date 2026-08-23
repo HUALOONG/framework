@@ -1,95 +1,156 @@
 package cn.jowen.framework.core.desensitize;
 
+import org.junit.jupiter.api.Test;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.junit.jupiter.api.Test;
-
 /**
- * {@link Desensitizer}/{@link DesensitizeStrategies}/{@link DesensitizeContext} 测试。
+ * {@link Desensitizer} 测试。
  */
 class DesensitizerTest {
 
+    Desensitizer desensitizer = Desensitizer.getInstance();
+
     @Test
-    void context_mask_keepsEdges() {
-        DesensitizeContext ctx = DesensitizeContext.of(3, 4);
-        assertThat(ctx.mask("13812345678")).isEqualTo("138****5678");
+    void getInstance_returnsSame() {
+        assertThat(Desensitizer.getInstance()).isSameAs(Desensitizer.getInstance());
     }
 
     @Test
-    void context_mask_blankReturnsRaw() {
-        assertThat(DesensitizeContext.DEFAULT.mask("  ")).isEqualTo("  ");
-        assertThat(DesensitizeContext.DEFAULT.mask(null)).isNull();
+    void mask_autoDetect_phone() {
+        // mask(String) 只跑 SPI 自定义规则，无注册规则时原样返回
+        assertThat(desensitizer.mask("13812345678")).isEqualTo("13812345678");
     }
 
     @Test
-    void context_mask_skipReturnsRaw() {
-        DesensitizeContext ctx = new DesensitizeContext(3, 4, "*", true);
-        assertThat(ctx.mask("13812345678")).isEqualTo("13812345678");
+    void mask_autoDetect_email() {
+        assertThat(desensitizer.mask("user@test.com")).isEqualTo("user@test.com");
     }
 
     @Test
-    void strategy_phone_masksByDefault() {
-        assertThat(DesensitizeStrategies.PHONE.mask("13812345678")).isEqualTo("138****5678");
+    void mask_nullReturnsNull() {
+        assertThat(desensitizer.mask(null)).isNull();
     }
 
     @Test
-    void strategy_invalidFormat_returnsRaw() {
-        assertThat(DesensitizeStrategies.PHONE.mask("not-a-phone")).isEqualTo("not-a-phone");
-    }
-
-    @Test
-    void strategy_idCard_masks() {
-        assertThat(DesensitizeStrategies.ID_CARD.mask("11010519491231002X"))
-                .isEqualTo("110***********002X");
-    }
-
-    @Test
-    void strategy_email_keepsDomain() {
-        assertThat(DesensitizeStrategies.EMAIL.mask("zhangsan@example.com"))
-                .isEqualTo("z***@example.com");
-    }
-
-    @Test
-    void desensitizer_maskByStrategyName() {
-        Desensitizer desensitizer = Desensitizer.getInstance();
+    void mask_byStrategy() {
         assertThat(desensitizer.mask("13812345678", "phone")).isEqualTo("138****5678");
     }
 
     @Test
-    void desensitizer_unknownStrategy_throws() {
-        assertThatThrownBy(() -> Desensitizer.getInstance().mask("x", "NO_SUCH"))
+    void mask_byStrategy_caseInsensitive() {
+        assertThat(desensitizer.mask("13812345678", "PHONE")).isEqualTo("138****5678");
+    }
+
+    @Test
+    void mask_byStrategy_nullOrBlankReturnsRaw() {
+        assertThat(desensitizer.mask(null, "PHONE")).isNull();
+        assertThat(desensitizer.mask("", "PHONE")).isEqualTo("");
+        assertThat(desensitizer.mask("  ", "PHONE")).isEqualTo("  ");
+    }
+
+    @Test
+    void mask_unknownStrategy_throws() {
+        assertThatThrownBy(() -> desensitizer.mask("x", "UNKNOWN"))
                 .isInstanceOf(DesensitizeException.class)
                 .hasMessageContaining("未知脱敏策略");
     }
 
     @Test
-    void desensitizer_maskObject_byAnnotation() {
-        UserVO vo = new UserVO();
-        vo.phone = "13812345678";
-        vo.idCard = "11010519491231002X";
-        vo.note = "keep-me";
-
-        Desensitizer.getInstance().maskObject(vo);
-
-        assertThat(vo.phone).isEqualTo("138****5678");
-        assertThat(vo.idCard).isEqualTo("110***********002X");
-        assertThat(vo.note).isEqualTo("keep-me");
+    void mask_byStrategyWithContext() {
+        DesensitizeContext ctx = DesensitizeContext.of(2, 2);
+        assertThat(desensitizer.mask("12345678", "CUSTOM", ctx)).isEqualTo("12****78");
     }
 
     @Test
-    void desensitizer_maskObject_nullSafe() {
-        assertThat(Desensitizer.getInstance().maskObject(null)).isNull();
+    void register_customRule_applied() {
+        Desensitizer testInstance = Desensitizer.getInstance();
+        testInstance.register((text, ctx) -> text.replace("敏感", "****"));
+        assertThat(testInstance.mask("包含敏感词")).contains("****");
     }
 
-    /** 测试载体：带 {@link DesensitizeField} 注解的字段。 */
+    @Test
+    void maskObject_nullReturnsNull() {
+        assertThat(desensitizer.maskObject(null)).isNull();
+    }
+
+    @Test
+    void maskObject_desensitizesAnnotatedField() {
+        UserVO user = new UserVO();
+        user.phone = "13812345678";
+        user.idCard = "11010519491231002X";
+
+        Object result = desensitizer.maskObject(user);
+
+        assertThat(result).isSameAs(user);
+        assertThat(user.phone).isEqualTo("138****5678");
+        assertThat(user.idCard).isEqualTo("110***********002X");
+    }
+
+    @Test
+    void maskObject_skipsStaticAndFinal() {
+        UserVOWithStatic vo = new UserVOWithStatic();
+        assertThat(desensitizer.maskObject(vo)).isSameAs(vo);
+    }
+
+    @Test
+    void maskObject_unknownStrategyInAnnotation_throws() {
+        UserVOInvalid user = new UserVOInvalid();
+        user.phone = "13812345678";
+
+        assertThatThrownBy(() -> desensitizer.maskObject(user))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void maskMap_nullReturnsNull() {
+        assertThat(desensitizer.maskMap(null, "PHONE")).isNull();
+    }
+
+    @Test
+    void maskMap_emptyMapReturnsEmpty() {
+        assertThat(desensitizer.maskMap(Collections.emptyMap(), "PHONE")).isEmpty();
+    }
+
+    @Test
+    void maskMap_masksStringValues() {
+        Map<String, String> source = new LinkedHashMap<>();
+        source.put("phone", "13812345678");
+        source.put("email", "user@test.com");
+        source.put("name", "张三");
+
+        // maskMap 按 CUSTOM 策略逐一脱敏（默认 0/0 全量脱敏）
+        Map<String, String> result = desensitizer.maskMap(source, "CUSTOM");
+
+        assertThat(result.get("phone")).isEqualTo("***********");  // 11 位全量
+        assertThat(result.get("email")).isEqualTo("*************"); // 13 位全量
+        assertThat(result.get("name")).isEqualTo("**");             // 2 位全量
+        assertThat(result).hasSize(3);
+    }
+
     static class UserVO {
         @DesensitizeField(strategy = "PHONE")
         String phone;
 
-        @DesensitizeField(strategy = "ID_CARD", startKeep = 3, endKeep = 4)
+        @DesensitizeField(strategy = "ID_CARD")
         String idCard;
+    }
 
-        String note;
+    static class UserVOWithStatic {
+        @DesensitizeField(strategy = "PHONE")
+        static String staticField = "13812345678";
+
+        @DesensitizeField(strategy = "PHONE")
+        final String finalField = "13900000000";
+    }
+
+    static class UserVOInvalid {
+        @DesensitizeField(strategy = "NO_SUCH_STRATEGY")
+        String phone;
     }
 }

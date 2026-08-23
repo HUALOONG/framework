@@ -5,8 +5,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * 事务定义，含传播行为、隔离级别、超时与只读标记。
  *
- * @author Jowen
- * @date 2026-08-21
+ * @author 王飞
+ * @since 2026-08-21
  */
 @NullMarked
 public final class TransactionDefinition {
@@ -48,7 +48,9 @@ public final class TransactionDefinition {
         return readOnly;
     }
 
-    /** 传播行为。 */
+    /**
+     * 传播行为。
+     */
     public enum Propagation {
         REQUIRED,
         REQUIRES_NEW,
@@ -59,7 +61,9 @@ public final class TransactionDefinition {
         MANDATORY
     }
 
-    /** 隔离级别。 */
+    /**
+     * 隔离级别。
+     */
     public enum Isolation {
         DEFAULT,
         READ_UNCOMMITTED,

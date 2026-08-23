@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.notification.config;
 
 import org.jspecify.annotations.NullMarked;
@@ -14,22 +7,30 @@ import org.jspecify.annotations.NullMarked;
  *
  * <p>对应属性前缀 {@code framework.extras.notification.wechat-work}。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public class WeChatWorkProperties {
 
-    /** 企业 ID。 */
+    /**
+     * 企业 ID。
+     */
     private String corpId;
 
-    /** 应用 AgentId。 */
+    /**
+     * 应用 AgentId。
+     */
     private String agentId;
 
-    /** 应用 Secret。 */
+    /**
+     * 应用 Secret。
+     */
     private String secret;
 
-    /** 自定义 Webhook 地址（用于简单文本消息）。 */
+    /**
+     * 自定义 Webhook 地址（用于简单文本消息）。
+     */
     private String webhookUrl;
 
     public String getCorpId() {

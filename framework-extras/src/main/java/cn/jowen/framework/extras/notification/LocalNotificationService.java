@@ -1,11 +1,6 @@
-/*
- * Copyright (c) 2026 Jowen
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- */
 package cn.jowen.framework.extras.notification;
+
+import org.jspecify.annotations.NullMarked;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,8 +10,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 本地通知服务：按渠道路由到已注册的 {@link NotificationChannelHandler}。
@@ -24,8 +17,8 @@ import org.jspecify.annotations.Nullable;
  * <p>零外部依赖，可直接 {@code new LocalNotificationService(List.of(new ConsoleNotificationHandler()))} 使用。
  * 未注册渠道返回 {@code success=false}（不抛异常）。
  *
- * @author Jowen
- * @date 2026-08-22
+ * @author 王飞
+ * @since 2026-08-22
  */
 @NullMarked
 public final class LocalNotificationService implements NotificationService {
@@ -83,12 +76,16 @@ public final class LocalNotificationService implements NotificationService {
         return results;
     }
 
-    /** 关闭异步线程池（可选清理钩子）。 */
+    /**
+     * 关闭异步线程池（可选清理钩子）。
+     */
     public void shutdown() {
         asyncExecutor.shutdown();
     }
 
-    /** 已注册的处理器集合（不可变）。 */
+    /**
+     * 已注册的处理器集合（不可变）。
+     */
     public Map<NotificationChannel, NotificationChannelHandler> handlers() {
         return handlers;
     }
