@@ -2,6 +2,9 @@ package cn.jowen.framework.plugin;
 
 import org.junit.jupiter.api.Test;
 
+import java.net.URL;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -38,6 +41,25 @@ class PluginManagerTest {
         manager.stopAll();
         // 逆序停止：b 先停，a 后停
         assertThat(b.stopOrder).isLessThan(a.stopOrder);
+    }
+
+    /** load 重复 id 时旧 loader 被 close，不留下孤立的 classloader。 */
+    @Test
+    void loadClosesOldLoaderOnReload() throws Exception {
+        DefaultPluginManager manager = new DefaultPluginManager();
+        URL[] noUrls = new URL[0];
+        // 使用 "test" 作为 descriptor id，与 TestPlugin.id() 返回值一致
+        PluginDescriptor desc = new PluginDescriptor("test", "1.0.0",
+                "cn.jowen.framework.plugin.PluginManagerTest$TestPlugin", "", List.of());
+
+        // 第一次 load
+        manager.load(new PluginLoader(desc, noUrls, PluginManagerTest.class.getClassLoader()));
+        assertThat(manager.get("test")).isNotNull();
+
+        // 第二次 load 同一 id：先 unregister，再 load（模拟热替换场景）
+        manager.unregister("test");
+        manager.load(new PluginLoader(desc, noUrls, PluginManagerTest.class.getClassLoader()));
+        assertThat(manager.get("test")).isNotNull();
     }
 
     static final class TestPlugin implements Plugin {

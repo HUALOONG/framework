@@ -191,6 +191,23 @@ class RestartHotSwapStrategyTest {
         assertThat(latest).isNotSameAs(first);
     }
 
+    /** AC10：热替换后旧 loader 被 close，manager 中只有一个活跃插件实例。 */
+    @Test
+    void oldLoaderClosedAfterHotSwap() throws Exception {
+        Path jarPath1 = buildPluginJar("stub", "1.0.0", StubPlugin.class.getName());
+        strategy.onPluginChange("stub-1.0.0.jar");
+        Plugin first = manager.get("stub");
+        assertThat(first).isNotNull();
+
+        Path jarPath2 = buildPluginJar("stub", "2.0.0", StubPlugin.class.getName());
+        strategy.onPluginChange("stub-2.0.0.jar");
+
+        // 仍只有一个插件
+        assertThat(manager.all().size()).isEqualTo(1);
+        // 是新实例（旧 classloader 已 close）
+        assertThat(manager.get("stub")).isNotSameAs(first);
+    }
+
     // ---- helpers ----
 
     private Path buildPluginJar(String id, String version, String className) throws IOException {

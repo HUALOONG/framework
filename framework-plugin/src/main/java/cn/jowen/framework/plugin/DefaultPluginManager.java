@@ -7,6 +7,7 @@ import cn.jowen.framework.plugin.event.PluginEventPublisher;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -25,6 +26,8 @@ public final class DefaultPluginManager implements PluginManager {
     /** 注册表，{@link LinkedHashMap} 保证 {@link #all()} 与注册（即加载）顺序一致。 */
     private final Map<String, Plugin> registry = new LinkedHashMap<>();
     private final DependencyResolver dependencyResolver = new DependencyResolver();
+    /** 已加载的 loader 引用，用于 unregister/stopAll 时关闭 classloader 释放 jar 文件句柄。 */
+    private final Map<String, PluginLoader> loaders = new LinkedHashMap<>();
     private final PluginEventPublisher eventPublisher;
 
     public DefaultPluginManager() {
@@ -60,7 +63,19 @@ public final class DefaultPluginManager implements PluginManager {
     @Override
     public void load(PluginLoader loader) {
         PluginDescriptor descriptor = loader.descriptor();
-        resolveDependencies(descriptor);
+        // 检查已有注册表中的依赖（loadAll 场景由 DependencyResolver 批次内检查）
+        List<String> missing = new ArrayList<>();
+        for (String dep : descriptor.dependencies()) {
+            if (registry.get(dep) == null) missing.add(dep);
+        }
+        if (!missing.isEmpty()) {
+            throw new PluginLoader.PluginException("插件 " + descriptor.id() + " 依赖未满足：" + missing);
+        }
+        // 关闭旧 loader，释放旧 jar 文件句柄
+        PluginLoader oldLoader = loaders.put(descriptor.id(), loader);
+        if (oldLoader != null) {
+            try { oldLoader.close(); } catch (IOException ignored) {}
+        }
         Plugin plugin = loader.load();
         if (!plugin.id().equals(descriptor.id())) {
             throw new PluginLoader.PluginException("插件 id 与描述符 id 不一致：" + plugin.id() + " vs " + descriptor.id());
@@ -69,10 +84,10 @@ public final class DefaultPluginManager implements PluginManager {
     }
 
     @Override
-    public List<Plugin> loadAll(List<PluginLoader> loaders) {
-        List<PluginDescriptor> descriptors = new ArrayList<>(loaders.size());
-        Map<String, PluginLoader> loaderById = new LinkedHashMap<>(loaders.size());
-        for (PluginLoader loader : loaders) {
+    public List<Plugin> loadAll(List<PluginLoader> pluginLoaders) {
+        List<PluginDescriptor> descriptors = new ArrayList<>(pluginLoaders.size());
+        Map<String, PluginLoader> loaderById = new LinkedHashMap<>(pluginLoaders.size());
+        for (PluginLoader loader : pluginLoaders) {
             PluginDescriptor descriptor = loader.descriptor();
             descriptors.add(descriptor);
             if (loaderById.putIfAbsent(descriptor.id(), loader) != null) {
@@ -91,26 +106,23 @@ public final class DefaultPluginManager implements PluginManager {
                 throw new DependencyResolutionException("依赖解析结果包含未知插件 id：" + id);
             }
             Plugin plugin = loader.load();
+            // 关闭旧 loader，释放旧 jar 文件句柄
+            PluginLoader oldLoader = loaders.put(id, loader);
+            if (oldLoader != null) {
+                try { oldLoader.close(); } catch (IOException ignored) {}
+            }
             register(plugin);
             loaded.add(plugin);
         }
         return Collections.unmodifiableList(loaded);
     }
 
-    private void resolveDependencies(PluginDescriptor descriptor) {
-        List<String> deps = descriptor.dependencies();
-        if (deps.isEmpty()) return;
-        List<String> missing = new ArrayList<>();
-        for (String dep : deps) {
-            if (registry.get(dep) == null) missing.add(dep);
-        }
-        if (!missing.isEmpty()) {
-            throw new PluginLoader.PluginException("插件 " + descriptor.id() + " 依赖未满足：" + missing);
-        }
-    }
-
     @Override
     public void unregister(String id) {
+        PluginLoader oldLoader = loaders.remove(id);
+        if (oldLoader != null) {
+            try { oldLoader.close(); } catch (IOException ignored) {}
+        }
         Plugin plugin = registry.remove(id);
         if (plugin != null) {
             try {
@@ -132,6 +144,10 @@ public final class DefaultPluginManager implements PluginManager {
         for (Plugin plugin : reversed) {
             try { plugin.destroy(); } catch (Exception ignored) {}
         }
+        for (PluginLoader loader : loaders.values()) {
+            try { loader.close(); } catch (IOException ignored) {}
+        }
+        loaders.clear();
         registry.clear();
     }
 
