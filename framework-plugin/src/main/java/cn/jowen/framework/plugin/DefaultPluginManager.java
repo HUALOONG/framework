@@ -1,11 +1,14 @@
 package cn.jowen.framework.plugin;
 
 import cn.jowen.framework.core.event.EventBus;
+import cn.jowen.framework.plugin.dependency.DependencyResolutionException;
+import cn.jowen.framework.plugin.dependency.DependencyResolver;
 import cn.jowen.framework.plugin.event.PluginEventPublisher;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +22,9 @@ import java.util.Map;
 @NullMarked
 public final class DefaultPluginManager implements PluginManager {
 
+    /** 注册表，{@link LinkedHashMap} 保证 {@link #all()} 与注册（即加载）顺序一致。 */
     private final Map<String, Plugin> registry = new LinkedHashMap<>();
+    private final DependencyResolver dependencyResolver = new DependencyResolver();
     private final PluginEventPublisher eventPublisher;
 
     public DefaultPluginManager() {
@@ -54,6 +59,33 @@ public final class DefaultPluginManager implements PluginManager {
         resolveDependencies(descriptor);
         Plugin plugin = loader.load();
         register(plugin);
+    }
+
+    @Override
+    public List<Plugin> loadAll(List<PluginLoader> loaders) {
+        List<PluginDescriptor> descriptors = new ArrayList<>(loaders.size());
+        Map<String, PluginLoader> loaderById = new LinkedHashMap<>(loaders.size());
+        for (PluginLoader loader : loaders) {
+            PluginDescriptor descriptor = loader.descriptor();
+            descriptors.add(descriptor);
+            loaderById.put(descriptor.id(), loader);
+        }
+
+        // 依赖解析先行：循环依赖或批次内未满足依赖都在此抛出 DependencyResolutionException，
+        // 此时尚未加载/注册任何插件，管理器状态保持不变。
+        List<String> order = dependencyResolver.resolve(descriptors);
+
+        List<Plugin> loaded = new ArrayList<>(order.size());
+        for (String id : order) {
+            PluginLoader loader = loaderById.get(id);
+            if (loader == null) {
+                throw new DependencyResolutionException("依赖解析结果包含未知插件 id：" + id);
+            }
+            Plugin plugin = loader.load();
+            register(plugin);
+            loaded.add(plugin);
+        }
+        return Collections.unmodifiableList(loaded);
     }
 
     private void resolveDependencies(PluginDescriptor descriptor) {
