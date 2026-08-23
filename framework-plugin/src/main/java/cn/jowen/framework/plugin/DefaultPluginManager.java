@@ -1,6 +1,7 @@
 package cn.jowen.framework.plugin;
 
 import cn.jowen.framework.core.event.EventBus;
+import cn.jowen.framework.plugin.config.PluginApplicationContext;
 import cn.jowen.framework.plugin.dependency.DependencyResolutionException;
 import cn.jowen.framework.plugin.dependency.DependencyResolver;
 import cn.jowen.framework.plugin.event.PluginEventPublisher;
@@ -30,6 +31,10 @@ public final class DefaultPluginManager implements PluginManager {
     private final Map<String, PluginLoader> loaders = new LinkedHashMap<>();
     private final PluginEventPublisher eventPublisher;
 
+    /** Spring 子容器持有器，可为 {@code null}（非 Spring 宿主场景）。 */
+    @Nullable
+    private PluginApplicationContext springContext;
+
     public DefaultPluginManager() {
         this(null);
     }
@@ -50,6 +55,10 @@ public final class DefaultPluginManager implements PluginManager {
             throw new PluginLoader.PluginException("插件启动失败：" + id, e);
         }
         registry.put(id, plugin);
+        // Spring 子容器：为 springEnabled 插件创建子容器
+        if (springContext != null && plugin.descriptor() != null && plugin.descriptor().springEnabled()) {
+            springContext.createFor(plugin);
+        }
         if (eventPublisher != null) {
             PluginDescriptor desc = plugin.descriptor();
             if (desc != null) {
@@ -125,6 +134,10 @@ public final class DefaultPluginManager implements PluginManager {
         }
         Plugin plugin = registry.remove(id);
         if (plugin != null) {
+            // 关闭 Spring 子容器
+            if (springContext != null) {
+                springContext.closeFor(id);
+            }
             try {
                 plugin.destroy();
             } catch (Exception e) {
@@ -165,5 +178,14 @@ public final class DefaultPluginManager implements PluginManager {
     @Nullable
     public PluginEventPublisher getEventPublisher() {
         return eventPublisher;
+    }
+
+    /**
+     * 注入 Spring 子容器持有器。
+     *
+     * @param springContext 子容器持有器，{@code null} 表示不使用 Spring 子容器
+     */
+    public void setSpringContext(@Nullable PluginApplicationContext springContext) {
+        this.springContext = springContext;
     }
 }
