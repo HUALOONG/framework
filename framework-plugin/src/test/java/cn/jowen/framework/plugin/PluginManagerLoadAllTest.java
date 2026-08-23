@@ -121,6 +121,31 @@ class PluginManagerLoadAllTest {
     }
 
     /**
+     * 边界（团队主理人点名核查）：批次内出现重复 id（两个 loader 同 id "a"）。
+     * 验证不会误触 {@code loadAll} 中的防御分支（order 含 loaderById 没有的 id 时抛
+     * DependencyResolutionException）——该分支在此场景下不应被触发；同时记录当前语义：
+     * {@code loaderById} 为 {@link java.util.LinkedHashMap}，后加入的 loader 覆盖先加入者，
+     * 因此 2 个同 id 的 loader 只会注册出 1 个插件，先加入的 loader 被静默丢弃
+     * （与单插件 {@code load} 遇重复 id 抛「插件 id 已存在」的语义不一致，属本周期范围外
+     * 的潜在隐患，已在报告中挂账）。
+     */
+    @Test
+    void loadAllWithDuplicateIdsSilentlyDeduplicates() {
+        // 两个 loader 同 id "a"（真实场景：两份声明同一 id 的插件）
+        PluginLoader first = loaderOf("a", PluginA.class, List.of());
+        PluginLoader second = loaderOf("a", PluginA.class, List.of());
+
+        List<Plugin> loaded = manager.loadAll(List.of(first, second));
+
+        // 防御分支（order 含 loaderById 没有的 id）未被误触，整批仍完成、不抛 DependencyResolutionException
+        assertThat(loaded).hasSize(1);
+        // 但 loaderById 为 LinkedHashMap，后加入的覆盖先加入者 —— 第一个 loader 被静默丢弃，
+        // 2 个同 id loader 只注册出 1 个插件（id 为 "a"），与单 load 的重复 id 报错语义不一致
+        assertThat(idsOf(manager.all())).containsExactly("a");
+        assertThat(manager.get("a")).isNotNull();
+    }
+
+    /**
      * 构造一个以测试 classpath 为父加载器的插件加载器，插件类由父加载器解析。
      *
      * @param id           插件 id
