@@ -28,7 +28,7 @@ public final class PluginJsonDescriptorParser {
     private static final String PLUGIN_JSON_PATH = "META-INF/plugin/plugin.json";
 
     public PluginDescriptor parse(JarFile jarFile) throws IOException {
-        JarEntry entry = jarFile.getEntry(PLUGIN_JSON_PATH);
+        JarEntry entry = jarFile.getJarEntry(PLUGIN_JSON_PATH);
         if (entry == null) {
             throw new DescriptorParseException("JAR 中不存在 " + PLUGIN_JSON_PATH);
         }

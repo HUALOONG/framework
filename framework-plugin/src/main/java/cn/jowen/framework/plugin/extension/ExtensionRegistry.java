@@ -106,7 +106,8 @@ public final class ExtensionRegistry {
                 scanDirectory(root, basePackage);
             }
         } catch (Exception e) {
-            // 扫描失败不阻断
+            java.util.logging.Logger.getLogger(ExtensionRegistry.class.getName())
+                    .warning("扩展扫描失败：" + basePackage + "，原因：" + e.getMessage());
         }
     }
 
@@ -124,8 +125,10 @@ public final class ExtensionRegistry {
                                 Object instance = clazz.getDeclaredConstructor().newInstance();
                                 register(instance);
                             }
-                        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
-                                | InvocationTargetException ignored) {
+                        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException
+                                | IllegalAccessException | InvocationTargetException e) {
+                            java.util.logging.Logger.getLogger(ExtensionRegistry.class.getName())
+                                    .finer("跳过扩展类 " + className + "：" + e.getMessage());
                         }
                     });
         }
@@ -133,7 +136,9 @@ public final class ExtensionRegistry {
             sub.filter(p -> java.nio.file.Files.isDirectory(p)).forEach(p -> {
                 try {
                     scanDirectory(p, basePackage + "." + p.getFileName());
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    java.util.logging.Logger.getLogger(ExtensionRegistry.class.getName())
+                            .finer("跳过子目录 " + p + "：" + e.getMessage());
                 }
             });
         }

@@ -12,6 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import static java.nio.file.StandardWatchEventKinds.*;
 
 /**
  * 基于 JDK WatchService 的插件目录监听器。
@@ -51,9 +52,9 @@ public final class PluginWatchService implements Closeable {
         if (!running.compareAndSet(false, true)) return;
         try {
             watchDir.register(watchService,
-                    WatchEvent.Kind.CREATE,
-                    WatchEvent.Kind.DELETE,
-                    WatchEvent.Kind.MODIFY);
+                    ENTRY_CREATE,
+                    ENTRY_DELETE,
+                    ENTRY_MODIFY);
         } catch (Exception e) {
             throw new RuntimeException("注册 WatchKey 失败：" + watchDir, e);
         }
@@ -93,5 +94,10 @@ public final class PluginWatchService implements Closeable {
         running.set(false);
         executor.shutdownNow();
         try { watchService.close(); } catch (Exception ignored) {}
+        if (watcherThread != null && watcherThread.isAlive()) {
+            try { watcherThread.join(2000); } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }
