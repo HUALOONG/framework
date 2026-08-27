@@ -52,6 +52,13 @@
             <artifactId>framework-core</artifactId>
         </dependency>
 
+        <!-- Jackson 3：审计快照 JSON 序列化（可选） -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- 测试依赖 -->
         <dependency>
             <groupId>com.h2database</groupId>

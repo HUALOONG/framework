@@ -26,6 +26,7 @@ public final class ExtensionRegistry {
     public static ExtensionRegistry defaults() {
         ExtensionRegistry registry = new ExtensionRegistry();
         registry.register(new FlexTenantHandler());
+        registry.register(new FlexAuditHandler());
         registry.register(new FlexMaskProcessor());
         registry.register(new FlexEncryptProcessor());
         registry.register(new FlexSqlAuditListener());
@@ -51,6 +52,7 @@ public final class ExtensionRegistry {
     public List<Extension> getAll() { return List.copyOf(extensions); }
 
     public FlexTenantHandler getTenantHandler() { return (FlexTenantHandler) extensionMap.get("tenant"); }
+    public FlexAuditHandler getAuditHandler() { return (FlexAuditHandler) extensionMap.get("audit"); }
     public FlexMaskProcessor getMaskProcessor() { return (FlexMaskProcessor) extensionMap.get("mask"); }
     public FlexEncryptProcessor getEncryptProcessor() { return (FlexEncryptProcessor) extensionMap.get("encrypt"); }
     public FlexSqlAuditListener getSqlAuditListener() { return (FlexSqlAuditListener) extensionMap.get("sqlAudit"); }
@@ -62,6 +64,8 @@ public final class ExtensionRegistry {
     public void firePostSave(Object entity) {
         FlexMaskProcessor processor = getMaskProcessor();
         if (processor != null) processor.maskObject(entity);
+        FlexAuditHandler auditHandler = getAuditHandler();
+        if (auditHandler != null) auditHandler.onInsert(entity);
     }
 
     public void firePreUpdate(Object entity) {
@@ -69,7 +73,12 @@ public final class ExtensionRegistry {
         if (handler != null) handler.incrementVersion(entity);
     }
 
-    public void firePostUpdate(Object entity) { firePostSave(entity); }
+    public void firePostUpdate(Object entity) {
+        FlexMaskProcessor processor = getMaskProcessor();
+        if (processor != null) processor.maskObject(entity);
+        FlexAuditHandler auditHandler = getAuditHandler();
+        if (auditHandler != null) auditHandler.onUpdate(entity);
+    }
 
     public interface Extension {
         String name();

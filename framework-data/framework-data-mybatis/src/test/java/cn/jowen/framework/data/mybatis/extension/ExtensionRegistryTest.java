@@ -14,7 +14,7 @@ class ExtensionRegistryTest {
     void defaults_registersAllExtensions() {
         ExtensionRegistry registry = ExtensionRegistry.defaults();
         List<ExtensionRegistry.Extension> all = registry.getAll();
-        assertThat(all).hasSize(6);
+        assertThat(all).hasSize(7);
     }
 
     @Test
@@ -52,6 +52,13 @@ class ExtensionRegistryTest {
         ExtensionRegistry registry = ExtensionRegistry.defaults();
         FlexMaskProcessor processor = registry.getMaskProcessor();
         assertThat(processor).isNotNull();
+    }
+
+    @Test
+    void getAuditHandler() {
+        ExtensionRegistry registry = ExtensionRegistry.defaults();
+        FlexAuditHandler handler = registry.getAuditHandler();
+        assertThat(handler).isNotNull();
     }
 
     @Test
