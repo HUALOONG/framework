@@ -470,18 +470,18 @@ framework:
 
 ```
 cn.jowen.framework.boot.autoconfigure/
-├─ BootAutoConfiguration           # 总入口（@Import 各模块）
+├─ JowenAutoConfiguration           # 总入口（@Import 各功能装配类）
 ├─ logger/    LoggerAutoConfiguration
-├─ data/      DataSourceAutoConfiguration · DataJdbcAutoConfiguration · DataMybatisAutoConfiguration
-├─ cache/     CacheAutoConfiguration
+├─ data/      JdbcAutoConfiguration · MybatisAutoConfiguration           # DataSourceAutoConfiguration 未实现
+├─ cache/     CacheAutoConfiguration · CacheStatsReporter（Micrometer 指标）
 ├─ i18n/      I18nAutoConfiguration
-├─ plugin/    PluginAutoConfiguration
+├─ plugin/    PluginAutoConfiguration · PluginEndpoint（/actuator/plugins）· PluginHealthIndicator
 ├─ extras/    ExtrasAutoConfiguration
 ├─ health/    HealthAutoConfiguration
-├─ observability/  ObservabilityAutoConfiguration
-├─ runtime/   BootRuntimeHints
-└─ web/       WebAutoConfiguration
+└─ runtime/   RuntimeHints 按领域拆分：Spi/Jdbc/Mybatis/Cache/I18n/Logger
 ```
+
+> 注：`ObservabilityAutoConfiguration` 与 `DataSourceAutoConfiguration` 尚未实现；`web/`、`bridge/` 装配类暂未落地。
 
 **注册文件**：`META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`（装配）、
 `META-INF/spring/aot.factories`（RuntimeHintsRegistrar）
@@ -490,12 +490,10 @@ cn.jowen.framework.boot.autoconfigure/
 
 ```textmate
 
-@AutoConfiguration
-@ConditionalOnClass(name = "cn.jowen.framework.data.jdbc.core.JdbcTemplate")
-@ConditionalOnBean(DataSource.class)
-@ConditionalOnProperty(prefix = "framework.data", name = "type", havingValue = "jdbc")
-@AutoConfigureAfter(DataSourceAutoConfiguration.class)
-public class DataJdbcAutoConfiguration {
+@AutoConfiguration(after = JowenAutoConfiguration.class)
+@ConditionalOnClass(name = "cn.jowen.framework.data.jdbc.context.JdbcContext")
+@ConditionalOnProperty(prefix = "framework.data", name = "type", havingValue = "jdbc", matchIfMissing = true)
+public class JdbcAutoConfiguration {
     ...
 }
 ```
