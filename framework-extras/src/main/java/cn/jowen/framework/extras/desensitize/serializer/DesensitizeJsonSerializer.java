@@ -101,8 +101,7 @@ public final class DesensitizeJsonSerializer extends ValueSerializer<String> {
     }
 
     private static Resolved fromCore(DesensitizeField annotation) {
-        DesensitizeStrategies strategyEnum =
-                DesensitizeStrategies.valueOf(annotation.strategy().toUpperCase(Locale.ROOT));
+        DesensitizeStrategies strategyEnum = DesensitizeStrategies.valueOf(annotation.strategy().toUpperCase(Locale.ROOT));
         int startKeep = annotation.startKeep() >= 0 ? annotation.startKeep() : strategyEnum.defaultStartKeep();
         int endKeep = annotation.endKeep() >= 0 ? annotation.endKeep() : strategyEnum.defaultEndKeep();
         String replacement = annotation.replacement().isEmpty() ? "*" : annotation.replacement();
