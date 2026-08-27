@@ -19,6 +19,11 @@ target/
 .classpath
 .project
 
+# 工具 / 工作区配置
+.workbuddy/
+.claude/
+.mimocode/
+
 # 日志文件
 logs/
 *.log
