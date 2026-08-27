@@ -4,6 +4,7 @@ import cn.jowen.framework.core.desensitize.DesensitizeContext;
 import cn.jowen.framework.core.desensitize.DesensitizeRule;
 import cn.jowen.framework.core.desensitize.Desensitizer;
 import cn.jowen.framework.logger.config.LoggerProperties;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +24,7 @@ class LogMaskerTest {
         // 注册测试用手机号脱敏规则（测试隔离：每次测试前重新注册）
         desensitizer.register(new DesensitizeRule() {
             @Override
-            public String apply(String text, DesensitizeContext ctx) {
+            public String apply(@NonNull String text, @NonNull DesensitizeContext ctx) {
                 return text.replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1" + ctx.replacement().repeat(4) + "$2");
             }
         });

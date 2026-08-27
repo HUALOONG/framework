@@ -49,12 +49,12 @@
 ```text
 framework-logger
 └─ src/main/java/cn/jowen/framework/logger/
-   ├─ facade/                 # 日志门面（Logger / LoggerFactory / LogLevel）
    ├─ adapter/                # 日志实现适配（Logback / Log4j2）
-   ├─ trace/                  # 链路追踪增强（TraceEnhancer / TraceContext / MdcContextPropagation）
-   ├─ mask/                   # 日志脱敏（core.desensitize 适配：LogMasker / LogMaskLayout）
+   ├─ config/                 # 配置（LoggerProperties）
+   ├─ facade/                 # 日志门面（Logger / LoggerFactory / LogLevel）
    ├─ layout/                 # 结构化日志（StructuredLayout / JsonLogFormatter）
-   └─ config/                 # 配置（LoggerProperties）
+   ├─ mask/                   # 日志脱敏（core.desensitize 适配：LogMasker / LogMaskLayout）
+   └─ trace/                  # 链路追踪增强（TraceEnhancer / TraceContext / MdcContextPropagation）
 ```
 
 ---
