@@ -1,12 +1,11 @@
 package cn.jowen.framework.cache.serializer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Jackson 序列化器实现，为框架缓存默认序列化方案。
+ * Jackson 3 序列化器实现，为框架缓存默认序列化方案。
  * 支持泛型类型反序列化，需配合 TypeReference 使用。
  *
  * @author 王飞
@@ -15,7 +14,7 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public class JacksonSerializer implements CacheSerializer {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final JsonMapper OBJECT_MAPPER = JsonMapper.builder().build();
 
     @Override
     public byte[] serialize(Object object) {

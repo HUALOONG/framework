@@ -159,16 +159,5 @@
             <groupId>cn.jowen.framework</groupId>
             <artifactId>framework-data-mybatis</artifactId>
         </dependency>
-
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
     </dependencies>
 </project>
