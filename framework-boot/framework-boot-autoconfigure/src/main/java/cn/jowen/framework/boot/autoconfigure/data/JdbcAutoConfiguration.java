@@ -16,6 +16,7 @@ import cn.jowen.framework.data.jdbc.dialect.DialectRegistry;
 import cn.jowen.framework.data.jdbc.repository.DefaultIdGenerator;
 import cn.jowen.framework.data.jdbc.repository.IdGenerator;
 import cn.jowen.framework.data.jdbc.repository.JdbcRepositoryFactory;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -79,13 +80,18 @@ public class JdbcAutoConfiguration {
     @ConditionalOnMissingBean
     public JdbcContext jdbcContext(BootDataSourceProperties dataSourceProperties,
                                    BootJdbcProperties jdbcProperties,
-                                   ObjectProvider<IdGenerator> idGenerator) {
+                                   ObjectProvider<IdGenerator> idGenerator,
+                                   ObjectProvider<MeterRegistry> meterRegistry) {
         JdbcContext.Builder builder = JdbcContext.builder()
                 .properties(dataSourceProperties)
                 .jdbc(jdbcProperties);
         IdGenerator idGen = idGenerator.getIfAvailable();
         if (idGen != null) {
             builder.idGenerator(idGen);
+        }
+        MeterRegistry registry = meterRegistry.getIfAvailable();
+        if (registry != null) {
+            builder.meterRegistry(registry);
         }
         return builder.build();
     }

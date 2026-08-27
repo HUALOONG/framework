@@ -28,7 +28,9 @@ import cn.jowen.framework.data.jdbc.repository.DefaultIdGenerator;
 import cn.jowen.framework.data.jdbc.repository.IdGenerator;
 import cn.jowen.framework.data.jdbc.repository.JdbcRepositoryFactory;
 import cn.jowen.framework.data.jdbc.transaction.JdbcTransactionManager;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -174,6 +176,7 @@ public final class JdbcContext {
         private NamingStrategy namingStrategy = new CamelCaseNamingStrategy();
         private DialectRegistry dialectRegistry = new DialectRegistry();
         private IdGenerator idGenerator;
+        private @Nullable MeterRegistry meterRegistry;
         private LoggingInterceptor loggingInterceptor;
         private PerformanceInterceptor performanceInterceptor;
         private TenantInterceptor tenantInterceptor;
@@ -209,6 +212,17 @@ public final class JdbcContext {
             return this;
         }
 
+        /**
+         * 设置 Micrometer 指标注册中心（可选），用于 SQL 耗时上报。
+         *
+         * @param meterRegistry 指标注册中心，可为 {@code null}
+         * @return 构建器本身
+         */
+        public Builder meterRegistry(@Nullable MeterRegistry meterRegistry) {
+            this.meterRegistry = meterRegistry;
+            return this;
+        }
+
         public Builder addInterceptor(SqlInterceptor interceptor) {
             this.extraInterceptors.add(interceptor);
             return this;
@@ -241,7 +255,7 @@ public final class JdbcContext {
          */
         public JdbcContext build() {
             this.loggingInterceptor = new LoggingInterceptor(jdbcProperties);
-            this.performanceInterceptor = new PerformanceInterceptor(jdbcProperties);
+            this.performanceInterceptor = new PerformanceInterceptor(jdbcProperties, meterRegistry);
             if (jdbcProperties.isTenantEnabled()) {
                 this.tenantInterceptor = new TenantInterceptor(jdbcProperties);
             }

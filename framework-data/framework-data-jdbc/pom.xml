@@ -46,6 +46,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Micrometer 2.0 指标（可选）：PerformanceInterceptor 上报 SQL 耗时 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- 测试：H2 内存库跑通 CRUD/事务/分页 -->
         <dependency>
             <groupId>com.h2database</groupId>
