@@ -363,25 +363,25 @@ cn.jowen.framework.data.mybatis/
 
 ### 8.6 framework-cache — 缓存管理
 
-**定位**：统一缓存，多级缓存（L1 Caffeine + L2 Redis）、缓存注解、统计监控、防穿透/击穿/雪崩。
+**定位**：统一缓存，本地（Caffeine）与分布式（Redisson）多级缓存、缓存注解、统计监控与防穿透/击穿/雪崩。
 
 ```
 cn.jowen.framework.cache/
-├─ annotation/    @Cacheable · @CachePut · @CacheEvict · @CacheInvalidate · @Caching
-├─ api/           Cache<K,V> · CacheManager · CacheConfig · CacheException
-├─ config/        CacheAutoConfiguration · CacheProperties · CacheType(LOCAL/REDIS/MULTI/NONE)
-├─ distributed/   RedisCache · MemcachedCache
-├─ event/         CacheHitEvent · CacheMissEvent · CachePutEvent · CacheEvictEvent
-├─ interceptor/   CacheInterceptor · CacheKeyGenerator · CacheExpressionEvaluator(SpEL)
-├─ local/         CaffeineCache（默认）· ConcurrentMapCache · LoadingLocalCache
-├─ multi/         MultiLevelCache · CacheSyncBroadcaster（Redis Pub/Sub 跨节点同步）
-├─ serialization/ JsonCacheSerializer(Jackson 3) · KryoCacheSerializer · ProtobufCacheSerializer
-├─ stats/         CacheStatsCollector · CacheStatsReporter(Micrometer 2.0) · CacheHealthIndicator
-└─ support/       CachePenetrationShield · CacheBreakdownShield · CacheAvalancheShield · NullValue
+├─ annotation/   @Cacheable · @CachePut · @CacheEvict · @EnableCaching · CacheAnnotationProcessor（AOP 切面）
+├─ api/          Cache<K,V> · CacheManager · CacheConfiguration（Builder）· CacheStats · DefaultCacheManager · NullValue
+├─ cache/caffeine/   CaffeineCache（默认）· CaffeineCacheManager · CaffeineConfigurer
+├─ cache/redisson/   RedissonCache（逐键 TTL）· RedissonCacheManager
+├─ cache/multilevel/ MultilevelCache · MultilevelCacheManager · CacheSyncListener（跨节点同步）
+├─ config/       CacheProperties（纯 POJO；自动装配由 boot-autoconfigure 承载）
+├─ event/        CacheEvent · CacheHitEvent · CacheMissEvent · CachePutEvent · CacheEvictEvent · CacheEventListener
+├─ eviction/     EvictionPolicy（LRU）· EvictionContext · EvictionPolicyFactory
+├─ lock/         CacheLock · CacheLockFactory · RedissonCacheLock
+├─ serializer/   CacheSerializer · JacksonSerializer（Jackson 3）· KryoSerializer · SerializerFactory
+└─ support/      CacheKeyGenerator · DefaultCacheKeyGenerator · CacheOperationContext · ConditionEvaluator（SpEL）
 ```
 
-**Spring Boot 4.x 适配**：JsonCacheSerializer 用 Jackson 3；统计上报 Micrometer 2.0；`CacheHealthIndicator` 注册到
-Actuator。
+**Spring Boot 4.x 适配**：JacksonSerializer 用 Jackson 3（`tools.jackson`）；命中率指标经 boot-autoconfigure 的
+`CacheStatsReporter`（Micrometer 2.0）上报；防穿透/击穿/雪崩采用 NullValue + CacheLock + jitter 方案。
 
 ---
 
@@ -421,10 +421,10 @@ Spring，通过 autoconfigure 桥接。
 - **类加载隔离**（FRAMEWORK_API_DELEGATE 推荐策略）：框架 API 委派宿主 → 共享库委派 SharedClassLoader →
   插件私有类自身加载 → 隐藏类（如 javax.servlet.\*\*）拒绝
 - **Spring 子容器**：每个插件一个子 ApplicationContext，parent = 宿主容器，可访问宿主 Bean，卸载时 close 销毁
-- **热部署**：WatchService 监听 plugins 目录，新 jar 自动加载、删除自动卸载、更新自动重启（防抖 3s）
-- **扩展机制**：`@ExtensionPoint` / `@Extension` / `@ExtensionScan` + plugin.json 描述符双通道
+- **热部署**：WatchService 监听 plugins 目录，新 jar 自动加载、删除自动卸载、更新自动重启（防抖）；支持 `RestartHotSwapStrategy` 与 `ManualHotSwapStrategy`（待人工处置）
+- **扩展机制**：`@Extension`（extension 包）+ 复用 core `@SPI`/`@Activate`，描述符支持 `plugin.json`（手写解析）与 `plugin.yaml`（SnakeYAML）
 - **依赖解析**：DAG 拓扑排序 + 版本仲裁（VersionRange 交集）+ 循环检测
-- **Actuator 集成**：`/actuator/plugins` 端点（start/stop/restart/install/uninstall）+ PluginHealthIndicator
+- **Actuator 集成**（boot-autoconfigure 承载）：`/actuator/plugins` 端点（list/start/stop/restart/unload）+ `PluginHealthIndicator`（FAILED → DOWN）
 
 ```yaml
 framework:
@@ -536,7 +536,9 @@ spring-boot-starter），数据访问实现按需另引。
 ### 8.13 framework-data（聚合父模块）与 framework-boot（超级聚合器）
 
 - **framework-data**：纯聚合 POM，聚合 data-core / data-jdbc / data-mybatis 三个子模块
-- **framework-boot**：超级聚合器，聚合框架全部子模块；呈现 Layer -1（外部技术栈）到 Layer 4（starter）的完整依赖树与全局配置
+- **framework-boot**：纯聚合 POM，聚合 boot-autoconfigure / boot-starter 两个子模块；各功能自动装配经
+  `JowenAutoConfiguration`（总入口，`@Import` 各功能装配类）集中接入。**全框架模块的整体聚合由根 pom.xml 的
+  `<modules>` 完成**
 
 ---
 
