@@ -1,6 +1,9 @@
 package cn.jowen.framework.i18n.config;
 
+import cn.jowen.framework.i18n.reload.ReloadStrategy;
 import org.jspecify.annotations.NullMarked;
+
+import java.util.List;
 
 /**
  * 国际化配置属性（纯 POJO）。绑定前缀 {@code framework.i18n.*} 由 boot-autoconfigure 的
@@ -43,9 +46,34 @@ public class I18nProperties {
     private String defaultLocale = "";
 
     /**
+     * 支持的区域列表，空表示不限制。
+     */
+    private List<String> supportedLocales = List.of();
+
+    /**
+     * 多源聚合查找顺序（{@link SourceType#COMPOSITE} 时生效），依次命中即返回。
+     */
+    private List<SourceType> compositeOrder = List.of();
+
+    /**
+     * 消息资源缓存秒数，缺省 3600。
+     */
+    private long cacheSeconds = 3600;
+
+    /**
+     * 资源热加载策略，缺省 {@link ReloadStrategy#MANUAL}（仅手动触发）。
+     */
+    private ReloadStrategy reloadStrategy = ReloadStrategy.MANUAL;
+
+    /**
      * 热加载轮询间隔（秒），0 表示不轮询，缺省 0。
      */
     private long reloadIntervalSeconds = 0;
+
+    /**
+     * 数据库消息源配置。
+     */
+    private DatabaseSource database = new DatabaseSource();
 
     public boolean isEnabled() {
         return enabled;
@@ -95,11 +123,111 @@ public class I18nProperties {
         this.defaultLocale = defaultLocale;
     }
 
+    public List<String> getSupportedLocales() {
+        return supportedLocales;
+    }
+
+    public void setSupportedLocales(List<String> supportedLocales) {
+        this.supportedLocales = supportedLocales;
+    }
+
+    public List<SourceType> getCompositeOrder() {
+        return compositeOrder;
+    }
+
+    public void setCompositeOrder(List<SourceType> compositeOrder) {
+        this.compositeOrder = compositeOrder;
+    }
+
+    public long getCacheSeconds() {
+        return cacheSeconds;
+    }
+
+    public void setCacheSeconds(long cacheSeconds) {
+        this.cacheSeconds = cacheSeconds;
+    }
+
+    public ReloadStrategy getReloadStrategy() {
+        return reloadStrategy;
+    }
+
+    public void setReloadStrategy(ReloadStrategy reloadStrategy) {
+        this.reloadStrategy = reloadStrategy;
+    }
+
     public long getReloadIntervalSeconds() {
         return reloadIntervalSeconds;
     }
 
     public void setReloadIntervalSeconds(long reloadIntervalSeconds) {
         this.reloadIntervalSeconds = reloadIntervalSeconds;
+    }
+
+    public DatabaseSource getDatabase() {
+        return database;
+    }
+
+    public void setDatabase(DatabaseSource database) {
+        this.database = database;
+    }
+
+    /**
+     * 数据库消息源配置（{@code framework.i18n.database.*}），与 {@link cn.jowen.framework.i18n.source.DatabaseMessageSource}
+     * 的表结构约定对应。
+     */
+    @NullMarked
+    public static class DatabaseSource {
+
+        /**
+         * 消息表名，缺省 {@code i18n_message}。
+         */
+        private String tableName = "i18n_message";
+
+        /**
+         * 区域列名，缺省 {@code locale}。
+         */
+        private String localeColumn = "locale";
+
+        /**
+         * 消息编码列名，缺省 {@code code}。
+         */
+        private String codeColumn = "code";
+
+        /**
+         * 消息内容列名，缺省 {@code message}。
+         */
+        private String messageColumn = "message";
+
+        public String getTableName() {
+            return tableName;
+        }
+
+        public void setTableName(String tableName) {
+            this.tableName = tableName;
+        }
+
+        public String getLocaleColumn() {
+            return localeColumn;
+        }
+
+        public void setLocaleColumn(String localeColumn) {
+            this.localeColumn = localeColumn;
+        }
+
+        public String getCodeColumn() {
+            return codeColumn;
+        }
+
+        public void setCodeColumn(String codeColumn) {
+            this.codeColumn = codeColumn;
+        }
+
+        public String getMessageColumn() {
+            return messageColumn;
+        }
+
+        public void setMessageColumn(String messageColumn) {
+            this.messageColumn = messageColumn;
+        }
     }
 }

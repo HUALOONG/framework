@@ -1,11 +1,17 @@
 package cn.jowen.framework.i18n.config;
 
+import cn.jowen.framework.i18n.reload.ReloadStrategy;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * {@link I18nProperties} 测试。
+ *
+ * @author 王飞
+ * @since 2026-08-24
  */
 class I18nPropertiesTest {
 
@@ -20,6 +26,14 @@ class I18nPropertiesTest {
         assertThat(properties.getFormatter()).isEqualTo(FormatterType.JAVA_TEXT);
         assertThat(properties.getDefaultLocale()).isEmpty();
         assertThat(properties.getReloadIntervalSeconds()).isEqualTo(0L);
+        assertThat(properties.getSupportedLocales()).isEmpty();
+        assertThat(properties.getCompositeOrder()).isEmpty();
+        assertThat(properties.getCacheSeconds()).isEqualTo(3600L);
+        assertThat(properties.getReloadStrategy()).isEqualTo(ReloadStrategy.MANUAL);
+        assertThat(properties.getDatabase().getTableName()).isEqualTo("i18n_message");
+        assertThat(properties.getDatabase().getLocaleColumn()).isEqualTo("locale");
+        assertThat(properties.getDatabase().getCodeColumn()).isEqualTo("code");
+        assertThat(properties.getDatabase().getMessageColumn()).isEqualTo("message");
     }
 
     @Test
@@ -70,6 +84,27 @@ class I18nPropertiesTest {
     void setReloadIntervalSeconds_getReloadIntervalSeconds() {
         properties.setReloadIntervalSeconds(30);
         assertThat(properties.getReloadIntervalSeconds()).isEqualTo(30L);
+    }
+
+    @Test
+    void newFields_setters() {
+        properties.setSupportedLocales(List.of("zh_CN", "en_US"));
+        properties.setCompositeOrder(List.of(SourceType.DATABASE, SourceType.PROPERTIES));
+        properties.setCacheSeconds(600);
+        properties.setReloadStrategy(ReloadStrategy.WATCH);
+        properties.getDatabase().setTableName("i18n_msg");
+        properties.getDatabase().setLocaleColumn("lang");
+        properties.getDatabase().setCodeColumn("msg_code");
+        properties.getDatabase().setMessageColumn("msg_text");
+
+        assertThat(properties.getSupportedLocales()).containsExactly("zh_CN", "en_US");
+        assertThat(properties.getCompositeOrder()).containsExactly(SourceType.DATABASE, SourceType.PROPERTIES);
+        assertThat(properties.getCacheSeconds()).isEqualTo(600L);
+        assertThat(properties.getReloadStrategy()).isEqualTo(ReloadStrategy.WATCH);
+        assertThat(properties.getDatabase().getTableName()).isEqualTo("i18n_msg");
+        assertThat(properties.getDatabase().getLocaleColumn()).isEqualTo("lang");
+        assertThat(properties.getDatabase().getCodeColumn()).isEqualTo("msg_code");
+        assertThat(properties.getDatabase().getMessageColumn()).isEqualTo("msg_text");
     }
 
     @Test

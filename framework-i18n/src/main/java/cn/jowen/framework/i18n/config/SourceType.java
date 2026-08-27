@@ -19,5 +19,15 @@ public enum SourceType {
     /**
      * 数据库消息表。
      */
-    DATABASE
+    DATABASE,
+
+    /**
+     * Redis 消息缓存（骨架预留，实现依赖 cache 模块）。
+     */
+    REDIS,
+
+    /**
+     * 多源组合（按 {@code composite-order} 依次查找）。
+     */
+    COMPOSITE
 }
