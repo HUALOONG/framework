@@ -1,11 +1,13 @@
 package cn.jowen.framework.i18n.api;
 
+import cn.jowen.framework.core.context.ContextCarrier;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.Locale;
 
 /**
- * 区域上下文持有者。基于线程本地，避免对 Servlet {@code RequestContextHolder} 的耦合。
+ * 区域上下文持有者。读路径统一委托 {@link ContextCarrier}（与 {@link I18nContext} 共享载体），
+ * 写路径保留 ThreadLocal 以兼容作用域外调用（ScopedValue 模式下 set 仅在 {@code runWith} 作用域内可用）。
  *
  * @author 王飞
  * @since 2026-08-21
@@ -19,15 +21,19 @@ public final class LocaleContextHolder {
     }
 
     /**
-     * @return 当前线程区域；未设置返回 {@link Locale#getDefault()}
+     * @return 当前区域：优先取 {@link I18nContext}（ContextCarrier 作用域内）的值，
+     *         其次取本类 ThreadLocal，均未设置时返回 {@link Locale#getDefault()}
      */
     public static Locale getLocale() {
-        Locale locale = HOLDER.get();
+        Locale locale = ContextCarrier.get(I18nContext.LOCALE);
+        if (locale == null) {
+            locale = HOLDER.get();
+        }
         return locale != null ? locale : Locale.getDefault();
     }
 
     /**
-     * 设置当前线程区域。
+     * 设置当前线程区域（写 ThreadLocal；兼容作用域外调用）。
      *
      * @param locale 区域，不可为 {@code null}
      */
