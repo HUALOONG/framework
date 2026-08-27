@@ -2,10 +2,7 @@ package cn.jowen.framework.boot.autoconfigure.cache;
 
 import cn.jowen.framework.boot.autoconfigure.JowenAutoConfiguration;
 import cn.jowen.framework.cache.api.CacheManager;
-import cn.jowen.framework.cache.api.CacheStats;
 import cn.jowen.framework.cache.api.DefaultCacheManager;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -14,8 +11,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-
-import java.util.Collections;
 
 /**
  * 缓存装配。向容器提供 {@link CacheManager}（默认 {@link DefaultCacheManager}）。
@@ -44,33 +39,16 @@ public class CacheAutoConfiguration {
     }
 
     /**
-     * 缓存指标绑定器（可选）。仅当 Micrometer 在 classpath 且开启指标时生效。
+     * 缓存指标上报器（可选）。仅当 Micrometer 在 classpath 且开启指标时生效，
+     * 由 {@link CacheStatsReporter} 将各缓存命中率注册为 gauge。
      *
-     * @param manager    缓存管理器，不可为 {@code null}
-     * @param properties 属性，不可为 {@code null}
-     * @return 指标绑定器，不可为 {@code null}
+     * @param manager 缓存管理器，不可为 {@code null}
+     * @return 指标上报器，不可为 {@code null}
      */
     @Bean
     @ConditionalOnClass(name = "MeterRegistry")
     @ConditionalOnProperty(prefix = "framework.cache", name = "metrics", matchIfMissing = true)
-    public MeterBinder cacheMetrics(CacheManager manager, BootCacheProperties properties) {
-        return registry -> {
-            for (String name : manager.cacheNames()) {
-                bindCache(registry, manager, name);
-            }
-        };
-    }
-
-    private void bindCache(MeterRegistry registry, CacheManager manager, String cacheName) {
-        CacheStats stats = manager.getStats(cacheName);
-        if (stats == null) {
-            return;
-        }
-        registry.gauge("framework.cache.hits", Collections.singletonList(
-                Tag.of("cache", cacheName)), stats, CacheStats::hits);
-        registry.gauge("framework.cache.misses", Collections.singletonList(
-                Tag.of("cache", cacheName)), stats, CacheStats::misses);
-        registry.gauge("framework.cache.hitRate", Collections.singletonList(
-                Tag.of("cache", cacheName)), stats, CacheStats::hitRate);
+    public MeterBinder cacheMetrics(CacheManager manager) {
+        return new CacheStatsReporter(manager);
     }
 }
