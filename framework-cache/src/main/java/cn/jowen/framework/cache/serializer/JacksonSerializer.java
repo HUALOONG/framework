@@ -15,8 +15,7 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public class JacksonSerializer implements CacheSerializer {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     public byte[] serialize(Object object) {

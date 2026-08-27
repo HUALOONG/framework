@@ -8,11 +8,12 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.redisson.api.RedissonClient;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Redisson 二级分布式缓存的 {@link CacheManager} 实现。
+ * 基于 {@link RedissonCache} 的 {@link CacheManager} 实现，按需创建命名分布式缓存实例。
  *
  * @author 王飞
  * @since 2026-08-24
@@ -34,10 +35,20 @@ public class RedissonCacheManager implements CacheManager {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public <K, V> Cache<K, V> getCache(String name) {
         return (Cache<K, V>) caches.computeIfAbsent(
-                name, n -> RedissonCache.create(_client, n, _config));
+                name, n -> (Cache) RedissonCache.create(_client, n, _config));
+    }
+
+    public <K extends Serializable, V extends Serializable> Cache<K, V> create(String name, CacheConfiguration config) {
+        Cache<K, V> cache = RedissonCache.create(_client, name, config);
+        caches.put(name, cache);
+        return cache;
+    }
+
+    public void shutdown() {
+        _client.shutdown();
     }
 
     @Override

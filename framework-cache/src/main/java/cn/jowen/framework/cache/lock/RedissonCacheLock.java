@@ -2,13 +2,14 @@ package cn.jowen.framework.cache.lock;
 
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Redisson 分布式锁实现（预留，当前使用 ReentrantLock 单机兜底）。
+ * 基于 Redisson {@link RLock} 的 {@link CacheLock} 实现。
  *
  * @author 王飞
  * @since 2026-08-24
@@ -16,18 +17,20 @@ import java.util.concurrent.locks.ReentrantLock;
 @NullMarked
 public class RedissonCacheLock implements CacheLock {
 
-    private final String lockName;
-    private final ReentrantLock lock = new ReentrantLock();
-    private boolean locked = false;
+    private final RLock _lock;
 
-    public RedissonCacheLock(String lockName) {
-        this.lockName = lockName;
+    public RedissonCacheLock(RedissonClient client, String lockName) {
+        this._lock = client.getLock(lockName);
     }
 
     @Override
     public boolean tryLock(Duration waitTime, @Nullable Duration leaseTime) {
         try {
-            return lock.tryLock(waitTime.toMillis(), TimeUnit.MILLISECONDS);
+            long waitMillis = waitTime.toMillis();
+            if (leaseTime != null) {
+                return _lock.tryLock(waitMillis, leaseTime.toMillis(), TimeUnit.MILLISECONDS);
+            }
+            return _lock.tryLock(waitMillis, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return false;
@@ -36,18 +39,13 @@ public class RedissonCacheLock implements CacheLock {
 
     @Override
     public void unlock() {
-        if (lock.isHeldByCurrentThread()) {
-            lock.unlock();
-            locked = false;
+        if (_lock.isHeldByCurrentThread()) {
+            _lock.unlock();
         }
     }
 
     @Override
     public boolean isLocked() {
-        return lock.isLocked();
-    }
-
-    public String getLockName() {
-        return lockName;
+        return _lock.isLocked();
     }
 }

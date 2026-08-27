@@ -53,18 +53,18 @@
 ```text
 framework-cache
 └─ src/main/java/cn/jowen/framework/cache/
-   ├─ api/                    # 缓存核心接口（Cache、CacheManager、CacheConfiguration、CacheStats、NullValue）
    ├─ annotation/             # 缓存注解（@Cacheable、@CacheEvict、@CachePut、@EnableCaching）
+   ├─ api/                    # 缓存核心接口（Cache、CacheManager、CacheConfiguration、CacheStats、NullValue）
    ├─ cache/                  # 缓存实现
    │  ├─ caffeine/            # Caffeine 本地缓存
    │  ├─ redisson/            # Redisson 分布式缓存
    │  └─ multilevel/          # 多级缓存（Local + Remote 组合）
-   ├─ event/                  # 缓存事件
-   ├─ serializer/             # 序列化（Jackson 默认）
-   ├─ support/                # 缓存键生成器、条件解析
-   ├─ eviction/               # 淘汰策略（LRU 等）
    ├─ config/                 # 缓存配置属性（纯 POJO）
-   └─ lock/                   # 缓存锁（Redisson 实现）
+   ├─ event/                  # 缓存事件
+   ├─ eviction/               # 淘汰策略（LRU 等）
+   ├─ lock/                   # 缓存锁（Redisson 实现）
+   ├─ serializer/             # 序列化（Jackson 默认）
+   └─ support/                # 缓存键生成器、条件解析
 ```
 
 > **注意**：`framework-cache/config/CacheProperties` 为纯 POJO（不含 Spring 注解）。自动装配类（`CacheAutoConfiguration`）统一由
@@ -624,7 +624,6 @@ L3 (依赖 L0~L2)     annotation / config
     <dependency>
         <groupId>com.esotericsoftware</groupId>
         <artifactId>kryo</artifactId>
-        <version>5.6.2</version>
         <optional>true</optional>
     </dependency>
 

@@ -1,6 +1,7 @@
 package cn.jowen.framework.cache.cache.multilevel;
 
 import cn.jowen.framework.cache.api.Cache;
+import cn.jowen.framework.cache.api.CacheStats;
 import cn.jowen.framework.cache.api.NullValue;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -146,7 +147,7 @@ public final class MultilevelCache<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public cn.jowen.framework.cache.api.CacheStats stats() {
+    public CacheStats stats() {
         // 多级缓存统计合并（以本地为主）
         return localCache.stats();
     }
@@ -177,6 +178,8 @@ public final class MultilevelCache<K, V> implements Cache<K, V> {
 
     /**
      * 判断值是否为空值标记。
+     * @param value 值
+     * @return 是否为空值标记
      */
     private boolean isNullValue(@Nullable Object value) {
         return value instanceof NullValue;

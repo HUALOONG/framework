@@ -1,41 +1,33 @@
 package cn.jowen.framework.cache.cache.caffeine;
 
-import cn.jowen.framework.cache.AbstractCache;
+import cn.jowen.framework.cache.api.Cache;
 import cn.jowen.framework.cache.api.CacheConfiguration;
+import cn.jowen.framework.cache.api.CacheStats;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
+import java.util.Optional;
 
 /**
- * 基于 Caffeine 库的一级本地缓存实现。支持容量上限、写入过期、访问过期与 LRU 淘汰。
+ * 基于 Caffeine 的本地缓存实现，支持容量上限与 TTL 淘汰，并记录命中/未命中统计。
  *
- * <p>注意：Caffeine 的 TTL 策略在缓存创建时统一设定，不支持逐键独立 TTL；
- * {@link #put(Object, Object, Duration)} 的自定义 TTL 会回退到创建时的默认过期策略。
- *
- * @param <K> 键类型
- * @param <V> 值类型
  * @author 王飞
  * @since 2026-08-24
  */
 @NullMarked
-public final class CaffeineCache<K, V> extends AbstractCache<K, V> {
+public final class CaffeineCache<K, V> implements Cache<K, V> {
 
-    private final com.github.benmanes.caffeine.cache.Cache<K, V> cache;
+    private final String _name;
+    private final com.github.benmanes.caffeine.cache.Cache<K, V> _delegate;
+    private final CacheStats _stats = new CacheStats();
 
     public CaffeineCache(String name, CacheConfiguration config) {
-        super(name);
-        this.cache = buildCache(config);
+        this._name = name;
+        this._delegate = buildCache(config);
     }
 
-    /**
-     * 创建 Caffeine 缓存实例。
-     *
-     * @param name   缓存名称，不可为 {@code null}
-     * @param config 缓存配置，不可为 {@code null}
-     * @return 缓存实例，不可为 {@code null}
-     */
     public static <K, V> CaffeineCache<K, V> create(String name, CacheConfiguration config) {
         return new CaffeineCache<>(name, config);
     }
@@ -53,27 +45,57 @@ public final class CaffeineCache<K, V> extends AbstractCache<K, V> {
     }
 
     @Override
-    protected @Nullable V doGet(K key) {
-        return cache.getIfPresent(key);
+    public String name() {
+        return _name;
     }
 
     @Override
-    protected void doPut(K key, V value) {
-        cache.put(key, value);
+    public @Nullable V get(K key) {
+        V value = _delegate.getIfPresent(key);
+        if (value == null) {
+            _stats.recordMiss();
+        } else {
+            _stats.recordHit();
+        }
+        return value;
     }
 
     @Override
-    protected void doEvict(K key) {
-        cache.invalidate(key);
+    public Optional<V> getOptional(K key) {
+        return Optional.ofNullable(get(key));
     }
 
     @Override
-    protected void doClear() {
-        cache.invalidateAll();
+    public void put(K key, V value) {
+        _delegate.put(key, value);
     }
 
     @Override
-    protected long doSize() {
-        return cache.estimatedSize();
+    public boolean putIfAbsent(K key, V value) {
+        if (_delegate.getIfPresent(key) != null) {
+            return false;
+        }
+        _delegate.put(key, value);
+        return true;
+    }
+
+    @Override
+    public void evict(K key) {
+        _delegate.invalidate(key);
+    }
+
+    @Override
+    public void clear() {
+        _delegate.invalidateAll();
+    }
+
+    @Override
+    public long size() {
+        return _delegate.estimatedSize();
+    }
+
+    @Override
+    public CacheStats stats() {
+        return _stats;
     }
 }

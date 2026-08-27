@@ -4,9 +4,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * {@link LruEvictionPolicy} 测试。
- */
 class LruEvictionPolicyTest {
 
     private final LruEvictionPolicy policy = new LruEvictionPolicy();
@@ -32,10 +29,7 @@ class LruEvictionPolicyTest {
         assertThat(policy.getType()).isNotEmpty();
     }
 
-    /**
-     * 测试用的 EvictionContext 实现。
-     */
-    private static class TestEvictionContext implements EvictionPolicy.EvictionContext {
+    private static class TestEvictionContext implements EvictionContext {
         @Override
         public Object key() {
             return "test-key";
