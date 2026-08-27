@@ -3,7 +3,10 @@ package cn.jowen.framework.boot.autoconfigure.plugin;
 import cn.jowen.framework.boot.autoconfigure.JowenAutoConfiguration;
 import cn.jowen.framework.plugin.api.PluginManager;
 import cn.jowen.framework.plugin.lifecycle.PluginLifecycleManager;
+import cn.jowen.framework.plugin.registry.ExtensionRegistry;
+import cn.jowen.framework.plugin.resolver.DependencyResolver;
 import org.jspecify.annotations.NullMarked;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -26,12 +29,42 @@ import org.springframework.context.annotation.Bean;
 public class PluginAutoConfiguration {
 
     /**
-     * 插件生命周期管理器：状态机驱动插件的 initialize/start/stop/restart/destroy。
+     * 插件生命周期管理器：状态机驱动插件的 initialize/start/stop/restart/destroy，扩展查询委托 {@link ExtensionRegistry}。
+     *
+     * @param extensionRegistry 扩展注册中心（可选，{@code null} 时扩展查询返回空）
+     * @return 生命周期管理器，不可为 {@code null}
      */
     @Bean
     @ConditionalOnMissingBean(PluginManager.class)
-    public PluginLifecycleManager pluginLifecycleManager() {
-        return new PluginLifecycleManager();
+    public PluginLifecycleManager pluginLifecycleManager(ObjectProvider<ExtensionRegistry> extensionRegistry) {
+        PluginLifecycleManager manager = new PluginLifecycleManager();
+        ExtensionRegistry registry = extensionRegistry.getIfAvailable();
+        if (registry != null) {
+            manager.setExtensionRegistry(registry);
+        }
+        return manager;
+    }
+
+    /**
+     * 扩展注册中心：插件扩展实例的注册与按扩展点/类型查询。
+     *
+     * @return 扩展注册中心，不可为 {@code null}
+     */
+    @Bean("pluginExtensionRegistry")
+    @ConditionalOnMissingBean
+    public ExtensionRegistry pluginExtensionRegistry() {
+        return new ExtensionRegistry();
+    }
+
+    /**
+     * 依赖解析器：批量加载时按 DAG 拓扑排序、版本仲裁与循环检测。
+     *
+     * @return 依赖解析器，不可为 {@code null}
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public DependencyResolver dependencyResolver() {
+        return new DependencyResolver();
     }
 
     /**
