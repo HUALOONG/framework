@@ -64,6 +64,9 @@ public final class PluginLifecycleManager implements PluginManager {
             if (ctx == null) {
                 throw new IllegalStateException("插件 " + pluginId + " 未初始化");
             }
+            if (getState(pluginId) == PluginState.STOPPED) {
+                transition(pluginId, PluginState.STARTING);
+            }
             plugin.start(ctx);
             transition(pluginId, PluginState.STARTED);
             publish(new PluginStartedEvent(pluginId));
@@ -81,8 +84,10 @@ public final class PluginLifecycleManager implements PluginManager {
         Plugin plugin = plugins.get(pluginId);
         if (plugin == null) return;
         try {
-            transition(pluginId, PluginState.STOPPING);
-            publish(new PluginStoppingEvent(pluginId));
+            if (getState(pluginId) != PluginState.STARTING) {
+                transition(pluginId, PluginState.STOPPING);
+                publish(new PluginStoppingEvent(pluginId));
+            }
             plugin.stop();
             transition(pluginId, PluginState.STOPPED);
             publish(new PluginStoppedEvent(pluginId));

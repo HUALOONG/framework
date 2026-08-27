@@ -26,7 +26,7 @@ public record PluginDependency(String pluginId, VersionRange versionRange, boole
         String pluginId = (String) map.get("pluginId");
         String versionRangeStr = (String) map.get("versionRange");
         boolean optional = Boolean.TRUE.equals(map.get("optional"));
-        VersionRange range = versionRangeStr != null ? new VersionRange(versionRangeStr) : null;
+        VersionRange range = versionRangeStr != null ? new VersionRange(versionRangeStr) : new VersionRange("[0.0.0,999.999.999]");
         return new PluginDependency(pluginId, range, optional);
     }
 }

@@ -61,7 +61,8 @@ public final class DependencyResolver {
         try {
             loadOrder = graph.topologicalSort();
         } catch (DependencyGraph.CycleDetectedException e) {
-            return ResolutionResult.failed(List.of(), List.of());
+            return new ResolutionResult(List.of(), List.of(),
+                    List.of("检测到循环依赖"));
         }
 
         return ResolutionResult.ok(loadOrder);

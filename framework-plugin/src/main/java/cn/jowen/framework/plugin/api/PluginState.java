@@ -66,7 +66,7 @@ public enum PluginState {
             case CREATED, STOPPED -> nextState == STARTING || nextState == DISABLED;
             case STARTING -> nextState == STARTED || nextState == FAILED || nextState == DISABLED;
             case STARTED -> nextState == STOPPING || nextState == DISABLED;
-            case STOPPING -> nextState == STOPPED || nextState == FAILED;
+            case STOPPING -> nextState == STOPPED || nextState == FAILED || nextState == DISABLED;
             case FAILED, DISABLED -> nextState == CREATED;
         };
     }

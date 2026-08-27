@@ -69,16 +69,16 @@
 framework-plugin
 └─ src/main/java/cn/jowen/framework/plugin/
    ├─ api/            # Plugin / PluginContext / PluginManager / PluginState
-   ├─ descriptor/     # PluginDescriptor / PluginVersion / PluginDependency / VersionRange / ExtensionPointDescriptor / ExtensionDescriptor / PluginConfigurationDescriptor / PluginDescriptorLoader
-   ├─ loader/         # PluginClassLoader / SharedClassLoader / PluginLoader / PluginInfo / ClassLoadingStrategy
-   ├─ resolver/       # DependencyResolver / ResolutionResult / DependencyConflict / VersionArbitrator / DependencyGraph
-   ├─ lifecycle/      # PluginLifecycleManager / PluginStateTransition / PluginHealthChecker
-   ├─ registry/       # PluginRegistry / ExtensionRegistry / ExtensionPoint / Extension
-   ├─ extension/      # 扩展桥接：@Extension / @ExtensionScan / ExtensionScanner / ExtensionDefinition / ExtensionFactory（扩展点声明复用 core @SPI）
-   ├─ context/        # DefaultPluginContext / PluginConfiguration / SharedData / PluginSpringContextFactory / PluginBeanPostProcessor
-   ├─ event/          # PluginEvent / PluginLoadedEvent / PluginStartedEvent / PluginFailedEvent / ... / PluginEventListener
-   ├─ hotswap/        # PluginHotSwapManager / HotSwapStrategy / PluginFileWatcher / HotSwapContext
    ├─ config/         # PluginProperties（自动装配在 boot-autoconfigure）
+   ├─ context/        # DefaultPluginContext / PluginConfiguration / SharedData / PluginSpringContextFactory / PluginBeanPostProcessor
+   ├─ descriptor/     # PluginDescriptor / PluginVersion / PluginDependency / VersionRange / ExtensionPointDescriptor / ExtensionDescriptor / PluginConfigurationDescriptor / PluginDescriptorLoader
+   ├─ event/          # PluginEvent / PluginLoadedEvent / PluginStartedEvent / PluginFailedEvent / ... / PluginEventListener
+   ├─ extension/      # 扩展桥接：@Extension / @ExtensionScan / ExtensionScanner / ExtensionDefinition / ExtensionFactory（扩展点声明复用 core @SPI）
+   ├─ hotswap/        # PluginHotSwapManager / HotSwapStrategy / PluginFileWatcher / HotSwapContext
+   ├─ lifecycle/      # PluginLifecycleManager / PluginStateTransition / PluginHealthChecker
+   ├─ loader/         # PluginClassLoader / SharedClassLoader / PluginLoader / PluginInfo / ClassLoadingStrategy
+   ├─ registry/       # PluginRegistry / ExtensionRegistry / ExtensionPoint / Extension
+   ├─ resolver/       # DependencyResolver / ResolutionResult / DependencyConflict / VersionArbitrator / DependencyGraph
    └─ support/        # PluginUtils / PluginPackage / ValidationError / AbstractPlugin
 ```
 
