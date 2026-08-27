@@ -41,6 +41,20 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Micrometer 2.0 指标（可选）：I18nMetricsCollector 上报消息解析统计 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Redisson（可选）：RedisMessageSource / RedisSubscriptionWatcher -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
