@@ -1,6 +1,7 @@
 package cn.jowen.framework.data.core.query;
 
-import cn.jowen.framework.data.core.page.Sort;
+import cn.jowen.framework.data.core.sort.Order;
+import cn.jowen.framework.data.core.sort.Sort;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -135,7 +136,7 @@ public final class QueryWrapper<T> {
     }
 
     public QueryWrapper<T> orderBy(Sort sort) {
-        for (Sort.Order order : sort.getOrders()) {
+        for (Order order : sort.getOrders()) {
             orderBy.add(order.toSql());
         }
         return this;

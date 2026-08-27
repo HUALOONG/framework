@@ -2,6 +2,8 @@ package cn.jowen.framework.data.jdbc;
 
 import cn.jowen.framework.data.core.datasource.DataSourceProperties;
 import cn.jowen.framework.data.core.datasource.PoolType;
+import cn.jowen.framework.data.core.transaction.Isolation;
+import cn.jowen.framework.data.core.transaction.Propagation;
 import cn.jowen.framework.data.core.transaction.TransactionCallback;
 import cn.jowen.framework.data.core.transaction.TransactionDefinition;
 import cn.jowen.framework.data.core.transaction.TransactionStatus;
@@ -25,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 事务测试：编程式事务提交/回滚、REQUIRED/REQUIRES_NEW 传播行为。
+ * 浜嬪姟娴嬭瘯锛氱紪绋嬪紡浜嬪姟鎻愪氦/鍥炴粴銆丷EQUIRED/REQUIRES_NEW 浼犳挱琛屼负銆?
  */
 class TransactionTest {
 
@@ -82,7 +84,7 @@ class TransactionTest {
     @AfterEach
     void tearDown() {
         TenantContext.clear();
-        // 清理线程绑定（事务完成后理论上应已清理，防止污染其他测试）
+        // 娓呯悊绾跨▼缁戝畾锛堜簨鍔″畬鎴愬悗鐞嗚涓婂簲宸叉竻鐞嗭紝闃叉姹℃煋鍏朵粬娴嬭瘯锛?
         TransactionSynchronizationManager.unbindResource();
         if (connectionProvider != null) {
             connectionProvider.close();
@@ -90,7 +92,7 @@ class TransactionTest {
     }
 
     // -------------------------------------------------------------------------
-    // 提交
+    // 鎻愪氦
     // -------------------------------------------------------------------------
 
     @Test
@@ -139,7 +141,7 @@ class TransactionTest {
     }
 
     // -------------------------------------------------------------------------
-    // REQUIRED 传播：内层加入外层事务
+    // REQUIRED 浼犳挱锛氬唴灞傚姞鍏ュ灞備簨鍔?
     // -------------------------------------------------------------------------
 
     @Test
@@ -148,7 +150,7 @@ class TransactionTest {
         TransactionStatus outer = tm.begin(outerDef);
         try {
             template.update("INSERT INTO app_user (name) VALUES (?)", "alice");
-            // 内层也是 REQUIRED，应加入外层事务
+            // 鍐呭眰涔熸槸 REQUIRED锛屽簲鍔犲叆澶栧眰浜嬪姟
             TransactionStatus inner = tm.begin(TransactionDefinition.defaults());
             template.update("INSERT INTO app_user (name) VALUES (?)", "bob");
             tm.commit(inner);
@@ -177,12 +179,12 @@ class TransactionTest {
             throw e;
         }
         Long count = template.queryForObject("SELECT COUNT(*) FROM app_user", Long.class);
-        // 内层标记回滚，整笔事务应回滚
+        // 鍐呭眰鏍囪鍥炴粴锛屾暣绗斾簨鍔″簲鍥炴粴
         assertThat(count).isEqualTo(0L);
     }
 
     // -------------------------------------------------------------------------
-    // REQUIRES_NEW 传播：挂起外层，新开独立事务
+    // REQUIRES_NEW 浼犳挱锛氭寕璧峰灞傦紝鏂板紑鐙珛浜嬪姟
     // -------------------------------------------------------------------------
 
     @Test
@@ -191,14 +193,14 @@ class TransactionTest {
         TransactionStatus outer = tm.begin(outerDef);
         try {
             template.update("INSERT INTO app_user (name) VALUES (?)", "alice");
-            // REQUIRES_NEW：挂起外层，开新事务
+            // REQUIRES_NEW锛氭寕璧峰灞傦紝寮€鏂颁簨鍔?
             TransactionDefinition newDef = new TransactionDefinition(
-                    TransactionDefinition.Propagation.REQUIRES_NEW,
-                    TransactionDefinition.Isolation.DEFAULT, -1, false);
+                    Propagation.REQUIRES_NEW,
+                    Isolation.DEFAULT, -1, false);
             TransactionStatus inner = tm.begin(newDef);
             template.update("INSERT INTO app_user (name) VALUES (?)", "bob");
             tm.commit(inner);
-            // 外层提交（不影响内层）
+            // 澶栧眰鎻愪氦锛堜笉褰卞搷鍐呭眰锛?
             tm.commit(outer);
         } catch (RuntimeException e) {
             tm.rollback(outer);
@@ -215,8 +217,8 @@ class TransactionTest {
         try {
             template.update("INSERT INTO app_user (name) VALUES (?)", "alice");
             TransactionDefinition newDef = new TransactionDefinition(
-                    TransactionDefinition.Propagation.REQUIRES_NEW,
-                    TransactionDefinition.Isolation.DEFAULT, -1, false);
+                    Propagation.REQUIRES_NEW,
+                    Isolation.DEFAULT, -1, false);
             TransactionStatus inner = tm.begin(newDef);
             template.update("INSERT INTO app_user (name) VALUES (?)", "bob");
             tm.rollback(inner);
@@ -226,7 +228,7 @@ class TransactionTest {
             throw e;
         }
         Long count = template.queryForObject("SELECT COUNT(*) FROM app_user", Long.class);
-        // 内层回滚，外层提交，只有 alice 保留
+        // 鍐呭眰鍥炴粴锛屽灞傛彁浜わ紝鍙湁 alice 淇濈暀
         assertThat(count).isEqualTo(1L);
     }
 
@@ -261,7 +263,7 @@ class TransactionTest {
     }
 
     // -------------------------------------------------------------------------
-    // 账户转账场景（完整的事务一致性测试）
+    // 璐︽埛杞处鍦烘櫙锛堝畬鏁寸殑浜嬪姟涓€鑷存€ф祴璇曪級
     // -------------------------------------------------------------------------
 
     @Test
@@ -299,7 +301,7 @@ class TransactionTest {
     }
 
     // -------------------------------------------------------------------------
-    // 辅助方法
+    // 杈呭姪鏂规硶
     // -------------------------------------------------------------------------
 
     private java.math.BigDecimal queryBalance(String owner) {
@@ -308,3 +310,4 @@ class TransactionTest {
         return new java.math.BigDecimal(bal.toString());
     }
 }
+

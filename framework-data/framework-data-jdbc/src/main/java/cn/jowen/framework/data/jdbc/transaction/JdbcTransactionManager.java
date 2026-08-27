@@ -1,6 +1,7 @@
 package cn.jowen.framework.data.jdbc.transaction;
 
 import cn.jowen.framework.data.core.exception.DataAccessException;
+import cn.jowen.framework.data.core.transaction.Isolation;
 import cn.jowen.framework.data.core.transaction.TransactionDefinition;
 import cn.jowen.framework.data.core.transaction.TransactionManager;
 import cn.jowen.framework.data.core.transaction.TransactionStatus;
@@ -99,7 +100,7 @@ public final class JdbcTransactionManager implements TransactionManager {
         try {
             Connection real = connectionProvider.getConnection();
             real.setAutoCommit(false);
-            if (definition.getIsolation() != TransactionDefinition.Isolation.DEFAULT) {
+            if (definition.getIsolation() != Isolation.DEFAULT) {
                 real.setTransactionIsolation(IsolationLevelManager.toJdbc(definition.getIsolation()));
             }
             if (definition.isReadOnly()) {

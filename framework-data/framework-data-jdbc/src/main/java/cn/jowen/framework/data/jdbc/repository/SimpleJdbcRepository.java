@@ -7,8 +7,9 @@ import cn.jowen.framework.data.core.mapping.PropertyMetadata;
 import cn.jowen.framework.data.core.mapping.RowMapper;
 import cn.jowen.framework.data.core.page.Page;
 import cn.jowen.framework.data.core.page.Pageable;
-import cn.jowen.framework.data.core.page.Sort;
 import cn.jowen.framework.data.core.query.QueryWrapper;
+import cn.jowen.framework.data.core.sort.Order;
+import cn.jowen.framework.data.core.sort.Sort;
 import cn.jowen.framework.core.util.ReflectionUtils;
 import cn.jowen.framework.data.core.dialect.DatabaseDialect;
 import cn.jowen.framework.data.core.meta.GeneratedValue;
@@ -213,7 +214,7 @@ public class SimpleJdbcRepository<T, ID> implements JdbcRepository<T, ID> {
             return base;
         }
         StringBuilder sb = new StringBuilder(base).append(" ORDER BY ");
-        List<Sort.Order> orders = sort.getOrders();
+        List<Order> orders = sort.getOrders();
         for (int i = 0; i < orders.size(); i++) {
             if (i > 0) {
                 sb.append(", ");

@@ -9,8 +9,8 @@ class TransactionDefinitionTest {
     @Test
     void defaults() {
         TransactionDefinition def = TransactionDefinition.defaults();
-        assertThat(def.getPropagation()).isEqualTo(TransactionDefinition.Propagation.REQUIRED);
-        assertThat(def.getIsolation()).isEqualTo(TransactionDefinition.Isolation.DEFAULT);
+        assertThat(def.getPropagation()).isEqualTo(Propagation.REQUIRED);
+        assertThat(def.getIsolation()).isEqualTo(Isolation.DEFAULT);
         assertThat(def.getTimeout()).isEqualTo(-1);
         assertThat(def.isReadOnly()).isFalse();
     }
@@ -18,41 +18,42 @@ class TransactionDefinitionTest {
     @Test
     void customDefinition() {
         TransactionDefinition def = new TransactionDefinition(
-            TransactionDefinition.Propagation.REQUIRES_NEW,
-            TransactionDefinition.Isolation.SERIALIZABLE,
+            Propagation.REQUIRES_NEW,
+            Isolation.SERIALIZABLE,
             30,
             true
         );
 
-        assertThat(def.getPropagation()).isEqualTo(TransactionDefinition.Propagation.REQUIRES_NEW);
-        assertThat(def.getIsolation()).isEqualTo(TransactionDefinition.Isolation.SERIALIZABLE);
+        assertThat(def.getPropagation()).isEqualTo(Propagation.REQUIRES_NEW);
+        assertThat(def.getIsolation()).isEqualTo(Isolation.SERIALIZABLE);
         assertThat(def.getTimeout()).isEqualTo(30);
         assertThat(def.isReadOnly()).isTrue();
     }
 
     @Test
     void propagationEnumValues() {
-        TransactionDefinition.Propagation[] values = TransactionDefinition.Propagation.values();
+        Propagation[] values = Propagation.values();
         assertThat(values).containsExactly(
-            TransactionDefinition.Propagation.REQUIRED,
-            TransactionDefinition.Propagation.REQUIRES_NEW,
-            TransactionDefinition.Propagation.NESTED,
-            TransactionDefinition.Propagation.SUPPORTS,
-            TransactionDefinition.Propagation.NOT_SUPPORTED,
-            TransactionDefinition.Propagation.NEVER,
-            TransactionDefinition.Propagation.MANDATORY
+            Propagation.REQUIRED,
+            Propagation.REQUIRES_NEW,
+            Propagation.NESTED,
+            Propagation.SUPPORTS,
+            Propagation.NOT_SUPPORTED,
+            Propagation.NEVER,
+            Propagation.MANDATORY
         );
     }
 
     @Test
     void isolationEnumValues() {
-        TransactionDefinition.Isolation[] values = TransactionDefinition.Isolation.values();
+        Isolation[] values = Isolation.values();
         assertThat(values).containsExactly(
-            TransactionDefinition.Isolation.DEFAULT,
-            TransactionDefinition.Isolation.READ_UNCOMMITTED,
-            TransactionDefinition.Isolation.READ_COMMITTED,
-            TransactionDefinition.Isolation.REPEATABLE_READ,
-            TransactionDefinition.Isolation.SERIALIZABLE
+            Isolation.DEFAULT,
+            Isolation.READ_UNCOMMITTED,
+            Isolation.READ_COMMITTED,
+            Isolation.REPEATABLE_READ,
+            Isolation.SERIALIZABLE
         );
     }
 }
+

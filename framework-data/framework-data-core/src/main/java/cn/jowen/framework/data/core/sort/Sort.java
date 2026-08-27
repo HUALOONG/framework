@@ -1,4 +1,4 @@
-package cn.jowen.framework.data.core.page;
+package cn.jowen.framework.data.core.sort;
 
 import org.jspecify.annotations.NullMarked;
 
@@ -44,26 +44,5 @@ public final class Sort {
 
     public boolean isEmpty() {
         return orders.isEmpty();
-    }
-
-    public enum Direction {
-        ASC, DESC
-    }
-
-    public static final class Order {
-        private final String property;
-        private final Direction direction;
-
-        public Order(String property, Direction direction) {
-            this.property = property;
-            this.direction = direction;
-        }
-
-        public String getProperty() { return property; }
-        public Direction getDirection() { return direction; }
-
-        public String toSql() {
-            return property + (direction == Direction.DESC ? " DESC" : " ASC");
-        }
     }
 }

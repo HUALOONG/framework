@@ -47,28 +47,4 @@ public final class TransactionDefinition {
     public boolean isReadOnly() {
         return readOnly;
     }
-
-    /**
-     * 传播行为。
-     */
-    public enum Propagation {
-        REQUIRED,
-        REQUIRES_NEW,
-        NESTED,
-        SUPPORTS,
-        NOT_SUPPORTED,
-        NEVER,
-        MANDATORY
-    }
-
-    /**
-     * 隔离级别。
-     */
-    public enum Isolation {
-        DEFAULT,
-        READ_UNCOMMITTED,
-        READ_COMMITTED,
-        REPEATABLE_READ,
-        SERIALIZABLE
-    }
 }

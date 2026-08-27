@@ -1,5 +1,7 @@
 package cn.jowen.framework.data.core.page;
 
+import cn.jowen.framework.data.core.sort.Direction;
+import cn.jowen.framework.data.core.sort.Sort;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
@@ -17,7 +19,7 @@ class PageableTest {
 
     @Test
     void of_withSort() {
-        Sort sort = Sort.by("name", Sort.Direction.DESC);
+        Sort sort = Sort.by("name", Direction.DESC);
         Pageable pageable = Pageable.of(2, 5, sort);
 
         assertThat(pageable.getPage()).isEqualTo(2);

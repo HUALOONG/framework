@@ -1,6 +1,7 @@
 package cn.jowen.framework.data.core.query;
 
-import cn.jowen.framework.data.core.page.Sort;
+import cn.jowen.framework.data.core.sort.Direction;
+import cn.jowen.framework.data.core.sort.Sort;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -148,7 +149,7 @@ class QueryWrapperTest {
     @Test
     void orderBy_withSort() {
         QueryWrapper<ResolvableEntity> w = new QueryWrapper<>();
-        Sort sort = Sort.by("name", Sort.Direction.ASC).and(Sort.by("age", Sort.Direction.DESC));
+        Sort sort = Sort.by("name", Direction.ASC).and(Sort.by("age", Direction.DESC));
         w.orderBy(sort);
         assertThat(w.getOrderBy()).containsExactly("name ASC", "age DESC");
     }

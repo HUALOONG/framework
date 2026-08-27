@@ -1,5 +1,6 @@
 package cn.jowen.framework.data.core.page;
 
+import cn.jowen.framework.data.core.sort.Sort;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
