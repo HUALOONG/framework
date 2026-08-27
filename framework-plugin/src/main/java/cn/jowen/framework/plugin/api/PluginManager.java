@@ -33,6 +33,19 @@ public interface PluginManager {
     Plugin loadPlugin(Path pluginPath);
 
     /**
+     * 注册已加载的插件实例与上下文（状态 CREATED → STARTING），供引导器或手动装配调用。
+     *
+     * <p>默认实现不支持，由 {@code PluginLifecycleManager} 等实现覆盖。
+     *
+     * @param pluginId 插件 id，不可为 {@code null}
+     * @param plugin  插件实例，不可为 {@code null}
+     * @param context 插件上下文，不可为 {@code null}
+     */
+    default void initialize(String pluginId, Plugin plugin, PluginContext context) {
+        throw new UnsupportedOperationException("initialize 未实现，请使用 PluginLifecycleManager");
+    }
+
+    /**
      * 卸载指定插件。
      *
      * @param pluginId 插件 id，不可为 {@code null}

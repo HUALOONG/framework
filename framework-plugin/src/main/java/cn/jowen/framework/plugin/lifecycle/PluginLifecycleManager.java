@@ -47,6 +47,7 @@ public final class PluginLifecycleManager implements PluginManager {
     /**
      * 初始化插件（注入上下文，状态 CREATED → STARTING）。
      */
+    @Override
     public void initialize(String pluginId, Plugin plugin, PluginContext context) {
         plugins.put(pluginId, plugin);
         states.put(pluginId, new AtomicReference<>(PluginState.CREATED));

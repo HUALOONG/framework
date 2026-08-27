@@ -11,7 +11,7 @@ import java.util.List;
  * @author 王飞
  */
 @NullMarked
-public final class PluginProperties {
+public class PluginProperties {
     /**
      * 插件系统是否启用。默认启用。
      */
