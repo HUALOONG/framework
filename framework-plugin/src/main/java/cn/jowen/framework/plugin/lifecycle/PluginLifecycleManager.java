@@ -110,10 +110,14 @@ public final class PluginLifecycleManager implements PluginManager {
     }
 
     /**
-     * 销毁插件（stop + 关闭 ClassLoader + 移除注册）。
+     * 销毁插件（stop + 清理注册 + 关闭 ClassLoader + 移除注册）。
      */
     public void destroy(String pluginId) {
         stop(pluginId);
+        // 清理该插件在扩展注册中心的扩展，避免卸载后残留可被查询，并触发桥接源缓存失效
+        if (extensionRegistry != null) {
+            extensionRegistry.unregisterPlugin(pluginId);
+        }
         plugins.remove(pluginId);
         states.remove(pluginId);
         contexts.remove(pluginId);

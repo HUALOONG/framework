@@ -120,4 +120,38 @@ class ExtensionRegistryTest {
         assertThat(registry.unregister("ep1", "missing")).isNull();
         assertThat(fired.get()).isZero();
     }
+
+    @Test
+    void unregisterPlugin_removesOnlyMatchingPlugin() {
+        registry.register(new Extension("p1e1", "ep1", new Object(), 0, "p1", null));
+        registry.register(new Extension("p1e2", "ep1", new Object(), 0, "p1", null));
+        registry.register(new Extension("p2e1", "ep1", new Object(), 0, "p2", null));
+        registry.register(new Extension("p2e2", "ep2", new Object(), 0, "p2", null));
+
+        int removed = registry.unregisterPlugin("p1");
+
+        assertThat(removed).isEqualTo(2);
+        List<Extension> ep1 = registry.getExtensions("ep1");
+        assertThat(ep1).extracting(Extension::id).containsExactly("p2e1");
+        assertThat(registry.getExtensions("ep2")).hasSize(1);
+    }
+
+    @Test
+    void unregisterPlugin_unknownPlugin_returnsZeroWithoutNotify() {
+        java.util.concurrent.atomic.AtomicInteger fired = new java.util.concurrent.atomic.AtomicInteger();
+        registry.addChangeListener(fired::incrementAndGet);
+        assertThat(registry.unregisterPlugin("missing")).isZero();
+        assertThat(fired.get()).isZero();
+    }
+
+    @Test
+    void unregisterPlugin_triggersChangeNotification() {
+        java.util.concurrent.atomic.AtomicInteger fired = new java.util.concurrent.atomic.AtomicInteger();
+        registry.addChangeListener(fired::incrementAndGet);
+        registry.register(new Extension("e1", "ep1", new Object(), 0, "p1", null));
+        assertThat(fired.get()).isEqualTo(1);
+
+        registry.unregisterPlugin("p1");
+        assertThat(fired.get()).isEqualTo(2);
+    }
 }

@@ -81,6 +81,21 @@ class PluginLifecycleManagerTest {
         assertThat(manager.getState("p1")).isEqualTo(PluginState.CREATED);
     }
 
+    @Test
+    void destroy_cleansPluginExtensionsFromRegistry() {
+        ExtensionRegistry registry = new ExtensionRegistry();
+        manager.setExtensionRegistry(registry);
+        registry.register(new Extension("p1e1", "point-1", new TestPlugin("p1"), 0, "p1", null));
+        registry.register(new Extension("p2e1", "point-2", new TestPlugin("p2"), 0, "p2", null));
+
+        manager.initialize("p1", new TestPlugin("p1"), new TestContext());
+        manager.start("p1");
+        manager.destroy("p1");
+
+        assertThat(registry.getExtensionPointIds()).containsExactly("point-2");
+        assertThat(registry.getExtensions("point-2")).hasSize(1);
+    }
+
 
     @Test
     void getPlugin_returnsRegisteredPlugin() {

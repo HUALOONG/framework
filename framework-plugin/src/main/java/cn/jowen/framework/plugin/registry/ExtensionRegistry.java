@@ -132,6 +132,33 @@ public final class ExtensionRegistry {
     }
 
     /**
+     * 注销指定插件注册的全部扩展（插件卸载时调用），并触发变更通知。
+     *
+     * @param pluginId 插件 id，不可为 {@code null}
+     * @return 被注销的扩展数量
+     * @throws IllegalArgumentException pluginId 为 {@code null} 时抛出
+     */
+    public int unregisterPlugin(String pluginId) {
+        if (pluginId == null) throw new IllegalArgumentException("pluginId cannot be null");
+        int removed = 0;
+        java.util.Iterator<Map.Entry<String, List<Extension>>> it = registry.entrySet().iterator();
+        while (it.hasNext()) {
+            List<Extension> list = it.next().getValue();
+            int before = list.size();
+            list.removeIf(ext -> pluginId.equals(ext.pluginId()));
+            removed += before - list.size();
+            if (list.isEmpty()) {
+                // 扩展点下无存活扩展时移除该 key（getExtensionPointIds 只反映有效扩展点）
+                it.remove();
+            }
+        }
+        if (removed > 0) {
+            notifyChanged();
+        }
+        return removed;
+    }
+
+    /**
      * 添加注册表内容变更监听。扩展注册/注销/清空时回调，用于桥接层触发扩展加载器缓存失效。
      *
      * @param listener 变更监听，不可为 {@code null}

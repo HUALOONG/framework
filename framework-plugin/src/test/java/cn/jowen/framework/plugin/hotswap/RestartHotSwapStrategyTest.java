@@ -100,6 +100,8 @@ class RestartHotSwapStrategyTest {
         buildJarWithExtensionPoints("demo.jar");
         ExtensionRegistry registry = new ExtensionRegistry();
         PluginSpiBridge bridge = new PluginSpiBridge(registry);
+        // 与 boot 装配一致：管理器注入注册中心，卸载时级联清理该插件扩展
+        manager.setExtensionRegistry(registry);
         registry.register(new Extension("e1", HotSwapPoint.class.getName(), new HotSwapPointImpl(), 0, "demo", null));
         RestartHotSwapStrategy strategy = new RestartHotSwapStrategy(manager, pluginsDir, bridge);
 
@@ -122,6 +124,8 @@ class RestartHotSwapStrategyTest {
         buildJarWithExtensionPoints("demo.jar");
         ExtensionRegistry registry = new ExtensionRegistry();
         PluginSpiBridge bridge = new PluginSpiBridge(registry);
+        // 与 boot 装配一致：管理器注入注册中心，卸载时级联清理该插件扩展
+        manager.setExtensionRegistry(registry);
         registry.register(new Extension("e1", HotSwapPoint.class.getName(), new HotSwapPointImpl(), 0, "demo", null));
         RestartHotSwapStrategy strategy = new RestartHotSwapStrategy(manager, pluginsDir, bridge);
         strategy.onFileModified("demo.jar");
@@ -129,6 +133,8 @@ class RestartHotSwapStrategyTest {
         assertThat(loader.getExtension("e1")).isInstanceOf(HotSwapPointImpl.class);
 
         strategy.onFileModified("demo.jar");
+        // destroy 已清理注册中心：重载后由新插件实例重新注册扩展，桥接映射应保持可用
+        registry.register(new Extension("e1", HotSwapPoint.class.getName(), new HotSwapPointImpl(), 0, "demo", null));
         assertThat(loader.getExtension("e1")).isInstanceOf(HotSwapPointImpl.class);
 
         strategy.close();
