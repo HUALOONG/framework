@@ -10,6 +10,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -161,5 +163,50 @@ class PluginSpiBridgeTest {
 
     /** PlainPoint 的无状态实现。 */
     static final class PlainPointImpl implements PlainPoint {
+    }
+
+    @SPI
+    public interface SharedPoint {
+    }
+
+    static final class SharedPointImpl implements SharedPoint {
+    }
+
+    /**
+     * 多插件共享扩展点：任一插件注销不拆除共享源，全部注销后源才移除。
+     */
+    @Test
+    void sharedPoint_unregisterOneKeepsSourceUntilLastRemoved() {
+        ExtensionPointDescriptor point = new ExtensionPointDescriptor(
+                SharedPoint.class.getName(), SharedPoint.class.getName(), false);
+        registry.register(new Extension("a-ext", SharedPoint.class.getName(), new SharedPointImpl(), 0, "plugin-a", null));
+        bridge.registerPlugin("plugin-a", List.of(point));
+        bridge.registerPlugin("plugin-b", List.of(point));
+        ExtensionLoader<SharedPoint> loader = ExtensionLoader.getExtensionLoader(SharedPoint.class);
+        assertThat(loader.getExtension("a-ext")).isInstanceOf(SharedPointImpl.class);
+
+        // 插件 A 卸载：扩展点仍被 B 引用，共享源保留
+        bridge.unregisterPlugin("plugin-a");
+        assertThat(loader.getExtension("a-ext")).isNotNull();
+
+        // 插件 B 卸载：引用归零，源移除
+        bridge.unregisterPlugin("plugin-b");
+        assertThatThrownBy(() -> loader.getExtension("a-ext"))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("未找到 SPI 实现");
+    }
+
+    @Test
+    void unregisterPlugin_unknownPlugin_noOp() {
+        bridge.unregisterPlugin("nope");
+    }
+
+    @Test
+    void duplicateBareRegister_needsMatchingUnregisters() {
+        bridge.registerExtensionPoint(PlainPoint.class.getName(), PlainPoint.class);
+        bridge.registerExtensionPoint(PlainPoint.class.getName(), PlainPoint.class);
+        // 仍有一个引用，共享源保留
+        assertThat(bridge.unregisterExtensionPoint(PlainPoint.class.getName())).isFalse();
+        assertThat(bridge.unregisterExtensionPoint(PlainPoint.class.getName())).isTrue();
     }
 }

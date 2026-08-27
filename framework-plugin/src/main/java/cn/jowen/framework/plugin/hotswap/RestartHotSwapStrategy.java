@@ -8,7 +8,6 @@ import cn.jowen.framework.plugin.api.PluginManager;
 import cn.jowen.framework.plugin.context.DefaultPluginContext;
 import cn.jowen.framework.plugin.context.MapPluginConfiguration;
 import cn.jowen.framework.plugin.context.SharedData;
-import cn.jowen.framework.plugin.descriptor.ExtensionPointDescriptor;
 import cn.jowen.framework.plugin.descriptor.PluginDescriptor;
 import cn.jowen.framework.plugin.loader.ClassLoadingStrategy;
 import cn.jowen.framework.plugin.loader.PluginLoader;
@@ -20,7 +19,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,10 +42,6 @@ public final class RestartHotSwapStrategy implements PluginFileWatcher.FileChang
     private final ClassLoader applicationClassLoader;
     private final Map<String, PluginLoader> loaders = new ConcurrentHashMap<>();
     private final Map<String, String> jarFileByPluginId = new ConcurrentHashMap<>();
-    /**
-     * 插件 id → 该插件经桥接注册的扩展点 id 列表，用于卸载/关闭时反向清理。
-     */
-    private final Map<String, List<String>> pointIdsByPlugin = new ConcurrentHashMap<>();
 
     /**
      * 构造重启策略（不桥接 core SPI，等价于桥接参数为 {@code null}）。
@@ -153,7 +147,7 @@ public final class RestartHotSwapStrategy implements PluginFileWatcher.FileChang
     }
 
     /**
-     * 将描述符扩展点映射注册到桥接门面，并记录该插件注册的扩展点 id 供卸载时反向清理。
+     * 将插件的描述符扩展点映射注册到桥接门面（桥接侧按插件引用计数，全插件注销后源才移除）。
      *
      * @param pluginId 插件 id，不可为 {@code null}
      * @param desc     插件描述符，不可为 {@code null}
@@ -162,12 +156,7 @@ public final class RestartHotSwapStrategy implements PluginFileWatcher.FileChang
         if (spiBridge == null) {
             return;
         }
-        List<String> ids = new ArrayList<>();
-        for (ExtensionPointDescriptor point : desc.extensionPoints()) {
-            spiBridge.registerExtensionPoint(point);
-            ids.add(point.id());
-        }
-        pointIdsByPlugin.put(pluginId, ids);
+        spiBridge.registerPlugin(pluginId, desc.extensionPoints());
     }
 
     /**
@@ -179,22 +168,15 @@ public final class RestartHotSwapStrategy implements PluginFileWatcher.FileChang
         if (spiBridge == null) {
             return;
         }
-        List<String> ids = pointIdsByPlugin.remove(pluginId);
-        if (ids == null) {
-            return;
-        }
-        for (String id : ids) {
-            spiBridge.unregisterExtensionPoint(id);
-        }
+        spiBridge.unregisterPlugin(pluginId);
     }
 
     @Override
     public void close() throws IOException {
-        // 关闭即视为全部插件卸载，清理桥接映射与类加载器
-        for (String id : List.copyOf(pointIdsByPlugin.keySet())) {
+        // 关闭即视为全部插件卸载，逐插件注销桥接映射并释放类加载器
+        for (String id : List.copyOf(loaders.keySet())) {
             unregisterPluginPoints(id);
         }
-        pointIdsByPlugin.clear();
         for (PluginLoader loader : loaders.values()) {
             loader.close();
         }

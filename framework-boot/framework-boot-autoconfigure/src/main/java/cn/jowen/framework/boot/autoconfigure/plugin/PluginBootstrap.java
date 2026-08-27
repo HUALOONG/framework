@@ -8,7 +8,6 @@ import cn.jowen.framework.plugin.api.PluginManager;
 import cn.jowen.framework.plugin.context.DefaultPluginContext;
 import cn.jowen.framework.plugin.context.MapPluginConfiguration;
 import cn.jowen.framework.plugin.context.SharedData;
-import cn.jowen.framework.plugin.descriptor.ExtensionPointDescriptor;
 import cn.jowen.framework.plugin.descriptor.PluginDescriptor;
 import cn.jowen.framework.plugin.loader.ClassLoadingStrategy;
 import cn.jowen.framework.plugin.loader.PluginLoader;
@@ -115,7 +114,7 @@ public final class PluginBootstrap implements SmartInitializingSingleton, Dispos
             pluginManager.initialize(id, plugin, context);
             loaders.put(id, loader);
             // 描述符声明的扩展点映射注册到桥接门面，使该插件的扩展对 core SPI 查询可见
-            registerExtensionPoints(desc);
+            registerExtensionPoints(id, desc);
             if (properties.isAutoStart()) {
                 pluginManager.startPlugin(id);
             }
@@ -143,17 +142,16 @@ public final class PluginBootstrap implements SmartInitializingSingleton, Dispos
     }
 
     /**
-     * 将描述符中的扩展点映射逐条注册到桥接门面。
+     * 将插件描述符中的扩展点映射按插件注册到桥接门面（引用计数，随插件销毁批量注销）。
      *
-     * @param desc 插件描述符，不可为 {@code null}
+     * @param pluginId 插件 id，不可为 {@code null}
+     * @param desc     插件描述符，不可为 {@code null}
      */
-    private void registerExtensionPoints(PluginDescriptor desc) {
+    private void registerExtensionPoints(String pluginId, PluginDescriptor desc) {
         if (spiBridge == null) {
             return;
         }
-        for (ExtensionPointDescriptor point : desc.extensionPoints()) {
-            spiBridge.registerExtensionPoint(point);
-        }
+        spiBridge.registerPlugin(pluginId, desc.extensionPoints());
     }
 
     private static List<Path> listJars(Path dir) {
