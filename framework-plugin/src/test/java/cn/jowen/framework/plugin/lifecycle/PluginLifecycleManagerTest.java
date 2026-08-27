@@ -6,6 +6,8 @@ import cn.jowen.framework.plugin.api.PluginState;
 import cn.jowen.framework.plugin.context.SharedData;
 import cn.jowen.framework.plugin.descriptor.PluginDescriptor;
 import cn.jowen.framework.plugin.event.PluginEvent;
+import cn.jowen.framework.plugin.registry.Extension;
+import cn.jowen.framework.plugin.registry.ExtensionRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -101,6 +103,24 @@ class PluginLifecycleManagerTest {
         manager.start("p1");
         assertThat(manager.getPluginsByState(PluginState.STARTED)).hasSize(1);
         assertThat(manager.getPluginsByState(PluginState.STOPPED)).isEmpty();
+    }
+
+    @Test
+    void getExtensions_emptyWhenNoRegistry() {
+        assertThat(manager.getExtensions(Plugin.class)).isEmpty();
+        assertThat(manager.getExtension("point-1")).isNull();
+    }
+
+    @Test
+    void getExtensions_delegatesToExtensionRegistry() {
+        ExtensionRegistry registry = new ExtensionRegistry();
+        manager.setExtensionRegistry(registry);
+        TestPlugin impl = new TestPlugin("ext-plugin");
+        registry.register(new Extension("ext-1", "point-1", impl, 0, "plugin-1", null));
+
+        List<Plugin> result = manager.getExtensions(Plugin.class);
+        assertThat(result).containsExactly(impl);
+        assertThat(manager.getExtension("point-1")).isNotNull();
     }
 
     static class TestPlugin implements Plugin {

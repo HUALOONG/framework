@@ -16,6 +16,7 @@ import cn.jowen.framework.plugin.event.PluginStoppingEvent;
 import cn.jowen.framework.plugin.event.PluginUnloadedEvent;
 import cn.jowen.framework.plugin.registry.Extension;
 import cn.jowen.framework.plugin.registry.ExtensionPoint;
+import cn.jowen.framework.plugin.registry.ExtensionRegistry;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -41,6 +42,7 @@ public final class PluginLifecycleManager implements PluginManager {
     private final Map<String, PluginContext> contexts = new ConcurrentHashMap<>();
     private final List<PluginHealthChecker> healthCheckers = new ArrayList<>();
     private final List<PluginEventListener> listeners = new ArrayList<>();
+    private @Nullable ExtensionRegistry extensionRegistry;
 
     /**
      * 初始化插件（注入上下文，状态 CREATED → STARTING）。
@@ -187,18 +189,25 @@ public final class PluginLifecycleManager implements PluginManager {
     }
 
     @Override
-    public Extension getExtension(String extensionPointId) {
-        return null; // 由 ExtensionRegistry 处理
+    public @Nullable Extension getExtension(String extensionPointId) {
+        if (extensionRegistry == null) {
+            return null;
+        }
+        List<Extension> exts = extensionRegistry.getExtensions(extensionPointId);
+        return exts.isEmpty() ? null : exts.getFirst();
     }
 
     @Override
     public <T> List<T> getExtensions(Class<T> extensionPointClass) {
-        return List.of(); // 由 ExtensionRegistry 处理
+        if (extensionRegistry == null) {
+            return List.of();
+        }
+        return extensionRegistry.getExtensionsByType(extensionPointClass);
     }
 
     @Override
     public void registerExtensionPoint(ExtensionPoint point) {
-        // 由 ExtensionRegistry 处理
+        // 扩展点描述符由描述符加载链注册；本管理器仅委托扩展实例查询至 ExtensionRegistry
     }
 
     // endregion
@@ -224,6 +233,15 @@ public final class PluginLifecycleManager implements PluginManager {
 
     public void addListener(PluginEventListener listener) {
         listeners.add(listener);
+    }
+
+    /**
+     * 注入扩展注册中心，使 {@code getExtension(s)} 委托其查询；未注入时返回空。
+     *
+     * @param extensionRegistry 扩展注册中心，可为 {@code null}
+     */
+    public void setExtensionRegistry(@Nullable ExtensionRegistry extensionRegistry) {
+        this.extensionRegistry = extensionRegistry;
     }
 
     public List<PluginHealthChecker> getHealthCheckers() {
