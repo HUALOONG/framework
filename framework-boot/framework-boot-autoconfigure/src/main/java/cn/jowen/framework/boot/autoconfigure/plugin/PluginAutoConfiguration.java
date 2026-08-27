@@ -8,6 +8,7 @@ import cn.jowen.framework.plugin.hotswap.PluginHotSwapManager;
 import cn.jowen.framework.plugin.lifecycle.PluginLifecycleManager;
 import cn.jowen.framework.plugin.registry.ExtensionRegistry;
 import cn.jowen.framework.plugin.resolver.DependencyResolver;
+import cn.jowen.framework.plugin.spi.PluginSpiBridge;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -75,16 +76,35 @@ public class PluginAutoConfiguration {
     }
 
     /**
+     * 插件扩展点桥接门面：将插件侧扩展点映射为 core {@code ExtensionLoader} 的动态发现源，
+     * 使插件实现的扩展经统一 SPI 查询可获取（热注册/注销自动生效）。
+     *
+     * @param extensionRegistry 插件扩展注册中心（可选，存在时桥接才注册）
+     * @return 桥接门面，无注册中心时返回 {@code null}（不注册该 bean）
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public PluginSpiBridge pluginSpiBridge(ObjectProvider<ExtensionRegistry> extensionRegistry) {
+        ExtensionRegistry registry = extensionRegistry.getIfAvailable();
+        if (registry == null) {
+            return null;
+        }
+        return new PluginSpiBridge(registry);
+    }
+
+    /**
      * 插件自动加载引导器：容器就绪后扫描 plugins-dir 加载并按 autoStart 启动，关闭时释放类加载器。
      *
      * @param pluginManager 插件管理器，不可为 {@code null}
      * @param properties    插件配置，不可为 {@code null}
+     * @param spiBridge     扩展点桥接门面（可选），用于插件描述符扩展点映射注册
      * @return 引导器，不可为 {@code null}
      */
     @Bean
     @ConditionalOnMissingBean
-    public PluginBootstrap pluginBootstrap(PluginManager pluginManager, BootPluginProperties properties) {
-        return new PluginBootstrap(pluginManager, properties);
+    public PluginBootstrap pluginBootstrap(PluginManager pluginManager, BootPluginProperties properties,
+                                           ObjectProvider<PluginSpiBridge> spiBridge) {
+        return new PluginBootstrap(pluginManager, properties, spiBridge.getIfAvailable());
     }
 
     /**
@@ -92,17 +112,20 @@ public class PluginAutoConfiguration {
      *
      * @param pluginManager 插件管理器，不可为 {@code null}
      * @param properties    插件配置，不可为 {@code null}
+     * @param spiBridge     扩展点桥接门面（可选），热加载/卸载时注册/注销描述符扩展点映射
      * @return 热部署管理器（已启动），不可为 {@code null}
      */
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "framework.plugin.hot-swap", name = "enabled", havingValue = "true", matchIfMissing = false)
-    public PluginHotSwapManager pluginHotSwapManager(PluginManager pluginManager, BootPluginProperties properties) {
+    public PluginHotSwapManager pluginHotSwapManager(PluginManager pluginManager, BootPluginProperties properties,
+                                                     ObjectProvider<PluginSpiBridge> spiBridge) {
         PluginProperties.HotSwapProperties hotSwap = properties.getHotSwap();
         HotSwapStrategy strategy = parseStrategy(hotSwap.getStrategy());
         long debounceMs = parseDebounceMillis(hotSwap.getDebounceInterval());
         PluginHotSwapManager manager = new PluginHotSwapManager(
-                Path.of(properties.getPluginsDir()), pluginManager, strategy, debounceMs);
+                Path.of(properties.getPluginsDir()), pluginManager, strategy, debounceMs,
+                spiBridge.getIfAvailable());
         manager.start();
         return manager;
     }

@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 扩展点注册表。
@@ -21,6 +22,11 @@ public final class ExtensionRegistry {
      * 扩展点 id → 扩展列表。
      */
     private final Map<String, List<Extension>> registry = new ConcurrentHashMap<>();
+
+    /**
+     * 注册表内容变更监听（注册/注销/清空触发），供桥接层做缓存失效。
+     */
+    private final List<Runnable> changeListeners = new CopyOnWriteArrayList<>();
 
     /**
      * 注册扩展实现。
@@ -40,6 +46,7 @@ public final class ExtensionRegistry {
         list.add(extension);
         // 按 order 排序
         list.sort(Comparator.comparingInt(Extension::order));
+        notifyChanged();
     }
 
     /**
@@ -59,7 +66,10 @@ public final class ExtensionRegistry {
                 break;
             }
         }
-        if (removed != null) list.remove(removed);
+        if (removed != null) {
+            list.remove(removed);
+            notifyChanged();
+        }
         return removed;
     }
 
@@ -118,5 +128,29 @@ public final class ExtensionRegistry {
      */
     public void clear() {
         registry.clear();
+        notifyChanged();
+    }
+
+    /**
+     * 添加注册表内容变更监听。扩展注册/注销/清空时回调，用于桥接层触发扩展加载器缓存失效。
+     *
+     * @param listener 变更监听，不可为 {@code null}
+     */
+    public void addChangeListener(Runnable listener) {
+        if (listener == null) throw new IllegalArgumentException("listener cannot be null");
+        changeListeners.add(listener);
+    }
+
+    /**
+     * 通知全部变更监听。
+     */
+    private void notifyChanged() {
+        for (Runnable listener : changeListeners) {
+            try {
+                listener.run();
+            } catch (Exception ignored) {
+                // 监听失败不影响注册表自身操作
+            }
+        }
     }
 }

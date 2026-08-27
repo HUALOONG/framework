@@ -4,6 +4,7 @@ import cn.jowen.framework.logger.facade.Logger;
 import cn.jowen.framework.logger.facade.LoggerFactory;
 import cn.jowen.framework.plugin.api.PluginManager;
 import cn.jowen.framework.plugin.hotswap.PluginFileWatcher.FileChangeHandler;
+import cn.jowen.framework.plugin.spi.PluginSpiBridge;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -28,6 +29,7 @@ public final class PluginHotSwapManager implements Closeable {
     private final PluginManager pluginManager;
     private final HotSwapStrategy strategy;
     private final long debounceMs;
+    private final @Nullable PluginSpiBridge spiBridge;
     private final Map<String, Long> lastChangeTime = new ConcurrentHashMap<>();
     private volatile boolean running = false;
     private @Nullable FileChangeHandler handler;
@@ -35,7 +37,7 @@ public final class PluginHotSwapManager implements Closeable {
     private WatchServiceWrapper watchService;
 
     /**
-     * 构造热部署管理器。
+     * 构造热部署管理器（不桥接 core SPI，等价于桥接参数为 {@code null}）。
      *
      * @param pluginsDir    插件目录
      * @param pluginManager 插件管理器
@@ -44,10 +46,26 @@ public final class PluginHotSwapManager implements Closeable {
      */
     public PluginHotSwapManager(Path pluginsDir, PluginManager pluginManager,
                                 HotSwapStrategy strategy, long debounceMs) {
+        this(pluginsDir, pluginManager, strategy, debounceMs, null);
+    }
+
+    /**
+     * 构造热部署管理器。
+     *
+     * @param pluginsDir    插件目录
+     * @param pluginManager 插件管理器
+     * @param strategy      热部署策略
+     * @param debounceMs    防抖间隔（毫秒）
+     * @param spiBridge     扩展点桥接门面（可为 {@code null}；置空时热加载/卸载不注册/注销描述符扩展点映射）
+     */
+    public PluginHotSwapManager(Path pluginsDir, PluginManager pluginManager,
+                                HotSwapStrategy strategy, long debounceMs,
+                                @Nullable PluginSpiBridge spiBridge) {
         this.pluginsDir = pluginsDir;
         this.pluginManager = pluginManager;
         this.strategy = strategy;
         this.debounceMs = debounceMs;
+        this.spiBridge = spiBridge;
     }
 
     /**
@@ -57,7 +75,7 @@ public final class PluginHotSwapManager implements Closeable {
         if (running) return;
         running = true;
         this.handler = switch (strategy) {
-            case RESTART -> new RestartHotSwapStrategy(pluginManager, pluginsDir);
+            case RESTART -> new RestartHotSwapStrategy(pluginManager, pluginsDir, spiBridge);
             case MANUAL -> new ManualHotSwapStrategy();
             case RELOAD_CLASSES -> null; // 需 JVM HotSwap 支持，暂不自动处理
         };
@@ -105,6 +123,10 @@ public final class PluginHotSwapManager implements Closeable {
     @Override
     public void close() {
         running = false;
+        // 关闭即视为全部插件卸载，清理桥接映射（幂等）
+        if (spiBridge != null) {
+            spiBridge.clear();
+        }
         if (watchService != null) {
             try {
                 watchService.close();

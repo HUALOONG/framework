@@ -32,4 +32,14 @@ public @interface SPI {
      * @return 默认实现名
      */
     String value() default "";
+
+    /**
+     * 扩展点唯一标识，为空时默认使用接口全限定名。
+     *
+     * <p>用于与插件侧 {@code @Extension.extensionPoint} 对齐（见 framework-plugin 的
+     * {@code PluginSpiBridge}），使扩展点可在不依赖接口全限定名的前提下被跨模块引用。
+     *
+     * @return 扩展点标识
+     */
+    String id() default "";
 }

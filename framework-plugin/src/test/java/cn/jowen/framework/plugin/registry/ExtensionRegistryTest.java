@@ -85,4 +85,39 @@ class ExtensionRegistryTest {
     void getExtensions_nonExistentExtensionPoint_returnsEmpty() {
         assertThat(registry.getExtensions("nonexistent")).isEmpty();
     }
+
+    @Test
+    void addChangeListener_registerAndUnregisterAndClear_trigger() {
+        java.util.concurrent.atomic.AtomicInteger fired = new java.util.concurrent.atomic.AtomicInteger();
+        registry.addChangeListener(fired::incrementAndGet);
+
+        registry.register(new Extension("e1", "ep1", new Object(), 0, "p1", null));
+        assertThat(fired.get()).isEqualTo(1);
+
+        registry.unregister("ep1", "e1");
+        assertThat(fired.get()).isEqualTo(2);
+
+        registry.register(new Extension("e1", "ep1", new Object(), 0, "p1", null));
+        registry.clear();
+        assertThat(fired.get()).isEqualTo(4);
+    }
+
+    @Test
+    void addChangeListener_duplicateIdException_doesNotTrigger() {
+        java.util.concurrent.atomic.AtomicInteger fired = new java.util.concurrent.atomic.AtomicInteger();
+        registry.addChangeListener(fired::incrementAndGet);
+        registry.register(new Extension("e1", "ep1", new Object(), 0, "p1", null));
+
+        assertThatThrownBy(() -> registry.register(new Extension("e1", "ep1", new Object(), 1, "p1", null)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(fired.get()).isEqualTo(1);
+    }
+
+    @Test
+    void addChangeListener_unregisterNonExistent_doesNotTrigger() {
+        java.util.concurrent.atomic.AtomicInteger fired = new java.util.concurrent.atomic.AtomicInteger();
+        registry.addChangeListener(fired::incrementAndGet);
+        assertThat(registry.unregister("ep1", "missing")).isNull();
+        assertThat(fired.get()).isZero();
+    }
 }

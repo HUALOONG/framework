@@ -8,10 +8,13 @@ import cn.jowen.framework.plugin.api.PluginManager;
 import cn.jowen.framework.plugin.context.DefaultPluginContext;
 import cn.jowen.framework.plugin.context.MapPluginConfiguration;
 import cn.jowen.framework.plugin.context.SharedData;
+import cn.jowen.framework.plugin.descriptor.ExtensionPointDescriptor;
 import cn.jowen.framework.plugin.descriptor.PluginDescriptor;
 import cn.jowen.framework.plugin.loader.ClassLoadingStrategy;
 import cn.jowen.framework.plugin.loader.PluginLoader;
+import cn.jowen.framework.plugin.spi.PluginSpiBridge;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 
@@ -40,20 +43,34 @@ public final class PluginBootstrap implements SmartInitializingSingleton, Dispos
 
     private final PluginManager pluginManager;
     private final BootPluginProperties properties;
+    private final @Nullable PluginSpiBridge spiBridge;
     private final ClassLoader applicationClassLoader;
     private final Map<String, PluginLoader> loaders = new ConcurrentHashMap<>();
+
+    /**
+     * 构造引导器（无桥接门面，等价于 {@code new PluginBootstrap(pluginManager, properties, null)}）。
+     *
+     * @param pluginManager 插件管理器，不可为 {@code null}
+     * @param properties    插件配置，不可为 {@code null}
+     */
+    public PluginBootstrap(PluginManager pluginManager, BootPluginProperties properties) {
+        this(pluginManager, properties, null);
+    }
 
     /**
      * 构造引导器。
      *
      * @param pluginManager 插件管理器，不可为 {@code null}
-     * @param properties   插件配置，不可为 {@code null}
+     * @param properties    插件配置，不可为 {@code null}
+     * @param spiBridge     扩展点桥接门面（可为 {@code null}，置空时不注册描述符扩展点映射）
      */
-    public PluginBootstrap(PluginManager pluginManager, BootPluginProperties properties) {
+    public PluginBootstrap(PluginManager pluginManager, BootPluginProperties properties,
+                           @Nullable PluginSpiBridge spiBridge) {
         Objects.requireNonNull(pluginManager, "pluginManager must not be null");
         Objects.requireNonNull(properties, "properties must not be null");
         this.pluginManager = pluginManager;
         this.properties = properties;
+        this.spiBridge = spiBridge;
         this.applicationClassLoader = Objects.requireNonNullElse(
                 Thread.currentThread().getContextClassLoader(), PluginBootstrap.class.getClassLoader());
     }
@@ -97,6 +114,8 @@ public final class PluginBootstrap implements SmartInitializingSingleton, Dispos
                     loader.getClassLoader(), null);
             pluginManager.initialize(id, plugin, context);
             loaders.put(id, loader);
+            // 描述符声明的扩展点映射注册到桥接门面，使该插件的扩展对 core SPI 查询可见
+            registerExtensionPoints(desc);
             if (properties.isAutoStart()) {
                 pluginManager.startPlugin(id);
             }
@@ -109,6 +128,10 @@ public final class PluginBootstrap implements SmartInitializingSingleton, Dispos
 
     @Override
     public void destroy() {
+        // 先解除桥接源，再关闭各插件类加载器
+        if (spiBridge != null) {
+            spiBridge.clear();
+        }
         for (Map.Entry<String, PluginLoader> entry : loaders.entrySet()) {
             try {
                 entry.getValue().close();
@@ -117,6 +140,20 @@ public final class PluginBootstrap implements SmartInitializingSingleton, Dispos
             }
         }
         loaders.clear();
+    }
+
+    /**
+     * 将描述符中的扩展点映射逐条注册到桥接门面。
+     *
+     * @param desc 插件描述符，不可为 {@code null}
+     */
+    private void registerExtensionPoints(PluginDescriptor desc) {
+        if (spiBridge == null) {
+            return;
+        }
+        for (ExtensionPointDescriptor point : desc.extensionPoints()) {
+            spiBridge.registerExtensionPoint(point);
+        }
     }
 
     private static List<Path> listJars(Path dir) {
