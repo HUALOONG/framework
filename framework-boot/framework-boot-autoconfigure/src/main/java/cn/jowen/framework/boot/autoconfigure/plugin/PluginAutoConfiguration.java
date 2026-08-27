@@ -33,4 +33,22 @@ public class PluginAutoConfiguration {
     public PluginLifecycleManager pluginLifecycleManager() {
         return new PluginLifecycleManager();
     }
+
+    /**
+     * Actuator 插件管理端点（/actuator/plugins），仅当 actuator 在 classpath 时生效。
+     */
+    @Bean
+    @ConditionalOnClass(name = "org.springframework.boot.actuate.endpoint.annotation.Endpoint")
+    public PluginEndpoint pluginEndpoint(PluginManager pluginManager) {
+        return new PluginEndpoint(pluginManager);
+    }
+
+    /**
+     * 插件健康指示器，仅当 spring-boot-health 在 classpath 时生效。
+     */
+    @Bean
+    @ConditionalOnClass(name = "org.springframework.boot.health.contributor.HealthIndicator")
+    public PluginHealthIndicator pluginHealthIndicator(PluginManager pluginManager) {
+        return new PluginHealthIndicator(pluginManager);
+    }
 }
