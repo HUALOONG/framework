@@ -92,6 +92,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Redisson（可选）：i18n REDIS 消息源自动装配 -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- 云原生（M6）：Actuator 端点与健康检查（可选，命中 @ConditionalOnClass 时生效） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

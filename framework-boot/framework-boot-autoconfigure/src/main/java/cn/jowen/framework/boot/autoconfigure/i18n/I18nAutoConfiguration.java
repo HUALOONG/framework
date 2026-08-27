@@ -16,6 +16,7 @@ import cn.jowen.framework.i18n.metrics.I18nMetricsCollector;
 import cn.jowen.framework.i18n.source.CompositeMessageSource;
 import cn.jowen.framework.i18n.source.DatabaseMessageSource;
 import cn.jowen.framework.i18n.source.PropertiesMessageSource;
+import cn.jowen.framework.i18n.source.RedisMessageSource;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.ObjectProvider;
@@ -27,6 +28,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.redisson.api.RedissonClient;
 
 import java.util.List;
 import java.util.Locale;
@@ -75,12 +77,24 @@ public class I18nAutoConfiguration {
     public MessageSource messageSource(BootI18nProperties properties,
                                        @Autowired(required = false) JdbcTemplate jdbcTemplate,
                                        @Autowired(required = false) List<MessageSourceCustomizer> customizers,
-                                       ObjectProvider<MeterRegistry> meterRegistry) {
+                                       ObjectProvider<MeterRegistry> meterRegistry,
+                                       ObjectProvider<RedissonClient> redisson) {
         CompositeMessageSource composite = new CompositeMessageSource();
-        if (properties.getSource() == SourceType.DATABASE && jdbcTemplate != null) {
+        SourceType source = properties.getSource();
+        if (source == SourceType.DATABASE && jdbcTemplate != null) {
             DatabaseMessageSource dbSource = new DatabaseMessageSource(jdbcTemplate);
             applyFormatter(dbSource, properties.getFormatter());
             composite.add(dbSource);
+        } else if (source == SourceType.REDIS) {
+            RedissonClient client = redisson.getIfAvailable();
+            if (client != null) {
+                RedisMessageSource redisSource = new RedisMessageSource(client, properties.getBasename());
+                applyFormatter(redisSource, properties.getFormatter());
+                composite.add(redisSource);
+            } else {
+                // REDIS 源但未配置 RedissonClient，回退 Properties 兜底
+                composite.add(new PropertiesMessageSource(properties.getBasename()));
+            }
         } else {
             composite.add(new PropertiesMessageSource(properties.getBasename()));
         }
