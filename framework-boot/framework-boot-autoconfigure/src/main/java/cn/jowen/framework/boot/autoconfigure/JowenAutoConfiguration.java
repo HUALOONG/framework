@@ -7,6 +7,7 @@ import cn.jowen.framework.boot.autoconfigure.extras.ExtrasAutoConfiguration;
 import cn.jowen.framework.boot.autoconfigure.health.HealthAutoConfiguration;
 import cn.jowen.framework.boot.autoconfigure.i18n.I18nAutoConfiguration;
 import cn.jowen.framework.boot.autoconfigure.logger.LoggerAutoConfiguration;
+import cn.jowen.framework.boot.autoconfigure.plugin.PluginAutoConfiguration;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -15,8 +16,7 @@ import org.springframework.context.annotation.Import;
 /**
  * 框架总装配入口。默认启用（{@code framework.enabled} 总开关，缺省即开），聚合各功能装配类。
  *
- * <p>当前引入 Logger 装配、JDBC 数据装配、缓存与国际化装配、插件装配、
- * extras/health/observability 装配；后续 web/bridge 逐步补齐。
+ * <p>当前引入 Logger 装配、数据装配（JDBC/MyBatis）、缓存、国际化、插件与 extras/health 装配。
  *
  * @author 王飞
  * @since 2026-08-21
@@ -31,7 +31,8 @@ import org.springframework.context.annotation.Import;
         I18nAutoConfiguration.class,
         JdbcAutoConfiguration.class,
         LoggerAutoConfiguration.class,
-        MybatisAutoConfiguration.class
+        MybatisAutoConfiguration.class,
+        PluginAutoConfiguration.class
 })
 public class JowenAutoConfiguration {
 }
