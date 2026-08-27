@@ -3,6 +3,7 @@ package cn.jowen.framework.plugin.loader;
 import cn.jowen.framework.plugin.api.Plugin;
 import cn.jowen.framework.plugin.descriptor.PluginDescriptor;
 import cn.jowen.framework.plugin.descriptor.PluginJsonDescriptorParser;
+import cn.jowen.framework.plugin.descriptor.PluginYamlDescriptorParser;
 import org.jspecify.annotations.NullMarked;
 
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.jar.JarFile;
 
 /**
  * 插件加载器。解析描述符 → 校验 → 创建 ClassLoader → 实例化主类。
@@ -60,10 +62,20 @@ public final class PluginLoader implements AutoCloseable {
      */
     public PluginLoader(Path jarPath, ClassLoader parent, ClassLoadingStrategy strategy) throws IOException {
         this.pluginPath = jarPath;
-        PluginDescriptor desc = new PluginJsonDescriptorParser().load(jarPath);
+        PluginDescriptor desc = loadDescriptor(jarPath);
         this.descriptor = desc;
         URL[] urls = {jarPath.toUri().toURL()};
         this.classLoader = createClassLoader(desc, urls, parent, strategy);
+    }
+
+    private static PluginDescriptor loadDescriptor(Path jarPath) throws IOException {
+        try (JarFile jarFile = new JarFile(jarPath.toFile())) {
+            if (jarFile.getJarEntry("META-INF/plugin/plugin.json") == null) {
+                // 无 plugin.json 时回退 plugin.yaml（YAML 解析依赖可选 snakeyaml）
+                return new PluginYamlDescriptorParser().load(jarPath);
+            }
+        }
+        return new PluginJsonDescriptorParser().load(jarPath);
     }
 
     private static List<String> computeExportedPackages(PluginDescriptor descriptor) {
