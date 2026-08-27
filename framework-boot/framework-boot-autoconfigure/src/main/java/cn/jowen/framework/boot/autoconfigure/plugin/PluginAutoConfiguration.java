@@ -2,6 +2,9 @@ package cn.jowen.framework.boot.autoconfigure.plugin;
 
 import cn.jowen.framework.boot.autoconfigure.JowenAutoConfiguration;
 import cn.jowen.framework.plugin.api.PluginManager;
+import cn.jowen.framework.plugin.config.PluginProperties;
+import cn.jowen.framework.plugin.hotswap.HotSwapStrategy;
+import cn.jowen.framework.plugin.hotswap.PluginHotSwapManager;
 import cn.jowen.framework.plugin.lifecycle.PluginLifecycleManager;
 import cn.jowen.framework.plugin.registry.ExtensionRegistry;
 import cn.jowen.framework.plugin.resolver.DependencyResolver;
@@ -13,6 +16,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+
+import java.nio.file.Path;
 
 /**
  * 插件能力装配。当 classpath 存在 {@code cn.jowen.framework.plugin.api.PluginManager} 且
@@ -80,6 +85,49 @@ public class PluginAutoConfiguration {
     @ConditionalOnMissingBean
     public PluginBootstrap pluginBootstrap(PluginManager pluginManager, BootPluginProperties properties) {
         return new PluginBootstrap(pluginManager, properties);
+    }
+
+    /**
+     * 热部署管理器：监听 plugins-dir 运行时变更并按策略重载（仅 {@code framework.plugin.hot-swap.enabled=true} 时启动）。
+     *
+     * @param pluginManager 插件管理器，不可为 {@code null}
+     * @param properties    插件配置，不可为 {@code null}
+     * @return 热部署管理器（已启动），不可为 {@code null}
+     */
+    @Bean(destroyMethod = "close")
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "framework.plugin.hot-swap", name = "enabled", havingValue = "true", matchIfMissing = false)
+    public PluginHotSwapManager pluginHotSwapManager(PluginManager pluginManager, BootPluginProperties properties) {
+        PluginProperties.HotSwapProperties hotSwap = properties.getHotSwap();
+        HotSwapStrategy strategy = parseStrategy(hotSwap.getStrategy());
+        long debounceMs = parseDebounceMillis(hotSwap.getDebounceInterval());
+        PluginHotSwapManager manager = new PluginHotSwapManager(
+                Path.of(properties.getPluginsDir()), pluginManager, strategy, debounceMs);
+        manager.start();
+        return manager;
+    }
+
+    private static HotSwapStrategy parseStrategy(String strategy) {
+        try {
+            return HotSwapStrategy.valueOf(strategy.toUpperCase().replace('-', '_'));
+        } catch (IllegalArgumentException e) {
+            return HotSwapStrategy.RESTART;
+        }
+    }
+
+    private static long parseDebounceMillis(String debounce) {
+        String value = debounce.trim().toLowerCase();
+        try {
+            if (value.endsWith("ms")) {
+                return Long.parseLong(value.substring(0, value.length() - 2));
+            }
+            if (value.endsWith("s")) {
+                return Long.parseLong(value.substring(0, value.length() - 1)) * 1000;
+            }
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            return 3000;
+        }
     }
 
     /**
