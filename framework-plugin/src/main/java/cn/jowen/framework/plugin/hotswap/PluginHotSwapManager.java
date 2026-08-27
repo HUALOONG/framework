@@ -3,7 +3,9 @@ package cn.jowen.framework.plugin.hotswap;
 import cn.jowen.framework.logger.facade.Logger;
 import cn.jowen.framework.logger.facade.LoggerFactory;
 import cn.jowen.framework.plugin.api.PluginManager;
+import cn.jowen.framework.plugin.hotswap.PluginFileWatcher.FileChangeHandler;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -28,6 +30,7 @@ public final class PluginHotSwapManager implements Closeable {
     private final long debounceMs;
     private final Map<String, Long> lastChangeTime = new ConcurrentHashMap<>();
     private volatile boolean running = false;
+    private @Nullable FileChangeHandler handler;
     private Thread watchThread;
     private WatchServiceWrapper watchService;
 
@@ -53,6 +56,11 @@ public final class PluginHotSwapManager implements Closeable {
     public void start() {
         if (running) return;
         running = true;
+        this.handler = switch (strategy) {
+            case RESTART -> new RestartHotSwapStrategy(pluginManager, pluginsDir);
+            case MANUAL -> new ManualHotSwapStrategy();
+            case RELOAD_CLASSES -> null; // 需 JVM HotSwap 支持，暂不自动处理
+        };
         watchThread = new Thread(this::watchLoop, "plugin-hotswap-watcher");
         watchThread.setDaemon(true);
         watchThread.start();
@@ -81,24 +89,17 @@ public final class PluginHotSwapManager implements Closeable {
     }
 
     private void onFileChanged(String fileName) {
-        Path jarPath = pluginsDir.resolve(fileName);
-        if (!Files.isRegularFile(jarPath)) return;
-        try {
-            if (strategy == HotSwapStrategy.RESTART) {
-                // 提取插件 id（从文件名或描述符）
-                String pluginId = extractPluginId(fileName);
-                if (pluginId != null) {
-                    pluginManager.restartPlugin(pluginId);
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.warn("热部署失败：" + fileName + "，原因：" + e.getMessage());
+        FileChangeHandler h = handler;
+        if (h == null) {
+            return;
         }
-    }
-
-    private String extractPluginId(String fileName) {
-        // 简化实现：从文件名去掉 .jar 后缀
-        return fileName.endsWith(".jar") ? fileName.substring(0, fileName.length() - 4) : fileName;
+        Path jarPath = pluginsDir.resolve(fileName);
+        // 文件仍存在视为新增/修改（重载），已删除则卸载
+        if (Files.isRegularFile(jarPath)) {
+            h.onFileModified(fileName);
+        } else {
+            h.onFileDeleted(fileName);
+        }
     }
 
     @Override
@@ -117,6 +118,14 @@ public final class PluginHotSwapManager implements Closeable {
                 Thread.currentThread().interrupt();
             }
         }
+        if (handler instanceof Closeable closeable) {
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                LOGGER.warn("热部署策略关闭失败：" + e.getMessage());
+            }
+        }
+        handler = null;
     }
 
     public boolean isRunning() {
