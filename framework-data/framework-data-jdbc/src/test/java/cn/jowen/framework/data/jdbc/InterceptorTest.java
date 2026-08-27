@@ -284,7 +284,24 @@ class InterceptorTest {
             }
 
             private void capture(String msg, Object... args) {
-                lastMessage = args == null || args.length == 0 ? msg : msg.formatted(args);
+                // 按 SLF4J 风格替换 {} 占位符，与 LoggingInterceptor 的 "SQL => {} | params => {}" 对齐
+                if (args == null || args.length == 0) {
+                    lastMessage = msg;
+                    return;
+                }
+                StringBuilder sb = new StringBuilder(msg.length() + 16);
+                int argIndex = 0;
+                int cursor = 0;
+                while (cursor < msg.length()) {
+                    int idx = msg.indexOf("{}", cursor);
+                    if (idx < 0 || argIndex >= args.length) {
+                        sb.append(msg, cursor, msg.length());
+                        break;
+                    }
+                    sb.append(msg, cursor, idx).append(args[argIndex++]);
+                    cursor = idx + 2;
+                }
+                lastMessage = sb.toString();
             }
         }
     }
