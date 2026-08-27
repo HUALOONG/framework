@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -26,6 +27,7 @@ import org.springframework.context.annotation.Bean;
 @AutoConfiguration(after = JowenAutoConfiguration.class)
 @ConditionalOnClass(name = "cn.jowen.framework.plugin.api.PluginManager")
 @ConditionalOnProperty(prefix = "framework.plugin", name = "enabled", matchIfMissing = true)
+@EnableConfigurationProperties(BootPluginProperties.class)
 public class PluginAutoConfiguration {
 
     /**
@@ -65,6 +67,19 @@ public class PluginAutoConfiguration {
     @ConditionalOnMissingBean
     public DependencyResolver dependencyResolver() {
         return new DependencyResolver();
+    }
+
+    /**
+     * 插件自动加载引导器：容器就绪后扫描 plugins-dir 加载并按 autoStart 启动，关闭时释放类加载器。
+     *
+     * @param pluginManager 插件管理器，不可为 {@code null}
+     * @param properties    插件配置，不可为 {@code null}
+     * @return 引导器，不可为 {@code null}
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public PluginBootstrap pluginBootstrap(PluginManager pluginManager, BootPluginProperties properties) {
+        return new PluginBootstrap(pluginManager, properties);
     }
 
     /**
