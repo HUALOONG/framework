@@ -59,14 +59,14 @@ public final class EventBus {
      * @return 事件类型；无法解析时返回 null
      */
     private static @Nullable Class<?> resolveEventType(Class<?> type, Map<TypeVariable<?>, Type> bindings) {
-        for (Type iface : type.getGenericInterfaces()) {
+        for (Type face : type.getGenericInterfaces()) {
             Map<TypeVariable<?>, Type> next = new HashMap<>(bindings);
             Class<?> rawClass;
             Type[] actualArgs;
-            if (iface instanceof ParameterizedType pt && pt.getRawType() instanceof Class<?> raw) {
+            if (face instanceof ParameterizedType pt && pt.getRawType() instanceof Class<?> raw) {
                 rawClass = raw;
                 actualArgs = pt.getActualTypeArguments();
-            } else if (iface instanceof Class<?> raw) {
+            } else if (face instanceof Class<?> raw) {
                 rawClass = raw;
                 actualArgs = new Type[0];
             } else {
@@ -88,6 +88,13 @@ public final class EventBus {
         return null;
     }
 
+    /**
+     * 解析类型，支持类型变量绑定。
+     *
+     * @param type     待解析的类型
+     * @param bindings 类型变量 → 实际类型 的绑定
+     * @return 解析后的类型；无法解析时返回 null
+     */
     private static @Nullable Class<?> resolveType(Type type, Map<TypeVariable<?>, Type> bindings) {
         if (type instanceof Class<?> clazz) {
             return clazz;
@@ -105,7 +112,6 @@ public final class EventBus {
      * @param listener 监听器，不可为 {@code null}
      * @param <E>      事件类型
      */
-    @SuppressWarnings("unchecked")
     public <E extends FrameworkEvent> void register(EventListener<E> listener) {
         Class<?> eventType = resolveEventType(listener);
         listeners.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>()).add(listener);
@@ -128,6 +134,12 @@ public final class EventBus {
         }
     }
 
+    /**
+     * 派发事件给监听器。
+     *
+     * @param listener 监听器
+     * @param event    事件
+     */
     private void dispatch(EventListener<FrameworkEvent> listener, FrameworkEvent event) {
         if (executor != null) {
             executor.execute(() -> safeInvoke(listener, event));
@@ -136,6 +148,12 @@ public final class EventBus {
         }
     }
 
+    /**
+     * 安全执行监听器。
+     *
+     * @param listener 监听器
+     * @param event    事件
+     */
     private void safeInvoke(EventListener<FrameworkEvent> listener, FrameworkEvent event) {
         try {
             listener.onEvent(event);

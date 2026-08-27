@@ -159,7 +159,13 @@ public final class ReflectionUtils {
     }
 
     /**
-     * 按名字 + 参数数量查找方法，参数类型依次做精确、包装类等价、可赋值三层匹配。
+     * 查找方法（含继承链）。
+     *
+     * @param type 起始类型
+     * @param name 方法名
+     * @param args 实参
+     * @return 方法（已设置可访问）
+     * @throws SystemException 方法不存在或参数不匹配
      */
     private static Method findMethod(Class<?> type, String name, Object... args) {
         List<Method> candidates = new ArrayList<>();
@@ -190,6 +196,13 @@ public final class ReflectionUtils {
         throw new SystemException("方法参数不匹配: " + type.getName() + "#" + name);
     }
 
+    /**
+     * 检查参数是否精确匹配。
+     *
+     * @param paramTypes 参数类型
+     * @param args       实参
+     * @return 是否精确匹配
+     */
     private static boolean paramsEquivalent(Class<?>[] paramTypes, Object... args) {
         for (int i = 0; i < paramTypes.length; i++) {
             if (args[i] == null) {
@@ -206,6 +219,13 @@ public final class ReflectionUtils {
         return true;
     }
 
+    /**
+     * 检查参数是否可赋值。
+     *
+     * @param paramTypes 参数类型
+     * @param args       实参
+     * @return 是否可赋值
+     */
     private static boolean paramsAssignable(Class<?>[] paramTypes, Object... args) {
         for (int i = 0; i < paramTypes.length; i++) {
             if (args[i] == null) {
@@ -222,6 +242,12 @@ public final class ReflectionUtils {
         return true;
     }
 
+    /**
+     * 设置方法可访问。
+     *
+     * @param method 方法
+     * @return 方法
+     */
     private static Method accessible(Method method) {
         if (!Modifier.isPublic(method.getModifiers())) {
             method.setAccessible(true);
@@ -230,7 +256,10 @@ public final class ReflectionUtils {
     }
 
     /**
-     * 基础类型装箱（非基础类型原样返回）。
+     * 包装类型。
+     *
+     * @param type 原始类型
+     * @return 包装类型
      */
     private static Class<?> wrap(Class<?> type) {
         if (!type.isPrimitive()) {
@@ -305,7 +334,10 @@ public final class ReflectionUtils {
     }
 
     /**
-     * 静态字段场景下的类型占位（按方法名在调用方类解析失败时兜底抛异常）。
+     * 解析静态类型。
+     *
+     * @param name 名称
+     * @return 类型
      */
     private static Class<?> resolveStaticType(String name) {
         throw new SystemException("无法解析目标类型（静态成员需通过对象实例访问）: " + name);

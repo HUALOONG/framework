@@ -13,23 +13,50 @@ import org.jspecify.annotations.Nullable;
  */
 @NullMarked
 public class BusinessException extends FrameworkException {
-
+    /**
+     * 创建业务异常。
+     *
+     * @param message 异常消息
+     */
     public BusinessException(String message) {
         super(message);
     }
 
+    /**
+     * 创建业务异常。
+     *
+     * @param message 异常消息
+     * @param cause   异常原因
+     */
     public BusinessException(String message, Throwable cause) {
         super(message, cause);
     }
 
+    /**
+     * 创建业务异常。
+     *
+     * @param errorCode 错误码
+     */
     public BusinessException(ErrorCode errorCode) {
         super(errorCode);
     }
 
+    /**
+     * 创建业务异常。
+     *
+     * @param errorCode 错误码
+     * @param message   异常消息
+     */
     public BusinessException(ErrorCode errorCode, String message) {
         super(errorCode, message);
     }
 
+    /**
+     * 创建业务异常。
+     *
+     * @param errorCode 错误码
+     * @param cause     异常原因
+     */
     public BusinessException(ErrorCode errorCode, Throwable cause) {
         super(errorCode, cause);
     }
@@ -40,6 +67,6 @@ public class BusinessException extends FrameworkException {
      * @return 错误码，可能为 {@code null}
      */
     public @Nullable ErrorCode getErrorCode() {
-        return (ErrorCode) super.getErrorCode();
+        return super.getErrorCode();
     }
 }

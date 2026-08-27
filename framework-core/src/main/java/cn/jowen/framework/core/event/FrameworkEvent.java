@@ -13,14 +13,28 @@ import java.time.Instant;
  */
 @NullMarked
 public class FrameworkEvent {
-
+    /**
+     * 事件发生时间。
+     */
     private final Instant timestamp;
+
+    /**
+     * 事件源对象（可为 {@code null}）。
+     */
     private final @Nullable Object source;
 
+    /**
+     * 创建事件。
+     */
     public FrameworkEvent() {
         this(null);
     }
 
+    /**
+     * 创建事件。
+     *
+     * @param source 事件源对象，可为 {@code null}
+     */
     public FrameworkEvent(@Nullable Object source) {
         this.timestamp = Instant.now();
         this.source = source;

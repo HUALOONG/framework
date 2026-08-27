@@ -11,23 +11,50 @@ import org.jspecify.annotations.Nullable;
  */
 @NullMarked
 public class SystemException extends FrameworkException {
-
+    /**
+     * 创建系统异常。
+     *
+     * @param message 异常消息
+     */
     public SystemException(String message) {
         super(message);
     }
 
+    /**
+     * 创建系统异常。
+     *
+     * @param message 异常消息
+     * @param cause   异常原因
+     */
     public SystemException(String message, Throwable cause) {
         super(message, cause);
     }
 
+    /**
+     * 创建系统异常。
+     *
+     * @param errorCode 错误码
+     */
     public SystemException(ErrorCode errorCode) {
         super(errorCode);
     }
 
+    /**
+     * 创建系统异常。
+     *
+     * @param errorCode 错误码
+     * @param message   异常消息
+     */
     public SystemException(ErrorCode errorCode, String message) {
         super(errorCode, message);
     }
 
+    /**
+     * 创建系统异常。
+     *
+     * @param errorCode 错误码
+     * @param cause     异常原因
+     */
     public SystemException(ErrorCode errorCode, Throwable cause) {
         super(errorCode, cause);
     }

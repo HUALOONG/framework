@@ -19,8 +19,14 @@ import java.util.Objects;
  */
 @NullMarked
 public final class ContextKey<T> {
-
+    /**
+     * 键名称。
+     */
     private final String name;
+
+    /**
+     * 值类型。
+     */
     private final Class<T> type;
 
     private ContextKey(String name, Class<T> type) {
@@ -47,6 +53,8 @@ public final class ContextKey<T> {
 
     /**
      * 键名称。
+     *
+     * @return 键名称
      */
     public String name() {
         return name;
@@ -54,6 +62,8 @@ public final class ContextKey<T> {
 
     /**
      * 值类型。
+     *
+     * @return 值类型
      */
     public Class<T> type() {
         return type;
@@ -72,6 +82,12 @@ public final class ContextKey<T> {
         return type.isInstance(value) ? type.cast(value) : null;
     }
 
+    /**
+     * 比较两个上下文键是否相等：名称 + 值类型相同。
+     *
+     * @param o 待比较对象
+     * @return 是否相等
+     */
     @Override
     public boolean equals(@Nullable Object o) {
         if (this == o) {
@@ -83,11 +99,21 @@ public final class ContextKey<T> {
         return name.equals(that.name) && type.equals(that.type);
     }
 
+    /**
+     * 计算哈希值：名称 + 值类型。
+     *
+     * @return 哈希值
+     */
     @Override
     public int hashCode() {
         return Objects.hash(name, type);
     }
 
+    /**
+     * 字符串表示：名称。
+     *
+     * @return 名称
+     */
     @Override
     public String toString() {
         return name;

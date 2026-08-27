@@ -115,6 +115,9 @@ public final class LifecycleProcessor {
         return lifecycles.size();
     }
 
+    /**
+     * 返回已注册组件的拷贝，并按阶段升序排序。
+     */
     private List<Lifecycle> sorted() {
         List<Lifecycle> copy = new ArrayList<>(lifecycles);
         copy.sort(PHASE_ASC);

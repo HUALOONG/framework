@@ -24,14 +24,36 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @NullMarked
 public final class ExtensionLoader<T> {
-
+    /**
+     * 已加载的扩展点接口与对应的加载器实例。
+     */
     private static final Map<Class<?>, ExtensionLoader<?>> LOADERS = new ConcurrentHashMap<>();
 
+    /**
+     * 扩展点接口类型。
+     */
     private final Class<T> type;
+
+    /**
+     * 已加载的扩展点实现。
+     */
     private final Map<String, T> namedInstances = new ConcurrentHashMap<>();
+
+    /**
+     * 默认加载的扩展点实现。
+     */
     private final Map<String, T> defaultInstances = new ConcurrentHashMap<>();
+
+    /**
+     * 已加载的自动激活扩展点实现。
+     */
     private volatile @Nullable List<T> activatedCache;
 
+    /**
+     * 创建扩展点加载器。
+     *
+     * @param type 扩展点接口类型
+     */
     private ExtensionLoader(Class<T> type) {
         this.type = type;
     }
@@ -51,6 +73,13 @@ public final class ExtensionLoader<T> {
         return (ExtensionLoader<T>) LOADERS.computeIfAbsent(type, ExtensionLoader::new);
     }
 
+    /**
+     * 判断数组中是否包含指定值。
+     *
+     * @param arr   数组
+     * @param value 值
+     * @return 是否包含
+     */
     private static boolean contains(String[] arr, String value) {
         for (String s : arr) {
             if (s.equals(value)) {
@@ -130,6 +159,11 @@ public final class ExtensionLoader<T> {
         return filtered;
     }
 
+    /**
+     * 加载并缓存所有被 {@link Activate} 标记的自动激活实例。
+     *
+     * @return 已排序的激活实例列表，不可为 {@code null}
+     */
     private List<T> loadActivate() {
         List<T> cached = activatedCache;
         if (cached != null) {

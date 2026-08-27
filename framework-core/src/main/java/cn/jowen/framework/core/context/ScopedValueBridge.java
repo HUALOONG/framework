@@ -25,12 +25,34 @@ import java.lang.reflect.Method;
  */
 @NullMarked
 final class ScopedValueBridge {
-
+    /**
+     * ScopedValue 是否可用（JDK 22+ 正式 API）。
+     */
     private static final boolean AVAILABLE;
+
+    /**
+     * 反射方法句柄（不可用时为 null）。
+     */
     private static final @Nullable Method NEW_INSTANCE;
+
+    /**
+     * 是否已绑定
+     */
     private static final @Nullable Method IS_BOUND;
+
+    /**
+     * 读取绑定值
+     */
     private static final @Nullable Method GET;
+
+    /**
+     * 在绑定值的作用域内执行任务
+     */
     private static final @Nullable Method WHERE;
+
+    /**
+     * 作用域执行器
+     */
     private static final @Nullable Method CARRIER_RUN;
 
     static {
@@ -105,6 +127,15 @@ final class ScopedValueBridge {
         invoke(CARRIER_RUN, carrier, task);
     }
 
+    /**
+     * 反射调用方法。
+     *
+     * @param method 方法，不可为 null
+     * @param target 目标对象，可为 null
+     * @param args   参数列表
+     * @param <T>    返回值类型
+     * @return 调用结果
+     */
     @SuppressWarnings("unchecked")
     private static <T> @Nullable T invoke(@Nullable Method method, @Nullable Object target, Object... args) {
         if (method == null) {

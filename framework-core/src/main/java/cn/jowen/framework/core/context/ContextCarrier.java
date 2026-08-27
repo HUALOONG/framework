@@ -32,7 +32,7 @@ public final class ContextCarrier {
      * ScopedValue 实例句柄（通过反射创建，不可用时为 null）。
      */
     private static final @Nullable Object SCOPED_VALUE_INSTANCE = ScopedValueBridge.newInstance();
-    private static final ThreadLocal<Map<ContextKey<?>, Object>> THREAD_LOCAL_VALUES = new ThreadLocal<>();
+    private static final ThreadLocal<@Nullable Map<ContextKey<?>, Object>> THREAD_LOCAL_VALUES = new ThreadLocal<>();
     private static volatile Mode mode = Mode.SCOPED_VALUE;
 
     private ContextCarrier() {
@@ -150,13 +150,10 @@ public final class ContextCarrier {
      */
     static @Nullable Map<ContextKey<?>, Object> boundValues() {
         if (useScopedValue()) {
-            if (!ScopedValueBridge.isBound(SCOPED_VALUE_INSTANCE)) {
+            if (SCOPED_VALUE_INSTANCE != null && !ScopedValueBridge.isBound(SCOPED_VALUE_INSTANCE)) {
                 return null;
             }
-            @SuppressWarnings("unchecked")
-            Map<ContextKey<?>, Object> values = (Map<ContextKey<?>, Object>) ScopedValueBridge.get(
-                    SCOPED_VALUE_INSTANCE);
-            return values;
+            return (Map<ContextKey<?>, Object>) ScopedValueBridge.get(SCOPED_VALUE_INSTANCE);
         }
         return THREAD_LOCAL_VALUES.get();
     }
@@ -177,7 +174,7 @@ public final class ContextCarrier {
     }
 
     private static void executeScoped(Map<ContextKey<?>, Object> next, Runnable task) {
-        if (useScopedValue()) {
+        if (SCOPED_VALUE_INSTANCE != null && useScopedValue()) {
             // 直接绑定可变 Map：作用域内 set() 可修改，作用域结束随 ScopedValue 一并丢弃
             ScopedValueBridge.run(SCOPED_VALUE_INSTANCE, next, task);
             return;

@@ -19,26 +19,54 @@ public class FrameworkException extends RuntimeException {
      */
     private final @Nullable ErrorCode errorCode;
 
+    /**
+     * 创建异常。
+     *
+     * @param message 异常消息
+     */
     public FrameworkException(String message) {
         super(message);
         this.errorCode = null;
     }
 
+    /**
+     * 创建异常。
+     *
+     * @param message 异常消息
+     * @param cause   异常原因
+     */
     public FrameworkException(String message, Throwable cause) {
         super(message, cause);
         this.errorCode = null;
     }
 
+    /**
+     * 创建异常。
+     *
+     * @param errorCode 错误码
+     */
     public FrameworkException(ErrorCode errorCode) {
         super(errorCode.message());
         this.errorCode = errorCode;
     }
 
+    /**
+     * 创建异常。
+     *
+     * @param errorCode 错误码
+     * @param cause     异常原因
+     */
     public FrameworkException(ErrorCode errorCode, Throwable cause) {
         super(errorCode.message(), cause);
         this.errorCode = errorCode;
     }
 
+    /**
+     * 创建异常。
+     *
+     * @param errorCode 错误码
+     * @param message   异常消息
+     */
     public FrameworkException(ErrorCode errorCode, String message) {
         super(message);
         this.errorCode = errorCode;

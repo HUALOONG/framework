@@ -1,6 +1,7 @@
 package cn.jowen.framework.core.event;
 
 import cn.jowen.framework.core.exception.SystemException;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -36,7 +37,7 @@ class EventBusTest {
         final List<OrderEvent> events = new ArrayList<>();
 
         @Override
-        public void onEvent(OrderEvent event) {
+        public void onEvent(@NonNull OrderEvent event) {
             events.add(event);
         }
     }
@@ -98,7 +99,7 @@ class EventBusTest {
         EventBus bus = new EventBus();
         bus.register(new EventListener<OrderEvent>() {
             @Override
-            public void onEvent(OrderEvent event) {
+            public void onEvent(@NonNull OrderEvent event) {
                 throw new RuntimeException("boom");
             }
         });
