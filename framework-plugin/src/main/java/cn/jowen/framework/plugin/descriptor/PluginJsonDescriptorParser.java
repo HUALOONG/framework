@@ -98,16 +98,7 @@ public final class PluginJsonDescriptorParser implements PluginDescriptorLoader 
                 int end = pos;
                 while (end < inner.length() && ",}]"
                         .indexOf(inner.charAt(end)) < 0) end++;
-                String numStr = inner.substring(pos, end).trim();
-                try {
-                    value = Long.parseLong(numStr);
-                } catch (NumberFormatException e) {
-                    try {
-                        value = Double.parseDouble(numStr);
-                    } catch (NumberFormatException e2) {
-                        value = numStr;
-                    }
-                }
+                value = parseScalar(inner.substring(pos, end).trim());
                 pos = end;
             }
             result.put(key, value);
@@ -117,32 +108,61 @@ public final class PluginJsonDescriptorParser implements PluginDescriptorLoader 
         return result;
     }
 
-    private static List<String> parseJsonArray(String json) throws DescriptorParseException {
+    private static List<Object> parseJsonArray(String json) throws DescriptorParseException {
         String trimmed = json.trim();
         if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) {
             throw new DescriptorParseException("无效的 JSON 数组：" + json);
         }
         String inner = trimmed.substring(1, trimmed.length() - 1).trim();
-        List<String> result = new ArrayList<>();
+        List<Object> result = new ArrayList<>();
         if (inner.isEmpty()) return result;
         int pos = 0;
         while (pos < inner.length()) {
             pos = skipWhitespace(inner, pos);
             if (pos >= inner.length()) break;
-            if (inner.charAt(pos) == '"') {
+            char c = inner.charAt(pos);
+            Object value;
+            if (c == '"') {
                 int end = findClosingQuote(inner, pos + 1);
-                result.add(inner.substring(pos + 1, end));
+                value = inner.substring(pos + 1, end);
+                pos = end + 1;
+            } else if (c == '{') {
+                int end = findMatchingBracket(inner, pos, '{', '}');
+                value = parseJsonObject(inner.substring(pos, end + 1));
+                pos = end + 1;
+            } else if (c == '[') {
+                int end = findMatchingBracket(inner, pos, '[', ']');
+                value = parseJsonArray(inner.substring(pos, end + 1));
                 pos = end + 1;
             } else {
                 int end = pos;
                 while (end < inner.length() && ',' != inner.charAt(end)) end++;
-                result.add(inner.substring(pos, end).trim());
-                pos = end + 1;
+                value = parseScalar(inner.substring(pos, end).trim());
+                pos = end;
             }
+            result.add(value);
             pos = skipWhitespace(inner, pos);
             if (pos < inner.length() && inner.charAt(pos) == ',') pos++;
         }
         return result;
+    }
+
+    /**
+     * 解析标量字面量：true/false/null/数字，否则按原样字符串返回。
+     */
+    private static Object parseScalar(String token) {
+        if ("true".equalsIgnoreCase(token)) return Boolean.TRUE;
+        if ("false".equalsIgnoreCase(token)) return Boolean.FALSE;
+        if ("null".equalsIgnoreCase(token)) return null;
+        try {
+            return Long.parseLong(token);
+        } catch (NumberFormatException e) {
+            try {
+                return Double.parseDouble(token);
+            } catch (NumberFormatException e2) {
+                return token;
+            }
+        }
     }
 
     private static int skipWhitespace(String s, int pos) {
@@ -173,6 +193,12 @@ public final class PluginJsonDescriptorParser implements PluginDescriptorLoader 
             char c = s.charAt(i);
             if (c == '\\') {
                 i++;
+                continue;
+            }
+            // 字符串字面量内的括号不计入深度匹配
+            if (c == '"') {
+                i = findClosingQuote(s, i + 1);
+                if (i < 0) return -1;
                 continue;
             }
             if (c == open) depth++;
