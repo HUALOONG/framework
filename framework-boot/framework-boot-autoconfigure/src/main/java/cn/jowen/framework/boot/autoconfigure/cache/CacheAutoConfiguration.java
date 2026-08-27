@@ -3,7 +3,7 @@ package cn.jowen.framework.boot.autoconfigure.cache;
 import cn.jowen.framework.boot.autoconfigure.JowenAutoConfiguration;
 import cn.jowen.framework.cache.api.CacheManager;
 import cn.jowen.framework.cache.api.CacheStats;
-import cn.jowen.framework.cache.DefaultCacheManager;
+import cn.jowen.framework.cache.api.DefaultCacheManager;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.MeterBinder;

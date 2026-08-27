@@ -1,7 +1,7 @@
 package cn.jowen.framework.boot.autoconfigure.extras;
 
 import cn.jowen.framework.cache.api.CacheManager;
-import cn.jowen.framework.cache.DefaultCacheManager;
+import cn.jowen.framework.cache.api.DefaultCacheManager;
 import cn.jowen.framework.extras.config.CaptchaProperties;
 import cn.jowen.framework.extras.config.DataPermissionProperties;
 import cn.jowen.framework.extras.config.DesensitizeProperties;
@@ -52,7 +52,7 @@ class ExtrasAutoConfigurationTest {
                 if (props != null) {
                     Map<String, Object> map = new LinkedHashMap<>();
                     props.forEach((k, v) -> map.put(k.toString(), v));
-                    ctx.getEnvironment().getPropertySources().addFirst(
+                    ctx.getEnvironment().getPropertySources().addLast(
                         new MapPropertySource("classpath:application.yaml", map));
                 }
             });

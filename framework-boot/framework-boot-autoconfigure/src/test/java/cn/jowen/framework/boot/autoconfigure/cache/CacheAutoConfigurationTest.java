@@ -1,7 +1,7 @@
 package cn.jowen.framework.boot.autoconfigure.cache;
 
 import cn.jowen.framework.cache.api.CacheManager;
-import cn.jowen.framework.cache.DefaultCacheManager;
+import cn.jowen.framework.cache.api.DefaultCacheManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.boot.autoconfigure.AutoConfigurations;

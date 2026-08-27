@@ -33,7 +33,7 @@ class MybatisAutoConfigurationTest {
                 if (props != null) {
                     Map<String, Object> map = new LinkedHashMap<>();
                     props.forEach((k, v) -> map.put(k.toString(), v));
-                    ctx.getEnvironment().getPropertySources().addFirst(
+                    ctx.getEnvironment().getPropertySources().addLast(
                         new MapPropertySource("classpath:application.yaml", map));
                 }
             })
@@ -54,7 +54,7 @@ class MybatisAutoConfigurationTest {
             assertThat(properties.getUrl()).isEqualTo("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1");
             assertThat(properties.getUsername()).isEqualTo("sa");
             assertThat(properties.getMaximumPoolSize()).isEqualTo(10);
-            assertThat(properties.getMapperLocations()).isEqualTo("classpath*:/mapper/**/*.xml");
+            assertThat(properties.getMapperLocations()).isEqualTo("classpath*:/mapper/**/*Mapper.xml");
             assertThat(properties.getTypeAliasesPackage()).isEqualTo("com.example.entity");
             assertThat(properties.isAuditEnabled()).isTrue();
             assertThat(properties.isTenantEnabled()).isTrue();

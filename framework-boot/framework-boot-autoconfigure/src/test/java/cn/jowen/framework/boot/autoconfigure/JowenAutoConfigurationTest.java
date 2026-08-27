@@ -36,7 +36,7 @@ class JowenAutoConfigurationTest {
                     if (props != null) {
                         Map<String, Object> map = new LinkedHashMap<>();
                         props.forEach((k, v) -> map.put(k.toString(), v));
-                        ctx.getEnvironment().getPropertySources().addFirst(
+                        ctx.getEnvironment().getPropertySources().addLast(
                             new MapPropertySource("classpath:application.yaml", map));
                     }
                 })
