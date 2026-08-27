@@ -472,16 +472,17 @@ framework:
 cn.jowen.framework.boot.autoconfigure/
 ├─ JowenAutoConfiguration           # 总入口（@Import 各功能装配类）
 ├─ logger/    LoggerAutoConfiguration
-├─ data/      JdbcAutoConfiguration · MybatisAutoConfiguration           # DataSourceAutoConfiguration 未实现
+├─ data/      JdbcAutoConfiguration · MybatisAutoConfiguration · DataSourceAutoConfiguration（数据源抽象/默认路由）
 ├─ cache/     CacheAutoConfiguration · CacheStatsReporter（Micrometer 指标）
 ├─ i18n/      I18nAutoConfiguration
 ├─ plugin/    PluginAutoConfiguration · PluginEndpoint（/actuator/plugins）· PluginHealthIndicator
 ├─ extras/    ExtrasAutoConfiguration
 ├─ health/    HealthAutoConfiguration
+├─ observability/  ObservabilityAutoConfiguration（指标集中总闸）
 └─ runtime/   RuntimeHints 按领域拆分：Spi/Jdbc/Mybatis/Cache/I18n/Logger
 ```
 
-> 注：`ObservabilityAutoConfiguration` 与 `DataSourceAutoConfiguration` 尚未实现；`web/`、`bridge/` 装配类暂未落地。
+> 注：`web/`、`bridge/` 装配类暂未落地。`DataSourceAutoConfiguration` 仅装配数据源元信息与默认路由（不管理物理连接池，连接池由 Jdbc/MyBatis 装配各自管理）；`ObservabilityAutoConfiguration` 为指标集中总闸（各模块指标按各自条件接线）。
 
 **注册文件**：`META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`（装配）、
 `META-INF/spring/aot.factories`（RuntimeHintsRegistrar）
