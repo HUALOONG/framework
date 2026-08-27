@@ -12,10 +12,13 @@ import cn.jowen.framework.i18n.format.MessageFormatter;
 import cn.jowen.framework.i18n.format.NamedParameterMessageFormatter;
 import cn.jowen.framework.i18n.locale.FixedLocaleResolver;
 import cn.jowen.framework.i18n.source.AbstractMessageSource;
+import cn.jowen.framework.i18n.metrics.I18nMetricsCollector;
 import cn.jowen.framework.i18n.source.CompositeMessageSource;
 import cn.jowen.framework.i18n.source.DatabaseMessageSource;
 import cn.jowen.framework.i18n.source.PropertiesMessageSource;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.jspecify.annotations.NullMarked;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -71,7 +74,8 @@ public class I18nAutoConfiguration {
     @ConditionalOnMissingBean(name = "frameworkMessageSource")
     public MessageSource messageSource(BootI18nProperties properties,
                                        @Autowired(required = false) JdbcTemplate jdbcTemplate,
-                                       @Autowired(required = false) List<MessageSourceCustomizer> customizers) {
+                                       @Autowired(required = false) List<MessageSourceCustomizer> customizers,
+                                       ObjectProvider<MeterRegistry> meterRegistry) {
         CompositeMessageSource composite = new CompositeMessageSource();
         if (properties.getSource() == SourceType.DATABASE && jdbcTemplate != null) {
             DatabaseMessageSource dbSource = new DatabaseMessageSource(jdbcTemplate);
@@ -84,6 +88,10 @@ public class I18nAutoConfiguration {
             for (MessageSourceCustomizer customizer : customizers) {
                 customizer.customize(composite);
             }
+        }
+        MeterRegistry registry = meterRegistry.getIfAvailable();
+        if (registry != null) {
+            return new I18nMetricsCollector(composite, registry);
         }
         return composite;
     }
