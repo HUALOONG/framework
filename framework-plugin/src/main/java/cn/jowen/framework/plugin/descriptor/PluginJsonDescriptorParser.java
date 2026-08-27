@@ -1,5 +1,6 @@
 package cn.jowen.framework.plugin.descriptor;
 
+import cn.jowen.framework.core.spi.SPIImplementation;
 import org.jspecify.annotations.NullMarked;
 
 import java.io.BufferedReader;
@@ -24,6 +25,7 @@ import java.util.jar.JarFile;
  * @author 王飞
  */
 @NullMarked
+@SPIImplementation(name = "json", order = 10)
 public final class PluginJsonDescriptorParser implements PluginDescriptorLoader {
 
     private static final String PLUGIN_JSON_PATH = "META-INF/plugin/plugin.json";

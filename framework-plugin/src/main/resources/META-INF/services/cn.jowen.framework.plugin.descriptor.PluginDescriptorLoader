@@ -1,0 +1,2 @@
+cn.jowen.framework.plugin.descriptor.PluginJsonDescriptorParser
+cn.jowen.framework.plugin.descriptor.PluginYamlDescriptorParser

@@ -1,9 +1,9 @@
 package cn.jowen.framework.plugin.loader;
 
+import cn.jowen.framework.core.spi.ExtensionLoader;
 import cn.jowen.framework.plugin.api.Plugin;
 import cn.jowen.framework.plugin.descriptor.PluginDescriptor;
-import cn.jowen.framework.plugin.descriptor.PluginJsonDescriptorParser;
-import cn.jowen.framework.plugin.descriptor.PluginYamlDescriptorParser;
+import cn.jowen.framework.plugin.descriptor.PluginDescriptorLoader;
 import org.jspecify.annotations.NullMarked;
 
 import java.io.IOException;
@@ -69,13 +69,28 @@ public final class PluginLoader implements AutoCloseable {
     }
 
     private static PluginDescriptor loadDescriptor(Path jarPath) throws IOException {
+        // 描述符格式探测：优先 plugin.json，否则回退 yaml（与既有行为一致），解析器经统一 SPI 机制发现
         try (JarFile jarFile = new JarFile(jarPath.toFile())) {
-            if (jarFile.getJarEntry("META-INF/plugin/plugin.json") == null) {
-                // 无 plugin.json 时回退 plugin.yaml（YAML 解析依赖可选 snakeyaml）
-                return new PluginYamlDescriptorParser().load(jarPath);
+            String suffix = jarFile.getJarEntry("META-INF/plugin/plugin.json") != null ? "json" : "yaml";
+            return findParser(suffix).load(jarPath);
+        }
+    }
+
+    /**
+     * 经 {@link ExtensionLoader} 发现描述符解析器，按文件后缀选择。
+     *
+     * @param suffix 描述符文件后缀（json 或 yaml）
+     * @return 匹配的解析器，不可为 {@code null}
+     */
+    private static PluginDescriptorLoader findParser(String suffix) {
+        ExtensionLoader<PluginDescriptorLoader> loader =
+                ExtensionLoader.getExtensionLoader(PluginDescriptorLoader.class);
+        for (PluginDescriptorLoader parser : loader.getAllExtensions()) {
+            if (parser.supportedExtensions().contains(suffix)) {
+                return parser;
             }
         }
-        return new PluginJsonDescriptorParser().load(jarPath);
+        throw new IllegalStateException("未找到支持 " + suffix + " 描述符的解析器");
     }
 
     private static List<String> computeExportedPackages(PluginDescriptor descriptor) {

@@ -1,5 +1,6 @@
 package cn.jowen.framework.plugin.descriptor;
 
+import cn.jowen.framework.core.spi.SPIImplementation;
 import cn.jowen.framework.plugin.descriptor.PluginJsonDescriptorParser.DescriptorParseException;
 import org.jspecify.annotations.NullMarked;
 import org.yaml.snakeyaml.Yaml;
@@ -25,6 +26,7 @@ import java.util.jar.JarFile;
  * @since 2026-08-27
  */
 @NullMarked
+@SPIImplementation(name = "yaml", order = 20)
 public final class PluginYamlDescriptorParser implements PluginDescriptorLoader {
 
     private static final String PLUGIN_YAML_PATH = "META-INF/plugin/plugin.yaml";

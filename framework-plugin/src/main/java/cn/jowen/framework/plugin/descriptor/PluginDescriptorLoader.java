@@ -1,5 +1,6 @@
 package cn.jowen.framework.plugin.descriptor;
 
+import cn.jowen.framework.core.spi.SPI;
 import cn.jowen.framework.plugin.support.ValidationError;
 import org.jspecify.annotations.NullMarked;
 
@@ -11,11 +12,14 @@ import java.util.List;
  * 插件描述符加载器 SPI 接口。
  *
  * <p>实现类负责从不同来源（plugin.json / plugin.yaml / MANIFEST.MF）加载
- * {@link PluginDescriptor}。框架通过 {@link java.util.ServiceLoader} 发现实现。
+ * {@link PluginDescriptor}。实现经 META-INF/services 注册后被 core
+ * {@link cn.jowen.framework.core.spi.ExtensionLoader} 统一发现，由
+ * {@code PluginLoader} 按 {@link #supportedExtensions()} 选择。
  *
  * @author 王飞
  */
 @NullMarked
+@SPI(value = "json")
 public interface PluginDescriptorLoader {
 
     /**
