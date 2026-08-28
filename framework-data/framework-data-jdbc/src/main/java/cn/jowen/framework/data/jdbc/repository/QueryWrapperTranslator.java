@@ -16,10 +16,11 @@ import java.util.List;
  * 查询条件翻译器：将 {@link QueryWrapper} 翻译为可执行 {@link SqlResult}（含 {@code SELECT} 与有序参数）。
  *
  * <p>支持 EQ/NE/LIKE/LIKE_LEFT/LIKE_RIGHT/GT/GTE/LT/LTE/IN/NOT_IN/BETWEEN/IS_NULL/IS_NOT_NULL，
- * 以及 AND/OR 逻辑连接；ORDER BY 由 {@link QueryWrapper#getOrderBy()} 直接拼接。
+ * 以及 AND/OR 逻辑连接；GROUP BY 与 ORDER BY 分别由 {@link QueryWrapper#getGroupBy()}
+ * 与 {@link QueryWrapper#getOrderBy()} 直接拼接。
  * 分页（LIMIT/OFFSET）交由方言在仓库层统一处理，本翻译器不产出分页片段。
  *
- * <p>join / groupBy 暂未实现（TODO）：当前直接忽略，避免破坏基础查询。
+ * <p>join 暂未实现（TODO）：当前直接忽略，避免破坏基础单表查询。
  *
  * @author 王飞
  * @since 2026-08-25
@@ -70,6 +71,10 @@ public final class QueryWrapperTranslator {
         String base = "SELECT * FROM " + tableName;
         if (where.length() > 0) {
             base += " WHERE " + where;
+        }
+        List<String> groupBy = wrapper.getGroupBy();
+        if (!groupBy.isEmpty()) {
+            base += " GROUP BY " + String.join(", ", groupBy);
         }
         List<String> orderBy = wrapper.getOrderBy();
         if (!orderBy.isEmpty()) {

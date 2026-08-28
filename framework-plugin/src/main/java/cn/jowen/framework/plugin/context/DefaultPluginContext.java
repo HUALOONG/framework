@@ -231,6 +231,19 @@ public final class DefaultPluginContext implements PluginContext {
      */
     @Override
     public void close() {
-        // TODO:: 清理资源
+        listeners.clear();
+        if (springContext instanceof AutoCloseable closeable) {
+            try {
+                closeable.close();
+            } catch (Exception e) {
+                LOGGER.warn("插件 Spring 上下文关闭异常：" + e.getMessage());
+            }
+        }
+        // 尽力置为停止态；非法转换（如未启动即关闭）仅记录，不抛出
+        try {
+            setState(PluginState.STOPPED);
+        } catch (IllegalStateException e) {
+            LOGGER.warn("插件上下文关闭状态置位跳过：" + e.getMessage());
+        }
     }
 }

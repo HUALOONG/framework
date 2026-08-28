@@ -98,6 +98,32 @@ class DefaultPluginContextTest {
         assertThat(events).hasSize(2);
     }
 
+    @Test
+    void close_clearsListeners() {
+        java.util.concurrent.atomic.AtomicReference<PluginEvent> captured = new java.util.concurrent.atomic.AtomicReference<>();
+        ctx.addListener(captured::set);
+        ctx.close();
+        ctx.publishEvent(new PluginStartedEvent("test"));
+        assertThat(captured.get()).isNull();
+    }
+
+    @Test
+    void close_closesSpringContext() {
+        AutoCloseableSpring spring = new AutoCloseableSpring();
+        DefaultPluginContext withSpring = new DefaultPluginContext("test", descriptor, config, sharedData, null, loader, loader, spring);
+        withSpring.close();
+        assertThat(spring.closed).isTrue();
+    }
+
+    static class AutoCloseableSpring implements AutoCloseable {
+        boolean closed;
+
+        @Override
+        public void close() {
+            closed = true;
+        }
+    }
+
     static class SimpleConfiguration implements PluginConfiguration {
         public String getString(String key) { return ""; }
         public int getInt(String key, int defaultValue) { return defaultValue; }
