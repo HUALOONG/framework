@@ -7,10 +7,12 @@ import org.jspecify.annotations.NullMarked;
  *
  * <p>负责创建和配置通知相关 Bean，由 boot-autoconfigure 调用。
  *
+ * @deprecated 由 boot-autoconfigure 装配层直接实例化具体组件取代，本工厂为无 Bean 方法的废弃骨架
  * @author 王飞
  * @since 2026-08-25
  */
 @NullMarked
+@Deprecated
 public class NotificationFactory {
 
     private final NotificationProperties properties;

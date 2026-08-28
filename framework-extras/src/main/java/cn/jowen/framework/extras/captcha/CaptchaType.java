@@ -5,9 +5,9 @@ import org.jspecify.annotations.NullMarked;
 /**
  * 验证码类型枚举（全量声明）。
  *
- * <p>本轮仅 {@link #IMAGE} 与 {@link #ARITHMETIC} 提供生成器实现；
- * {@link #SLIDER} / {@link #SMS} 调用 {@code generate()} 时抛出
- * {@link UnsupportedOperationException}（缺口图与真实短信发送本轮不做）。
+ * <p>{@link #IMAGE} / {@link #ARITHMETIC} / {@link #SLIDER} 已提供生成器实现；
+ * {@link #SMS} 需真实短信发送能力，本轮调用 {@code generate()} 时抛
+ * {@link UnsupportedOperationException}。
  *
  * @author 王飞
  * @since 2026-08-22
@@ -26,7 +26,7 @@ public enum CaptchaType {
     ARITHMETIC,
 
     /**
-     * 滑块验证码（本轮未实现）。
+     * 滑块验证码（JDK AWT 基础实现，见 {@code SliderCaptchaGenerator}）。
      */
     SLIDER,
 

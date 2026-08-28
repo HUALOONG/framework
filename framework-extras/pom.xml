@@ -48,6 +48,11 @@
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- ========== Config 装配层（optional） ========== -->
         <!-- Spring Boot autoconfigure：@EnableExtras 注解驱动装配（ExtrasBootstrapConfiguration）与 @ConditionalOn* 条件需要 -->

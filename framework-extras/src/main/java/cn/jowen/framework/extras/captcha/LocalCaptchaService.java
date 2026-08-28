@@ -5,6 +5,7 @@ import cn.jowen.framework.extras.captcha.generator.ArithmeticCaptchaGenerator;
 import cn.jowen.framework.extras.captcha.generator.CaptchaGenerator;
 import cn.jowen.framework.extras.captcha.generator.CaptchaImage;
 import cn.jowen.framework.extras.captcha.generator.ImageCaptchaGenerator;
+import cn.jowen.framework.extras.captcha.generator.SliderCaptchaGenerator;
 import cn.jowen.framework.extras.captcha.store.CaptchaStore;
 import cn.jowen.framework.extras.captcha.store.LocalCaptchaStore;
 import org.jspecify.annotations.NullMarked;
@@ -16,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -49,6 +51,7 @@ public final class LocalCaptchaService implements CaptchaService {
         Map<CaptchaType, CaptchaGenerator> map = new EnumMap<>(CaptchaType.class);
         map.put(CaptchaType.IMAGE, new ImageCaptchaGenerator(this.properties));
         map.put(CaptchaType.ARITHMETIC, new ArithmeticCaptchaGenerator(this.properties));
+        map.put(CaptchaType.SLIDER, new SliderCaptchaGenerator(this.properties));
         this.generators = Map.copyOf(map);
     }
 
@@ -73,8 +76,14 @@ public final class LocalCaptchaService implements CaptchaService {
         CaptchaImage captchaImage = generator.generate();
         String captchaId = UUID.randomUUID().toString().replace("-", "");
         store.put(captchaId, captchaImage.answer(), properties.getTtlMillis());
+        Map<String, Object> extra = new HashMap<>();
+        if (captchaImage.pieceImage() != null) {
+            // 滑块验证码：额外下发可拖动拼块与缺口坐标
+            extra.put("piece", DATA_URI_PREFIX + encode(captchaImage.pieceImage()));
+            extra.put("x", captchaImage.x());
+        }
         return new CaptchaResult(captchaId, DATA_URI_PREFIX + encode(captchaImage.image()),
-                properties.getTtlMillis(), Map.of());
+                properties.getTtlMillis(), extra);
     }
 
     @Override
