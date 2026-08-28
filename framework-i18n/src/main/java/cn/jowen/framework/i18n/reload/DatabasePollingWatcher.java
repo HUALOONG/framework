@@ -1,9 +1,9 @@
 package cn.jowen.framework.i18n.reload;
 
+import cn.jowen.framework.data.jdbc.core.JdbcTemplate;
 import cn.jowen.framework.i18n.api.ReloadableMessageSource;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Duration;
 import java.util.concurrent.Executors;
@@ -18,7 +18,8 @@ import java.util.concurrent.TimeUnit;
  * 消息表需含版本列（{@code version} 或 {@code updated_at}），每次变更递增。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class DatabasePollingWatcher implements ResourceWatcher {
@@ -33,6 +34,15 @@ public final class DatabasePollingWatcher implements ResourceWatcher {
     private volatile @Nullable ScheduledExecutorService executor;
     private volatile @Nullable Object lastFingerprint;
 
+    /**
+     * 构造轮询监听器。
+     *
+     * @param jdbcTemplate    framework-data-jdbc 的 JdbcTemplate
+     * @param fingerprintSql  指纹查询 SQL（如 {@code SELECT MAX(version) FROM i18n_message}）
+     * @param target          待刷新的消息源
+     * @param reloader        刷新执行器
+     * @param interval        轮询间隔
+     */
     public DatabasePollingWatcher(JdbcTemplate jdbcTemplate, String fingerprintSql,
                                   ReloadableMessageSource target, ResourceReloader reloader,
                                   Duration interval) {

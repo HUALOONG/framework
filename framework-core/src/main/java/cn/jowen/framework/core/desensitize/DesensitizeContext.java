@@ -15,7 +15,8 @@ import org.jspecify.annotations.Nullable;
  * @param replacement 替换符（默认 {@code *}，单字符）
  * @param skip        是否跳过脱敏（true 时 {@link #mask(String)} 原样返回）
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public record DesensitizeContext(int startKeep, int endKeep, String replacement, boolean skip) {

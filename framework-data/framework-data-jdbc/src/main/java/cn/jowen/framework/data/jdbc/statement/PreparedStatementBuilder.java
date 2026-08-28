@@ -13,7 +13,8 @@ import java.util.List;
  * 预编译语句构建器：根据 {@link SqlResult} 创建并填充 {@link PreparedStatement}。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class PreparedStatementBuilder {

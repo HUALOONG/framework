@@ -14,7 +14,8 @@ import java.util.Map;
  * <p>构造时注册内置方言（H2 / MySQL / PostgreSQL / Oracle / SQLServer），默认方言为 H2（便于独立运行与测试）。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class DialectRegistry {

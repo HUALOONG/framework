@@ -12,19 +12,39 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @NullMarked
+/**
+ * 「FlexRepository」封装相关能力。
+ *
+ * @author Jowen
+ * @since 0.0.1
+ * @version 0.0.1
+ */
 public class FlexRepositoryFactory implements RepositoryFactory {
 
+    /** logger 常量。 */
     private static final Logger logger = LoggerFactory.getLogger(FlexRepositoryFactory.class);
 
+    /** extensionRegistry 不可变字段。 */
     private final ExtensionRegistry extensionRegistry;
+    /** flexFactory 不可变字段。 */
     private final Object flexFactory;
+    /** cache 不可变字段。 */
     private final ConcurrentMap<Class<?>, Repository<?, ?>> cache = new ConcurrentHashMap<>();
 
+    /**
+     * 构造实例。
+     * @param flexFactory 参数 flexFactory
+     * @param extensionRegistry 参数 extensionRegistry
+     */
     public FlexRepositoryFactory(Object flexFactory, ExtensionRegistry extensionRegistry) {
         this.flexFactory = flexFactory;
         this.extensionRegistry = extensionRegistry;
     }
 
+    /**
+     * 执行@ suppress warnings操作。
+     * @return 结果
+     */
     @Override
     @SuppressWarnings({"unchecked"})
     public <T, ID> Repository<T, ID> getRepository(Class<T> entityClass) {
@@ -36,12 +56,20 @@ public class FlexRepositoryFactory implements RepositoryFactory {
         });
     }
 
+    /**
+     * 执行@ suppress warnings操作。
+     * @return 结果
+     */
     @SuppressWarnings("unchecked")
     public <T> FlexJoinRepository<T> getJoinRepository(Class<T> entityClass) {
         FlexRepositoryAdapter<T, ?> adapter = (FlexRepositoryAdapter<T, ?>) createAdapter(entityClass);
         return new FlexJoinRepository<>(adapter);
     }
 
+    /**
+     * 获取dynamic repository。
+     * @return 结果
+     */
     public FlexDynamicRepository getDynamicRepository() {
         return new FlexDynamicRepository(flexFactory);
     }
@@ -68,5 +96,12 @@ public class FlexRepositoryFactory implements RepositoryFactory {
         return new FlexRepositoryAdapter<>(proxy, entityClass, extensionRegistry);
     }
 
+    /**
+     * 「BaseMapper」接口定义。
+     *
+     * @author Jowen
+     * @since 0.0.1
+ * @version 0.0.1
+     */
     public interface BaseMapper<T> {}
 }

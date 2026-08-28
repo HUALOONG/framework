@@ -9,7 +9,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * {@link ConfigurationProperties}，避免 framework-i18n 反向依赖 Spring（保持实现层零 Spring 依赖）。
  *
  * @author 王飞
- * @since 2026-08-26
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @ConfigurationProperties(prefix = "framework.i18n")

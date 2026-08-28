@@ -12,7 +12,8 @@ import org.springframework.boot.health.contributor.HealthIndicator;
  * 遍历 {@code cacheNames()} 汇总缓存个数，供 actuator health 端点聚合。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class CacheHealthIndicator implements HealthIndicator {

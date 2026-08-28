@@ -10,7 +10,8 @@ import java.lang.annotation.Target;
  * 启用缓存注解支持。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

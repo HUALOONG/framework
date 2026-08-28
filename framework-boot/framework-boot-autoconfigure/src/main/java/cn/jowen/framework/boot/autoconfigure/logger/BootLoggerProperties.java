@@ -9,7 +9,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * {@link ConfigurationProperties}，避免 framework-logger 反向依赖 Spring（保持实现层零 Spring 依赖）。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @ConfigurationProperties(prefix = "framework.logger")

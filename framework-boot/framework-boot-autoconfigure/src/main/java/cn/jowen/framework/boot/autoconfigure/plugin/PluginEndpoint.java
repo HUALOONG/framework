@@ -18,7 +18,8 @@ import java.util.List;
  * Actuator 插件管理端点 {@code /actuator/plugins}：查询、启动、停止、重启与卸载插件。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @Endpoint(id = "plugins")

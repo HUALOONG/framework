@@ -8,7 +8,8 @@ import org.jspecify.annotations.NullMarked;
  * 数据库方言接口（SPI），负责 SQL 方言相关的分页、函数、关键字转义等差异。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @SPI
 @NullMarked

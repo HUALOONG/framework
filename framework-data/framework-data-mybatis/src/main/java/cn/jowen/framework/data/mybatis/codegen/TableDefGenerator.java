@@ -11,16 +11,34 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 @NullMarked
+/**
+ * 「TableDefGenerator」封装相关能力。
+ *
+ * @author Jowen
+ * @since 0.0.1
+ * @version 0.0.1
+ */
 public class TableDefGenerator {
 
+    /** logger 常量。 */
     private static final Logger logger = LoggerFactory.getLogger(TableDefGenerator.class);
+    /** config 不可变字段。 */
     private final GeneratorConfig config;
 
+    /**
+     * 构造实例。
+     * @param config 参数 config
+     */
     public TableDefGenerator(GeneratorConfig config) {
         if (config == null) throw new IllegalArgumentException("config must not be null");
         this.config = config;
     }
 
+    /**
+     * 执行generate操作。
+     * @param tableInfo 参数 tableInfo
+     * @return 结果
+     */
     public String generate(EntityGenerator.TableInfo tableInfo) {
         if (tableInfo == null) throw new IllegalArgumentException("tableInfo must not be null");
         String entityClass = toClassName(tableInfo.tableName());
@@ -41,6 +59,11 @@ public class TableDefGenerator {
         return sb.toString();
     }
 
+    /**
+     * 执行generate to file操作。
+     * @param tableInfo 参数 tableInfo
+     * @throws IOException IOException 异常
+     */
     public void generateToFile(EntityGenerator.TableInfo tableInfo) throws IOException {
         String code = generate(tableInfo);
         String entityClass = toClassName(tableInfo.tableName());
@@ -62,9 +85,19 @@ public class TableDefGenerator {
         };
     }
 
+    /**
+     * 「TableField」封装相关能力。
+     *
+     * @author Jowen
+     * @since 0.0.1
+ * @version 0.0.1
+     */
     public static final class TableField<E, V> {
+        /** columnName 不可变字段。 */
         private final String columnName;
+        /** public 字段。 */
         public TableField(String columnName) { this.columnName = columnName; }
+        /** columnName 字段。 */
         public String getColumnName() { return columnName; }
     }
 

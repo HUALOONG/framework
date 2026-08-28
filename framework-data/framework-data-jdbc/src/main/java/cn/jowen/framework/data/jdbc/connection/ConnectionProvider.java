@@ -12,7 +12,8 @@ import org.jspecify.annotations.NullMarked;
  * 事务内复用连接由 {@link TransactionSynchronizationManager} 负责，本接口仅负责物理连接的获取与释放。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface ConnectionProvider {

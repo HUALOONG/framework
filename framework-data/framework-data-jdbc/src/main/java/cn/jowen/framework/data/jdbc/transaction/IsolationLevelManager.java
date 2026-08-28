@@ -9,7 +9,8 @@ import java.sql.Connection;
  * 隔离级别管理器：将 core 的 {@link Isolation} 映射为 JDBC {@link Connection} 隔离级别常量。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class IsolationLevelManager {

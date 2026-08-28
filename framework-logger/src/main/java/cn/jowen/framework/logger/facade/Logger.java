@@ -8,7 +8,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>所有带 {@code {} } 占位符的方法在最终输出前经脱敏器处理，保证敏感信息不落盘。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface Logger {

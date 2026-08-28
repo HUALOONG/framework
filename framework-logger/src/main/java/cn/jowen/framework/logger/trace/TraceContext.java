@@ -13,7 +13,8 @@ import java.util.UUID;
  * <p>通过 {@link #open()} 进入作用域后，所有日志自动携带当前链路 ID，虚拟线程切换不丢失。
  *
  * @author 王飞
- * @since 2026-08-22
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class TraceContext {

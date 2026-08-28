@@ -15,7 +15,8 @@ import java.util.List;
  *
  * @param <T> 提取结果元素类型
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @FunctionalInterface

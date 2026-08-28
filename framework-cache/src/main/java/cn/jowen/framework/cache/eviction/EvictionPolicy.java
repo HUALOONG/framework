@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
  * 缓存淘汰策略接口。各实现定义不同的淘汰算法（LRU/LFU/TTL 等），与底层缓存实现解耦。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface EvictionPolicy {

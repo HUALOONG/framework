@@ -97,7 +97,8 @@ import java.util.List;
  * 业务方可通过 {@link FlexGlobalConfigCustomizer} Bean 定制全局配置。
  *
  * @author 王飞
- * @since 2026-08-26
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @AutoConfiguration(after = JowenAutoConfiguration.class)

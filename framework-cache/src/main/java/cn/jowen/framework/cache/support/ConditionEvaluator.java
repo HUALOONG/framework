@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
  * 条件表达式解析器接口。用于评估 @Cacheable/@CachePut 的 condition/unless SpEL 表达式。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface ConditionEvaluator {

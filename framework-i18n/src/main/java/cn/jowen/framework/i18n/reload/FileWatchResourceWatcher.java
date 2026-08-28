@@ -24,7 +24,8 @@ import java.util.Locale;
  * 重新加载；不匹配 {@code *.properties} 的文件变更被忽略。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class FileWatchResourceWatcher implements ResourceWatcher {

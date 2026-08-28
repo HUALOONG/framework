@@ -11,16 +11,34 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 @NullMarked
+/**
+ * 「MapperGenerator」封装相关能力。
+ *
+ * @author Jowen
+ * @since 0.0.1
+ * @version 0.0.1
+ */
 public class MapperGenerator {
 
+    /** logger 常量。 */
     private static final Logger logger = LoggerFactory.getLogger(MapperGenerator.class);
+    /** config 不可变字段。 */
     private final GeneratorConfig config;
 
+    /**
+     * 构造实例。
+     * @param config 参数 config
+     */
     public MapperGenerator(GeneratorConfig config) {
         if (config == null) throw new IllegalArgumentException("config must not be null");
         this.config = config;
     }
 
+    /**
+     * 执行generate操作。
+     * @param tableInfo 参数 tableInfo
+     * @return 结果
+     */
     public String generate(EntityGenerator.TableInfo tableInfo) {
         if (tableInfo == null) throw new IllegalArgumentException("tableInfo must not be null");
         String className = toClassName(tableInfo.tableName());
@@ -33,6 +51,11 @@ public class MapperGenerator {
         return sb.toString();
     }
 
+    /**
+     * 执行generate to file操作。
+     * @param tableInfo 参数 tableInfo
+     * @throws IOException IOException 异常
+     */
     public void generateToFile(EntityGenerator.TableInfo tableInfo) throws IOException {
         String code = generate(tableInfo);
         String className = toClassName(tableInfo.tableName());

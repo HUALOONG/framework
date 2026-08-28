@@ -7,7 +7,8 @@ import org.jspecify.annotations.NullMarked;
  * 分页请求，含页码、大小与排序。页码从 0 开始。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class Pageable {

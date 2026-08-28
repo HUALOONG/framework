@@ -17,7 +17,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
  * Spring Boot 4 自动将 {@code MeterBinder} bean 绑定到 {@link MeterRegistry}。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @AutoConfiguration(after = JowenAutoConfiguration.class)

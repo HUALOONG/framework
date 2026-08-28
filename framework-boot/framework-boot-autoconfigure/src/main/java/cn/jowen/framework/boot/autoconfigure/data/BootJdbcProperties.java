@@ -11,7 +11,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 供 {@link cn.jowen.framework.data.jdbc.context.JdbcContext} 装配使用。
  *
  * @author 王飞
- * @since 2026-08-26
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @ConfigurationProperties(prefix = "framework.data.jdbc")

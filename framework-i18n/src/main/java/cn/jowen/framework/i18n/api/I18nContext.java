@@ -18,7 +18,8 @@ import java.util.function.Supplier;
  * {@link cn.jowen.framework.core.context.ContextSnapshot}，本类不持有任何上下文字段。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class I18nContext {

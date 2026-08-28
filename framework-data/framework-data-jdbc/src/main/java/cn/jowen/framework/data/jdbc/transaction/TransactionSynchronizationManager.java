@@ -14,7 +14,8 @@ import java.util.List;
  * 同步回调（{@link TransactionSynchronization}）在提交/完成后被触发，用于资源清理或后置通知。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class TransactionSynchronizationManager {

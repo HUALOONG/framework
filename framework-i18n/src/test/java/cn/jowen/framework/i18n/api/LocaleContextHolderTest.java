@@ -11,7 +11,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@link LocaleContextHolder} 单元测试：验证读路径桥接（ContextCarrier 作用域值与 ThreadLocal 写入均可见）。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 class LocaleContextHolderTest {
 

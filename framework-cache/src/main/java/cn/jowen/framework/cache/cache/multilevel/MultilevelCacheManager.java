@@ -16,7 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 集中管理本地层与远程层的组合缓存。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class MultilevelCacheManager implements CacheManager {

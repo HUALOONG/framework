@@ -9,7 +9,8 @@ import java.util.List;
  * 实体元信息：表名、列名集合、主键字段等。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface EntityMetadata {

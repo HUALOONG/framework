@@ -9,7 +9,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 避免 framework-plugin 反向依赖 Spring（保持插件核心零 Spring 依赖）。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @ConfigurationProperties(prefix = "framework.plugin")

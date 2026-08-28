@@ -14,7 +14,8 @@ import java.sql.SQLException;
  * （maximumPoolSize / connectionTimeout / idleTimeout / maxLifetime）。若未显式指定驱动，由 JDBC URL 自动识别。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class HikariConnectionProvider implements ConnectionProvider {

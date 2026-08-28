@@ -17,7 +17,8 @@ import java.sql.SQLException;
  * 无法识别时返回 {@code null}，交由 {@link SQLExceptionTranslator} 回退到 SQLState 分类。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class VendorSpecificTranslator {

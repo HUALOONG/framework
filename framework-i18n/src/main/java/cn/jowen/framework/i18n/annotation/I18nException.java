@@ -12,7 +12,8 @@ import java.lang.annotation.Target;
  * 避免异常消息硬编码。支持异常 {@link Throwable#getMessage()} 作为参数化入参。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @Target(ElementType.TYPE)

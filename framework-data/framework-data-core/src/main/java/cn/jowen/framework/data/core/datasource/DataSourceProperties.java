@@ -9,7 +9,8 @@ import java.util.List;
  * 数据源配置属性，供实现层读取后组装 {@link DataSource}。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class DataSourceProperties {

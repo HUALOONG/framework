@@ -8,7 +8,8 @@ import java.time.Instant;
  * 缓存写入事件。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class CachePutEvent extends CacheEvent {

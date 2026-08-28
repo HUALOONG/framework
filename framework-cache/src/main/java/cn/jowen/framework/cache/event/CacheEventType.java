@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
  * 缓存事件类型枚举。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public enum CacheEventType {

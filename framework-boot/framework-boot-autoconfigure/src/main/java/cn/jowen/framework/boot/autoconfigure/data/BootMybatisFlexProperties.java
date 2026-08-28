@@ -10,7 +10,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * {@code @EnableConfigurationProperties} 注册到 Spring 容器，避免 framework-cache 反向依赖 Spring。
  *
  * @author 王飞
- * @since 2026-08-26
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @ConfigurationProperties(prefix = "framework.data.mybatis")

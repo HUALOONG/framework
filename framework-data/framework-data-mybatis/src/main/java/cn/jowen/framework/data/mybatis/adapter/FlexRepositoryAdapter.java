@@ -10,18 +10,44 @@ import cn.jowen.framework.logger.facade.LoggerFactory;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @NullMarked
+/**
+ * 「FlexRepositoryAdapter」封装相关能力。
+ *
+ * @author Jowen
+ * @since 0.0.1
+ * @version 0.0.1
+ */
 public final class FlexRepositoryAdapter<T, ID> {
 
+    /** logger 常量。 */
     private static final Logger logger = LoggerFactory.getLogger(FlexRepositoryAdapter.class);
 
+    /**
+     * 反射方法句柄缓存：以声明类为键，缓存其方法名→Method 的映射，
+     * 避免每次调用都执行 {@code Class.getMethod} 的反射查找开销。
+     */
+    private static final Map<Class<?>, Map<String, Method>> METHOD_CACHE =
+            new ConcurrentHashMap<>();
+
+    /** baseMapper 不可变字段。 */
     private final Object baseMapper;
+    /** entityClass 不可变字段。 */
     private final Class<T> entityClass;
+    /** extensionRegistry 不可变字段。 */
     private final ExtensionRegistry extensionRegistry;
 
+    /**
+     * 构造实例。
+     * @param baseMapper 参数 baseMapper
+     * @param extensionRegistry 参数 extensionRegistry
+     */
     public FlexRepositoryAdapter(Object baseMapper, Class<T> entityClass, ExtensionRegistry extensionRegistry) {
         if (baseMapper == null) throw new IllegalArgumentException("baseMapper must not be null");
         this.baseMapper = baseMapper;
@@ -31,9 +57,16 @@ public final class FlexRepositoryAdapter<T, ID> {
         this.extensionRegistry = extensionRegistry;
     }
 
+    /** entityClass 字段。 */
     public Class<T> getEntityClass() { return entityClass; }
+    /** baseMapper 字段。 */
     public Object getBaseMapper() { return baseMapper; }
 
+    /**
+     * 执行select by id操作。
+     * @param id 参数 id
+     * @return 结果
+     */
     public Optional<T> selectById(ID id) {
         try {
             T entity = invokeSelectById(id);
@@ -43,6 +76,10 @@ public final class FlexRepositoryAdapter<T, ID> {
         }
     }
 
+    /**
+     * 执行select all操作。
+     * @return 结果
+     */
     public List<T> selectAll() {
         try {
             return invokeSelectAll();
@@ -51,10 +88,20 @@ public final class FlexRepositoryAdapter<T, ID> {
         }
     }
 
+    /**
+     * 执行select all page操作。
+     * @param pageable 参数 pageable
+     * @return 结果
+     */
     public Page<T> selectAllPage(Pageable pageable) {
         return selectPage(pageable, null);
     }
 
+    /**
+     * 执行select page操作。
+     * @param pageable 参数 pageable
+     * @return 结果
+     */
     public Page<T> selectPage(Pageable pageable, @Nullable QueryWrapper<T> wrapper) {
         try {
             List<T> content = invokeSelectList(wrapper);
@@ -65,6 +112,11 @@ public final class FlexRepositoryAdapter<T, ID> {
         }
     }
 
+    /**
+     * 执行insert or update操作。
+     * @param entity 参数 entity
+     * @return 结果
+     */
     public T insertOrUpdate(T entity) {
         try {
             ID id = invokeGetId(entity);
@@ -80,6 +132,10 @@ public final class FlexRepositoryAdapter<T, ID> {
         }
     }
 
+    /**
+     * 执行insert all操作。
+     * @return 结果
+     */
     public List<T> insertAll(List<T> entities) {
         for (T entity : entities) {
             insertOrUpdate(entity);
@@ -87,6 +143,11 @@ public final class FlexRepositoryAdapter<T, ID> {
         return entities;
     }
 
+    /**
+     * 执行update by id操作。
+     * @param entity 参数 entity
+     * @return 结果
+     */
     public int updateById(T entity) {
         try {
             extensionRegistry.firePreUpdate(entity);
@@ -98,31 +159,58 @@ public final class FlexRepositoryAdapter<T, ID> {
         }
     }
 
+    /**
+     * 执行delete by id操作。
+     * @param id 参数 id
+     * @return 结果
+     */
     public int deleteById(ID id) {
         try { return invokeDeleteById(id); }
         catch (Exception e) { throw FlexExceptionTranslator.translate("deleteById", entityClass, e); }
     }
 
+    /**
+     * 执行delete操作。
+     * @param entity 参数 entity
+     * @return 结果
+     */
     public int delete(T entity) {
         try { return invokeDeleteById(invokeGetId(entity)); }
         catch (Exception e) { throw FlexExceptionTranslator.translate("delete", entityClass, e); }
     }
 
+    /**
+     * 执行delete all操作。
+     * @return 结果
+     */
     public int deleteAll() {
         try { return invokeDeleteAll(); }
         catch (Exception e) { throw FlexExceptionTranslator.translate("deleteAll", entityClass, e); }
     }
 
+    /**
+     * 执行exists by id操作。
+     * @param id 参数 id
+     * @return 结果
+     */
     public boolean existsById(ID id) {
         try { return invokeExistsById(id); }
         catch (Exception e) { throw FlexExceptionTranslator.translate("existsById", entityClass, e); }
     }
 
+    /**
+     * 执行count操作。
+     * @return 结果
+     */
     public long count() {
         try { return invokeCountAll(); }
         catch (Exception e) { throw FlexExceptionTranslator.translate("count", entityClass, e); }
     }
 
+    /**
+     * 执行count操作。
+     * @return 结果
+     */
     public long count(@Nullable QueryWrapper<T> wrapper) {
         try { return invokeSelectCount(wrapper); }
         catch (Exception e) { throw FlexExceptionTranslator.translate("count", entityClass, e); }
@@ -130,59 +218,77 @@ public final class FlexRepositoryAdapter<T, ID> {
 
     // ─── Reflection calls to MyBatis Flex BaseMapper ─────────────────────
 
-    private T invokeSelectById(ID id) throws Exception {
+    /**
+     * 从缓存获取目标类上的方法，未命中时反射查找并回填缓存。
+     *
+     * @param target     声明方法的类
+     * @param name       方法名
+     * @param paramTypes 参数类型
+     * @return 找到的方法；不存在返回 {@code null}
+     */
+    private static @Nullable Method resolveMethod(Class<?> target, String name, Class<?>... paramTypes) {
+        Map<String, Method> classMethods = METHOD_CACHE.computeIfAbsent(target, k -> new ConcurrentHashMap<>());
+        String key = name + "(" + String.join(",", java.util.Arrays.toString(paramTypes)) + ")";
+        Method cached = classMethods.get(key);
+        if (cached != null) {
+            return cached;
+        }
         try {
-            var method = baseMapper.getClass().getMethod("selectById", Object.class);
-            @SuppressWarnings("unchecked")
-            T result = (T) method.invoke(baseMapper, id);
-            return result;
+            Method method = target.getMethod(name, paramTypes);
+            classMethods.put(key, method);
+            return method;
         } catch (NoSuchMethodException e) {
             return null;
         }
     }
 
+    private T invokeSelectById(ID id) throws Exception {
+        var method = resolveMethod(baseMapper.getClass(), "selectById", Object.class);
+        if (method == null) {
+            return null;
+        }
+        @SuppressWarnings("unchecked")
+        T result = (T) method.invoke(baseMapper, id);
+        return result;
+    }
+
     @SuppressWarnings("unchecked")
     private List<T> invokeSelectAll() throws Exception {
-        try {
-            var method = baseMapper.getClass().getMethod("selectAll");
-            return (List<T>) method.invoke(baseMapper);
-        } catch (NoSuchMethodException e) {
+        var method = resolveMethod(baseMapper.getClass(), "selectAll");
+        if (method == null) {
             logger.debug("BaseMapper 缺少 selectAll()，回退为空列表");
             return List.of();
         }
+        return (List<T>) method.invoke(baseMapper);
     }
 
     @SuppressWarnings("unchecked")
     private List<T> invokeSelectList(@Nullable QueryWrapper<T> wrapper) throws Exception {
-        try {
-            var method = baseMapper.getClass().getMethod("selectList", QueryWrapper.class);
+        var method = resolveMethod(baseMapper.getClass(), "selectList", QueryWrapper.class);
+        if (method != null) {
             return (List<T>) method.invoke(baseMapper, wrapper);
-        } catch (NoSuchMethodException e) {
-            try {
-                var method2 = baseMapper.getClass().getMethod("selectList");
-                return (List<T>) method2.invoke(baseMapper);
-            } catch (NoSuchMethodException ex) {
-                return invokeSelectAll();
-            }
         }
+        var method2 = resolveMethod(baseMapper.getClass(), "selectList");
+        if (method2 != null) {
+            return (List<T>) method2.invoke(baseMapper);
+        }
+        return invokeSelectAll();
     }
 
     private long invokeSelectCount(@Nullable QueryWrapper<T> wrapper) throws Exception {
-        try {
-            var method = baseMapper.getClass().getMethod("selectCount", QueryWrapper.class);
+        var method = resolveMethod(baseMapper.getClass(), "selectCount", QueryWrapper.class);
+        if (method != null) {
             return (Long) method.invoke(baseMapper, wrapper);
-        } catch (NoSuchMethodException e) {
-            try {
-                var method2 = baseMapper.getClass().getMethod("selectCount");
-                return (Long) method2.invoke(baseMapper);
-            } catch (NoSuchMethodException ex) {
-                return invokeSelectAll().size();
-            }
         }
+        var method2 = resolveMethod(baseMapper.getClass(), "selectCount");
+        if (method2 != null) {
+            return (Long) method2.invoke(baseMapper);
+        }
+        return invokeSelectAll().size();
     }
 
     private int invokeInsert(T entity) throws Exception {
-        var method = baseMapper.getClass().getMethod("insert", Object.class);
+        var method = resolveMethod(baseMapper.getClass(), "insert", Object.class);
         method.invoke(baseMapper, entity);
         return 1;
     }
@@ -194,51 +300,47 @@ public final class FlexRepositoryAdapter<T, ID> {
     }
 
     private int invokeUpdateByIdAndReturn(T entity) throws Exception {
-        var method = baseMapper.getClass().getMethod("updateById", Object.class);
+        var method = resolveMethod(baseMapper.getClass(), "updateById", Object.class);
         return (Integer) method.invoke(baseMapper, entity);
     }
 
     private int invokeDeleteById(ID id) throws Exception {
-        var method = baseMapper.getClass().getMethod("deleteById", Object.class);
+        var method = resolveMethod(baseMapper.getClass(), "deleteById", Object.class);
         return (Integer) method.invoke(baseMapper, id);
     }
 
     private int invokeDeleteAll() throws Exception {
-        try {
-            var method = baseMapper.getClass().getMethod("deleteAll");
-            return (Integer) method.invoke(baseMapper);
-        } catch (NoSuchMethodException e) {
+        var method = resolveMethod(baseMapper.getClass(), "deleteAll");
+        if (method == null) {
             logger.warn("BaseMapper 缺少 deleteAll()");
             return 0;
         }
+        return (Integer) method.invoke(baseMapper);
     }
 
     private boolean invokeExistsById(ID id) throws Exception {
-        try {
-            var method = baseMapper.getClass().getMethod("existsById", Object.class);
+        var method = resolveMethod(baseMapper.getClass(), "existsById", Object.class);
+        if (method != null) {
             return (Boolean) method.invoke(baseMapper, id);
-        } catch (NoSuchMethodException e) {
-            return selectById(id).isPresent();
         }
+        return selectById(id).isPresent();
     }
 
     private long invokeCountAll() throws Exception {
-        try {
-            var method = baseMapper.getClass().getMethod("count");
+        var method = resolveMethod(baseMapper.getClass(), "count");
+        if (method != null) {
             return (Long) method.invoke(baseMapper);
-        } catch (NoSuchMethodException e) {
-            return invokeSelectAll().size();
         }
+        return invokeSelectAll().size();
     }
 
     private ID invokeGetId(T entity) throws Exception {
-        try {
-            var method = entityClass.getMethod("getId");
-            @SuppressWarnings("unchecked")
-            ID id = (ID) method.invoke(entity);
-            return id;
-        } catch (NoSuchMethodException e) {
+        var method = resolveMethod(entityClass, "getId");
+        if (method == null) {
             return null;
         }
+        @SuppressWarnings("unchecked")
+        ID id = (ID) method.invoke(entity);
+        return id;
     }
 }

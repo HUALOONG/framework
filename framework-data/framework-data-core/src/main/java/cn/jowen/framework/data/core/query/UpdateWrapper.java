@@ -19,7 +19,8 @@ import java.util.function.Function;
  *
  * @param <T> 实体类型
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class UpdateWrapper<T> {
@@ -78,7 +79,8 @@ public final class UpdateWrapper<T> {
      * @param column 列名
      * @param value  值
      * @author 王飞
-     * @since 2026-08-24
+     * @since 0.0.1
+ * @version 0.0.1
      */
     public record SetClause(String column, @Nullable Object value) {
     }

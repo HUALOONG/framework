@@ -15,7 +15,8 @@ import java.sql.Connection;
  * 额外暴露连接与挂起信息供 {@link JdbcTransactionManager} 使用。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class JdbcTransaction implements TransactionStatus {

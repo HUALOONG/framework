@@ -9,7 +9,8 @@ import org.jspecify.annotations.NullMarked;
  * 各实现（文件 WatchService、DB 轮询、Redis 订阅）应保证 {@code start()/stop()} 幂等。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface ResourceWatcher {

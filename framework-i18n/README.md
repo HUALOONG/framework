@@ -60,13 +60,13 @@ framework-i18n
    │                  # ResourceLoadException / ReloadableMessageSource               [已实现]
    ├─ source/         # AbstractMessageSource / PropertiesMessageSource / DatabaseMessageSource /
    │                  # ResourceBundleMessageSource / CompositeMessageSource           [已实现]
-   │                  # RedisMessageSource                                             [待实现，依赖 cache 模块]
+   │                  # RedisMessageSource                                             [已实现]
    ├─ locale/         # LocaleUtils + AcceptHeader / Cookie / Session / Parameter / Fixed / Composite Resolver [已实现]
    ├─ format/         # MessageFormatter / JavaTextMessageFormatter（默认）/ NamedParameterMessageFormatter /
    │                  # IcuMessageFormatter / FormatterRegistry                         [已实现]
    ├─ reload/         # ResourceWatcher / FileWatchResourceWatcher / DatabasePollingWatcher /
    │                  # ResourceReloader / ReloadStrategy                              [已实现]
-   │                  # RedisSubscriptionWatcher                                        [待实现，依赖 cache 模块]
+   │                  # RedisSubscriptionWatcher                                        [已实现]
    ├─ annotation/     # @I18nMessage / @I18nField / @I18nException / @I18nLocale       [已实现]
    ├─ interceptor/    # I18nInterceptor / I18nFieldInterceptor / I18nExceptionInterceptor /
    │                  # I18nResponseInterceptor                                         [已实现]
@@ -79,7 +79,7 @@ config 装配层（framework-boot-autoconfigure）
 └─ cn.jowen.framework.boot.autoconfigure.i18n/
    # I18nAutoConfiguration / MessageSourceCustomizer [已实现]
    # I18nProperties（extends I18nProperties，带 @ConfigurationProperties）[已实现]
-   # I18nRuntimeHints（GraalVM AOT） / I18nMetricsCollector（Micrometer）                [待实现]
+   # I18nRuntimeHints（GraalVM AOT） / I18nMetricsCollector（Micrometer）                [已实现]
 ```
 
 ---
@@ -204,7 +204,7 @@ cn.jowen.framework.i18n.reload
 ├─ ResourceWatcher              # 监听器接口：start() / stop()                 [已实现]
 ├─ FileWatchResourceWatcher     # 文件系统 WatchService 监听 *.properties 变更 [已实现]
 ├─ DatabasePollingWatcher       # 定时轮询 DB 变更指纹（ScheduledExecutor，Schedulable）[已实现，依赖 data 模块]
-├─ RedisSubscriptionWatcher     # Redis Pub/Sub 订阅变更通知                   [待实现，依赖 cache 模块]
+├─ RedisSubscriptionWatcher     # Redis Pub/Sub 订阅变更通知                   [已实现]
 ├─ ResourceReloader             # 重载执行器（原子替换内存缓存）                [已实现]
 └─ ReloadStrategy               # 策略枚举：POLLING /WATCH /SUBSCRIBE /MANUAL [已实现]
 ```
@@ -278,7 +278,7 @@ cn.jowen.framework.i18n.config
 cn.jowen.framework.boot.autoconfigure.i18n.I18nAutoConfiguration
 ```
 
-**GraalVM AOT 适配**（[待实现]）：
+**GraalVM AOT 适配**（[已实现]）：
 
 ```textmate
 public class I18nRuntimeHints implements RuntimeHintsRegistrar {
@@ -291,7 +291,7 @@ public class I18nRuntimeHints implements RuntimeHintsRegistrar {
 }
 ```
 
-**指标适配（Micrometer 2.0）**（[待实现]）：`I18nMetricsCollector` 记录资源加载次数、消息命中率、重载耗时等指标。
+**指标适配（Micrometer 2.0）**（[已实现]）：`I18nMetricsCollector` 记录资源加载次数、消息命中率、重载耗时等指标。
 
 ---
 

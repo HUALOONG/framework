@@ -13,7 +13,8 @@ import java.util.Optional;
  * @param <T>  实体类型
  * @param <ID> 主键类型
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface Repository<T, ID> {

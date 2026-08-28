@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>framework-demo · 能力演示</title>
+    <style>
+        :root {
+            --bg: #0f1115;
+            --panel: #171a21;
+            --border: #262b36;
+            --text: #e6e8ee;
+            --muted: #9aa3b2;
+            --accent: #4f8cff;
+            --ok: #3ecf8e;
+            --warn: #ffb454;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 32px 20px 64px;
+            background: var(--bg);
+            color: var(--text);
+            font: 14px/1.6 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+        }
+        .wrap { max-width: 900px; margin: 0 auto; }
+        h1 { font-size: 24px; margin: 0 0 6px; }
+        .sub { color: var(--muted); margin-bottom: 28px; }
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin-bottom: 16px;
+        }
+        .card h2 { font-size: 15px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); display: inline-block; }
+        .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+        button {
+            background: var(--accent);
+            color: #fff;
+            border: 0;
+            padding: 7px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        button:hover { filter: brightness(1.1); }
+        button.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        input, select {
+            background: #0d0f14;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 7px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        pre {
+            background: #0d0f14;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            overflow-x: auto;
+            margin: 10px 0 0;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #c9d1e0;
+            max-height: 320px;
+        }
+        .hint { color: var(--muted); font-size: 12px; margin-top: 8px; }
+        .badge {
+            font-size: 11px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: #1d2333;
+            color: var(--muted);
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>framework-demo</h1>
+    <div class="sub">
+        基于 <code>framework-boot-starter</code> 的示例应用 ·
+        数据访问（H2） · 缓存（Caffeine） · 国际化 · 限流 · 脱敏日志
+    </div>
+
+    <div class="card">
+        <h2><span class="dot"></span>用户接口 <span class="badge">JdbcTemplate + Cache</span></h2>
+        <div class="row">
+            <button onclick="call('/api/users')">用户列表</button>
+            <input id="uid" placeholder="用户ID" value="1" style="width:90px">
+            <button onclick="getUser()">查询单个</button>
+            <button class="ghost" onclick="call('/api/demo/cache-stats')">缓存统计</button>
+        </div>
+        <div class="hint">首次查询会回源数据库并打印「缓存未命中」，再次查询同一 ID 则命中缓存。</div>
+    </div>
+
+    <div class="card">
+        <h2><span class="dot"></span>国际化 <span class="badge">messages*.properties</span></h2>
+        <div class="row">
+            <input id="name" placeholder="你的名字" value="Alice" style="width:140px">
+            <select id="locale">
+                <option value="zh_CN">中文 zh_CN</option>
+                <option value="en_US">English en_US</option>
+            </select>
+            <button onclick="hello()">问候</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><span class="dot"></span>限流 <span class="badge">@RateLimit · 每分钟 5 次</span></h2>
+        <div class="row">
+            <button onclick="call('/api/demo/ratelimit')">请求一次</button>
+            <button class="ghost" onclick="burst()">连点 8 次</button>
+        </div>
+        <div class="hint">连续点击超过 5 次后会返回限流提示，可观察限流注解生效。</div>
+    </div>
+
+    <div class="card">
+        <h2><span class="dot"></span>其他</h2>
+        <div class="row">
+            <button class="ghost" onclick="call('/api/demo/capabilities')">装配自检</button>
+            <button class="ghost" onclick="call('/actuator/health')">健康检查</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>响应结果</h2>
+        <pre id="out">点击上方按钮开始…</pre>
+    </div>
+</div>
+
+<script>
+    async function call(url) {
+        const out = document.getElementById('out');
+        out.textContent = '请求中：' + url;
+        try {
+            const res = await fetch(url);
+            const text = await res.text();
+            let body;
+            try {
+                body = JSON.stringify(JSON.parse(text), null, 2);
+            } catch (e) {
+                body = text;
+            }
+            out.textContent = `HTTP ${res.status}\n${body}`;
+        } catch (e) {
+            out.textContent = '请求失败：' + e.message;
+        }
+    }
+
+    function getUser() {
+        const id = document.getElementById('uid').value || '1';
+        call('/api/users/' + encodeURIComponent(id));
+    }
+
+    function hello() {
+        const name = document.getElementById('name').value || 'World';
+        const locale = document.getElementById('locale').value;
+        call(`/api/demo/hello?name=${encodeURIComponent(name)}&locale=${encodeURIComponent(locale)}`);
+    }
+
+    async function burst() {
+        for (let i = 1; i <= 8; i++) {
+            await call('/api/demo/ratelimit');
+        }
+    }
+</script>
+</body>
+</html>

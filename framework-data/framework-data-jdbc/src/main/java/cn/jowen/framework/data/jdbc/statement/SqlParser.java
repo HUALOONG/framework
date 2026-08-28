@@ -18,7 +18,8 @@ import java.util.regex.Pattern;
  * 仅做语法层轻解析，不解析完整 SQL 语法。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class SqlParser {

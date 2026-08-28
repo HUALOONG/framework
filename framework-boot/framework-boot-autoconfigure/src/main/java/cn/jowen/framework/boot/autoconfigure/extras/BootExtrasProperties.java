@@ -1,6 +1,6 @@
 package cn.jowen.framework.boot.autoconfigure.extras;
 
-import cn.jowen.framework.extras.config.ExtrasProperties;
+import cn.jowen.framework.extras.properties.ExtrasProperties;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -9,7 +9,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * {@link ConfigurationProperties}，避免 framework-extras 反向依赖 Spring（保持实现层零 Spring 依赖）。
  *
  * @author 王飞
- * @since 2026-08-26
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @ConfigurationProperties(prefix = "framework.extras")

@@ -13,7 +13,8 @@ import java.lang.reflect.Method;
  * 通过 SPI 机制在 boot-autoconfigure 模块中装配。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public abstract class CacheAnnotationProcessor {

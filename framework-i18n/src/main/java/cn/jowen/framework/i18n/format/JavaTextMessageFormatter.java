@@ -13,7 +13,8 @@ import java.util.Locale;
  * {@link MessageFormat} 非线程安全带来的串扰。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class JavaTextMessageFormatter implements MessageFormatter {

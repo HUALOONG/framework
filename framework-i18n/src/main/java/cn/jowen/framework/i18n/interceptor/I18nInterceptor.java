@@ -24,7 +24,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * 组合解析，本过滤器作为最先执行的 Filter 注册。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class I18nInterceptor implements Filter {

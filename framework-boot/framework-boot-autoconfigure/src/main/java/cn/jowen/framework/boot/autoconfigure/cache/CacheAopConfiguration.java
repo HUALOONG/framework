@@ -13,7 +13,8 @@ import org.springframework.core.annotation.Order;
  * 切面并自动激活 {@link EnableCaching} 代理支持。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @Configuration

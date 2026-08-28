@@ -8,7 +8,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>规则在 {@link DesensitizeContext} 控制下对文本执行脱敏，上下文决定保留位数、替换符与跳过标记。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface DesensitizeRule {

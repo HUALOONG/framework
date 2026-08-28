@@ -9,7 +9,8 @@ import org.jspecify.annotations.NullMarked;
  *
  * @param <E> 监听的事件类型
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface I18nEventListener<E extends I18nEvent> extends EventListener<E> {

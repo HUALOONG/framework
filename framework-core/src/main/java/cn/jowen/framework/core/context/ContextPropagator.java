@@ -24,7 +24,8 @@ import java.util.concurrent.Callable;
  * 全局传播器或使用 {@link ContextSnapshot} 手动传播。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @SPI

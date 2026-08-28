@@ -13,7 +13,8 @@ import java.util.List;
  * @param sql    SQL 文本（含 {@code ?} 占位符），不可为 {@code null}
  * @param params 有序参数列表，不可为 {@code null}
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public record SqlResult(String sql, List<Object> params) {

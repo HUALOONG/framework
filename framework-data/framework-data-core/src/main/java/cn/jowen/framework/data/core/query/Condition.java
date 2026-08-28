@@ -7,7 +7,8 @@ import org.jspecify.annotations.Nullable;
  * 单个查询条件，由操作符、列名与值组成。实现层据此拼接 SQL。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class Condition {

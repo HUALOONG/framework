@@ -16,7 +16,8 @@ import java.util.Collections;
  * <p>与 {@link CacheAutoConfiguration} 配合使用，满足"多级缓存命中率可观测"出口标准。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class CacheStatsReporter implements MeterBinder {

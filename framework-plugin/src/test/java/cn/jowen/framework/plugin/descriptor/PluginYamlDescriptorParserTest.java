@@ -9,7 +9,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * {@link PluginYamlDescriptorParser} 单元测试：YAML 描述符解析（与 JSON 字段语义一致）。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 class PluginYamlDescriptorParserTest {
 

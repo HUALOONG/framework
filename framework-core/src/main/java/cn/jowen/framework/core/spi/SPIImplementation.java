@@ -12,7 +12,8 @@ import java.lang.annotation.Target;
  * 标记实现类为某 SPI 的具体实现，并指定其唯一名称与排序权重。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @Documented

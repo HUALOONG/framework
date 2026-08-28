@@ -20,7 +20,8 @@ import org.jspecify.annotations.NullMarked;
  * {@link #build()} 时将两个配置组装并产出 {@link JdbcContext}。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class JdbcContextBuilder {

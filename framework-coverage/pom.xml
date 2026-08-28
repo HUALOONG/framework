@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>cn.jowen.framework</groupId>
+        <artifactId>framework</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>framework-coverage</artifactId>
+    <packaging>pom</packaging>
+    <name>framework-coverage</name>
+    <description>JaCoCo 全工程聚合覆盖率报告：依赖全部叶子模块，reactor 中最后构建，report-aggregate 汇总各模块 jacoco.exec 生成统一 HTML 报告</description>
+
+    <!--
+        依赖全部有代码的叶子模块，使 Maven reactor 将其排在最后构建。
+        仅当本模块位于 reactor 末尾时，各叶子模块的 target/jacoco.exec 才已生成，
+        report-aggregate 才能正确汇总并渲染全工程覆盖率。
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-core</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-data-core</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-data-jdbc</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-data-mybatis</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-cache</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-logger</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-i18n</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-extras-common</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-extras-message</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-extras-storage</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-boot-web</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-plugin</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-boot-autoconfigure</artifactId>
+            <version>${revision}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- 真正的聚合报告：report-aggregate 收集 reactor 内各依赖模块的 jacoco.exec，
+                 在 verify 阶段生成全工程统一 HTML 报告到 target/site/jacoco-aggregate -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>report-aggregate</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report-aggregate</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate</outputDirectory>
+                            <sourceEncoding>UTF-8</sourceEncoding>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

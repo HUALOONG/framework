@@ -15,7 +15,8 @@ import java.util.Map;
  * 每组调用 {@link JdbcOperations#batchUpdate(String, List)} 执行，最终将所有分组受影响行数展平为 {@code int[]} 返回。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class BatchTemplate {

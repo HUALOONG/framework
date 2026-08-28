@@ -11,16 +11,32 @@ import java.util.List;
 import java.util.function.Function;
 
 @NullMarked
+/**
+ * 「FlexJoinRepository」封装相关能力。
+ *
+ * @author Jowen
+ * @since 0.0.1
+ * @version 0.0.1
+ */
 public class FlexJoinRepository<T> {
 
+    /** logger 常量。 */
     private static final Logger logger = LoggerFactory.getLogger(FlexJoinRepository.class);
 
+    /** adapter 不可变字段。 */
     private final FlexRepositoryAdapter<T, ?> adapter;
 
+    /**
+     * 构造实例。
+     */
     public FlexJoinRepository(FlexRepositoryAdapter<T, ?> adapter) {
         this.adapter = adapter;
     }
 
+    /**
+     * 执行@ suppress warnings操作。
+     * @return 结果
+     */
     @SuppressWarnings("unchecked")
     public List<T> selectJoinList(QueryWrapper<T> wrapper) {
         if (wrapper.getJoins().isEmpty()) return adapter.selectAll();
@@ -34,6 +50,11 @@ public class FlexJoinRepository<T> {
         }
     }
 
+    /**
+     * 执行select join list操作。
+     * @param joinType 参数 joinType
+     * @return 结果
+     */
     public List<T> selectJoinList(Function<T, ?> left, Class<?> rightEntity, Function<?, ?> right, JoinType joinType) {
         QueryWrapper<T> wrapper = new QueryWrapper<>();
         switch (joinType) {
@@ -44,6 +65,10 @@ public class FlexJoinRepository<T> {
         return selectJoinList(wrapper);
     }
 
+    /**
+     * 执行select list操作。
+     * @return 结果
+     */
     public List<T> selectList(QueryWrapper<T> wrapper) {
         return adapter.selectAll();
     }

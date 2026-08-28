@@ -8,7 +8,8 @@ import org.jspecify.annotations.NullMarked;
  * 避免业务方直接持有框架 Bean 引用。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @FunctionalInterface

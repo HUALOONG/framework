@@ -13,7 +13,8 @@ import java.util.Locale;
  * 可配置支持的区域集合用于就近匹配。上下文须为 {@link HttpServletRequest}。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class AcceptHeaderLocaleResolver implements LocaleResolver {

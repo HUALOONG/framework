@@ -20,7 +20,8 @@ import java.util.Map;
  * {@code Map}（key 为参数名）或 Bean（字段名即参数名）中提取。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class NamedParameterTemplate {

@@ -9,14 +9,29 @@ import org.jspecify.annotations.Nullable;
 import java.util.concurrent.Callable;
 
 @NullMarked
+/**
+ * 「FlexExceptionTranslator」封装相关能力。
+ *
+ * @author Jowen
+ * @since 0.0.1
+ * @version 0.0.1
+ */
 public final class FlexExceptionTranslator implements ExceptionTranslator {
 
+    /** INSTANCE 常量。 */
     private static final ExceptionTranslator INSTANCE = new FlexExceptionTranslator();
 
+    /** private 字段。 */
     private FlexExceptionTranslator() {}
 
+    /** INSTANCE 静态变量。 */
     public static ExceptionTranslator getInstance() { return INSTANCE; }
 
+    /**
+     * 执行translate操作。
+     * @param action 参数 action
+     * @return 结果
+     */
     @Override
     @Nullable
     public DataAccessException translate(String action, Callable<Void> task) {
@@ -30,6 +45,12 @@ public final class FlexExceptionTranslator implements ExceptionTranslator {
         }
     }
 
+    /**
+     * 执行translate操作。
+     * @param action 参数 action
+     * @param ex 参数 ex
+     * @return 结果
+     */
     public static DataAccessException translate(String action, @Nullable Class<?> entityClass, Throwable ex) {
         if (action == null) throw new IllegalArgumentException("action must not be null");
         if (ex == null) throw new IllegalArgumentException("ex must not be null");

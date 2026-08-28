@@ -23,7 +23,8 @@ import java.util.jar.JarFile;
  * SnakeYAML 为可选依赖，仅在调用本类时才需要。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @SPIImplementation(name = "yaml", order = 20)

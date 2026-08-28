@@ -17,7 +17,8 @@ import java.util.Optional;
  * @param columnName    对应数据库列名
  * @param generated     主键生成策略，为空表示无生成策略
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class PropertyMetadata {

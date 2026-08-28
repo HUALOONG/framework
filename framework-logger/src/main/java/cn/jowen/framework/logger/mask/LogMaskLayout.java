@@ -8,7 +8,8 @@ import org.jspecify.annotations.Nullable;
  * 日志布局装饰器，在最终输出文本上施加脱敏（适用于 Logback/Log4j2 Layout 包装）。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class LogMaskLayout {

@@ -12,7 +12,8 @@ import java.lang.annotation.Target;
  * 标记实现类需被自动激活（无需显式按名获取），常用于全局拦截器、过滤器等可插拔组件。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @Documented

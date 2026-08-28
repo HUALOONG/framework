@@ -8,7 +8,8 @@ import org.jspecify.annotations.NullMarked;
  * 判断时通过 {@code instanceOf NullValue} 而非 {@code == null} 区分"未命中"与"明确为空"。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class NullValue {

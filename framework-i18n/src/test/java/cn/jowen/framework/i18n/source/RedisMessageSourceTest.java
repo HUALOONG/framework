@@ -10,7 +10,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@link RedisMessageSource} 键映射逻辑测试（Redis 键策略不依赖真实连接）。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 class RedisMessageSourceTest {
 

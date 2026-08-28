@@ -21,7 +21,8 @@ import java.sql.Types;
  * <p>封装大字段的常见读写，屏蔽不同 JDBC 驱动对 LOB 的细微差异（如 {@code setCharacterStream} 长度参数）。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class LobHandler {

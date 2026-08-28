@@ -27,7 +27,8 @@ import java.nio.file.Path;
  * <p>业务方可通过 {@code @Autowired PluginManager} 注入后动态加载/启动/停止插件。
  *
  * @author 王飞
- * @since 2026-08-26
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @AutoConfiguration(after = JowenAutoConfiguration.class)

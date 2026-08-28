@@ -17,7 +17,8 @@ import org.springframework.context.annotation.Bean;
  * <p>仅当 spring-boot-health 在 classpath 且 {@code framework.health.enabled}（缺省开）时生效。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @AutoConfiguration

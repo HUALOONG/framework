@@ -10,7 +10,8 @@ import java.util.function.Supplier;
  * 对象判空与默认值工具。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class ObjectUtils {

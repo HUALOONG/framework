@@ -14,7 +14,8 @@ import java.util.Locale;
  * 聚合消息源。按注册顺序委托多个子源，命中即返回；支持热加载全部子源。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class CompositeMessageSource implements ReloadableMessageSource {

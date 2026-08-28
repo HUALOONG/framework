@@ -10,7 +10,8 @@ import java.util.Locale;
  * 写路径保留 ThreadLocal 以兼容作用域外调用（ScopedValue 模式下 set 仅在 {@code runWith} 作用域内可用）。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class LocaleContextHolder {

@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
  * 唯一键冲突异常，对应数据库 UNIQUE constraint 违规。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class DuplicateKeyException extends DataAccessException {

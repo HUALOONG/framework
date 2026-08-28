@@ -10,7 +10,8 @@ import java.util.Map;
  * 通过原始 SQL + 参数方式执行查询与更新，结果以 {@code Map<String, Object>} 呈现。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface DynamicRepository {

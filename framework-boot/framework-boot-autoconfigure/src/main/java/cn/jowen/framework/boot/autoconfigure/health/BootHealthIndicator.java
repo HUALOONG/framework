@@ -2,12 +2,16 @@ package cn.jowen.framework.boot.autoconfigure.health;
 
 import cn.jowen.framework.cache.api.CacheManager;
 import cn.jowen.framework.i18n.api.MessageSource;
+import cn.jowen.framework.plugin.api.Plugin;
 import cn.jowen.framework.plugin.api.PluginManager;
+import cn.jowen.framework.plugin.api.PluginState;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.context.ApplicationContext;
+
+import java.util.List;
 
 /**
  * 框架健康指示器：汇总框架各模块运行状态（缓存、插件、国际化资源包）。
@@ -15,7 +19,8 @@ import org.springframework.context.ApplicationContext;
  * <p>任一无状态上报失败即标记为 DOWN，便于容器编排探针感知框架整体可用性。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class BootHealthIndicator implements HealthIndicator {
@@ -29,34 +34,39 @@ public class BootHealthIndicator implements HealthIndicator {
     @Override
     public Health health() {
         Health.Builder builder = Health.up();
-        boolean healthy = true;
 
         ObjectProvider<CacheManager> cacheManager = context.getBeanProvider(CacheManager.class);
-        if (cacheManager.getIfAvailable() != null) {
-            int count = 0;
-            for (String ignored : cacheManager.getObject().cacheNames()) {
-                count++;
+        CacheManager cm = cacheManager.getIfAvailable();
+        if (cm != null) {
+            try {
+                int count = 0;
+                for (String ignored : cm.cacheNames()) {
+                    count++;
+                }
+                builder.withDetail("cache.caches", count);
+            } catch (Exception e) {
+                // 缓存管理器存在但无法访问：视为不可用
+                builder.withDetail("cache.error", e.getMessage());
+                builder.down();
             }
-            builder.withDetail("cache.caches", count);
         }
 
         ObjectProvider<PluginManager> pluginManager = context.getBeanProvider(PluginManager.class);
         PluginManager pm = pluginManager.getIfAvailable();
-//        if (pm != null) {
-//            builder.withDetail("plugin.plugins", pm.all().size());
-//        }
+        if (pm != null) {
+            List<Plugin> plugins = pm.getPlugins();
+            builder.withDetail("plugin.plugins", plugins.size());
+            List<Plugin> failed = pm.getPluginsByState(PluginState.FAILED);
+            builder.withDetail("plugin.failed", failed.size());
+            if (!failed.isEmpty()) {
+                builder.down();
+            }
+        }
 
         ObjectProvider<MessageSource> messageSource = context.getBeanProvider(MessageSource.class);
-        if (messageSource.getIfAvailable() == null) {
-            // 国际化资源缺失不视为致命，仅记录
-            builder.withDetail("i18n.available", false);
-        } else {
-            builder.withDetail("i18n.available", true);
-        }
+        // 国际化资源缺失不视为致命，仅记录
+        builder.withDetail("i18n.available", messageSource.getIfAvailable() != null);
 
-        if (!healthy) {
-            builder = Health.down();
-        }
         return builder.build();
     }
 }

@@ -8,7 +8,8 @@ import java.util.Map;
  * 缓存管理器接口。按名称获取或创建缓存，并集中暴露各缓存的统计（可观测入口）。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface CacheManager {

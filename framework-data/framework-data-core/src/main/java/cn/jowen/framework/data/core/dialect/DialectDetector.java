@@ -6,7 +6,8 @@ import cn.jowen.framework.core.spi.SPI;
  * 方言检测器（SPI），负责根据连接信息自动识别数据库类型并返回对应 {@link Dialect} 实现。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @SPI
 public interface DialectDetector {

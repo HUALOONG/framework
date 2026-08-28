@@ -15,7 +15,8 @@ import org.springframework.context.annotation.Bean;
  * 日志能力装配。将门面 facade 桥接到底层实现（默认 Logback），并暴露脱敏开关与组件。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @AutoConfiguration(after = JowenAutoConfiguration.class)

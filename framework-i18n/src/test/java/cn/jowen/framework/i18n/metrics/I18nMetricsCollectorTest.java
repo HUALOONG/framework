@@ -12,7 +12,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@link I18nMetricsCollector} 单元测试：验证查找/未命中计数与解析耗时上报。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 class I18nMetricsCollectorTest {
 

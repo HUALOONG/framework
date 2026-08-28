@@ -10,7 +10,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 本类作为集中总闸的统一配置入口。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @ConfigurationProperties(prefix = "framework.observability")

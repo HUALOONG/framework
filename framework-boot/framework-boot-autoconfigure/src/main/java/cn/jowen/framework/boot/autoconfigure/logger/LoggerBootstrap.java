@@ -11,7 +11,8 @@ import org.jspecify.annotations.NullMarked;
  * 日志引导组件：在容器启动早期预热门面 → 底层适配器解析，确保业务代码首次取 logger 即可用。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class LoggerBootstrap implements InitializingBean {

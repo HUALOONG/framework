@@ -12,7 +12,8 @@ import java.lang.annotation.Target;
  * 支持参数化占位符（与 {@link #args()} 结合）。典型用于 RPC/Controller 返回错误码文案统一。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @Target(ElementType.METHOD)

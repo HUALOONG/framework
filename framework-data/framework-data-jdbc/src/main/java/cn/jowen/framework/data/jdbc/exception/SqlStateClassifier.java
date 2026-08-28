@@ -17,7 +17,8 @@ import java.sql.SQLException;
  * <p>采用模式匹配 {@code switch} 覆盖常见 SQLState 类别（连接/完整性/事务回滚/语法等）。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class SqlStateClassifier {

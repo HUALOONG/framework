@@ -10,7 +10,8 @@ import java.lang.annotation.Target;
  * 缓存写入注解。方法执行后更新缓存（不跳过方法执行）。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

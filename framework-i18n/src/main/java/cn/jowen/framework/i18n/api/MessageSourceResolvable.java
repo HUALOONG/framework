@@ -14,7 +14,8 @@ import java.util.Objects;
  * @param args           格式化参数，可为 {@code null}
  * @param defaultMessage 未找到编码时使用的默认文案，可为 {@code null}
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public record MessageSourceResolvable(String code, @Nullable Object @Nullable [] args,

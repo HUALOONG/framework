@@ -12,7 +12,8 @@ import java.lang.annotation.Target;
  * 典型用于枚举/字典值返回文案（如状态码 → 状态文案）。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @Target(ElementType.FIELD)

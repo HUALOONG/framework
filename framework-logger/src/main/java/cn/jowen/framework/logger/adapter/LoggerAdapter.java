@@ -11,7 +11,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>实现类标注 {@link Activate} 后被 {@link cn.jowen.framework.logger.facade.LoggerFactory} 自动发现。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @SPI

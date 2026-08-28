@@ -11,7 +11,8 @@ package cn.jowen.framework.core.spi;
  * @param sourceId  来源标识（见 {@link ExtensionSource#sourceId()}）
  * @param <T>       扩展点接口类型
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 public record NamedExtension<T>(
         String name,

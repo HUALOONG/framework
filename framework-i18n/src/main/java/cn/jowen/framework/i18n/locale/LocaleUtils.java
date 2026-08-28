@@ -12,7 +12,8 @@ import java.util.Locale;
  * 区域工具：Accept-Language 头解析、语言标签规范化、区域匹配。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class LocaleUtils {

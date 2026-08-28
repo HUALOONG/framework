@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
  * 事务回调，供 {@link TransactionTemplate} 在事务边界内执行业务逻辑。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @FunctionalInterface
 @NullMarked

@@ -13,7 +13,8 @@ import java.util.Locale;
  * 上下文须为 {@link HttpServletRequest}；会话或属性缺失返回 {@code null}。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class SessionLocaleResolver implements LocaleResolver {

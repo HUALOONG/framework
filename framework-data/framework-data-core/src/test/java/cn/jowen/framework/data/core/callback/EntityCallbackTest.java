@@ -1,5 +1,6 @@
 package cn.jowen.framework.data.core.callback;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
@@ -19,10 +20,10 @@ class EntityCallbackTest {
     void overriddenMethods_invoked() {
         final int[] counter = {0};
         EntityCallback<String> callback = new EntityCallback<>() {
-            @Override public void beforeInsert(String entity) { counter[0]++; }
-            @Override public void beforeUpdate(String entity) { counter[0]++; }
-            @Override public void afterInsert(String entity) { counter[0]++; }
-            @Override public void afterUpdate(String entity) { counter[0]++; }
+            @Override public void beforeInsert(@NonNull String entity) { counter[0]++; }
+            @Override public void beforeUpdate(@NonNull String entity) { counter[0]++; }
+            @Override public void afterInsert(@NonNull String entity) { counter[0]++; }
+            @Override public void afterUpdate(@NonNull String entity) { counter[0]++; }
         };
 
         callback.beforeInsert("e");

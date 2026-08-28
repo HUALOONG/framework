@@ -33,7 +33,8 @@ import java.util.stream.Stream;
  * <p>单插件加载失败不影响其余插件与应用启动；插件目录不存在时静默跳过。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class PluginBootstrap implements SmartInitializingSingleton, DisposableBean {

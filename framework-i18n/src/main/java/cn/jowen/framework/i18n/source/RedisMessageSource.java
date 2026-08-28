@@ -15,7 +15,8 @@ import java.util.Locale;
  * {@link cn.jowen.framework.i18n.reload.RedisSubscriptionWatcher} 订阅通知。Redisson 为可选依赖。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class RedisMessageSource extends AbstractMessageSource {

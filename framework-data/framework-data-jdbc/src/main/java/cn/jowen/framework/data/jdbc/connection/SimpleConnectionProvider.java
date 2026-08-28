@@ -17,7 +17,8 @@ import java.util.Set;
  * 通过 core 的 {@link DataSourceProperties} 读取 url/username/password/driverClassName。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class SimpleConnectionProvider implements ConnectionProvider {

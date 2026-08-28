@@ -1,9 +1,9 @@
 package cn.jowen.framework.i18n.source;
 
+import cn.jowen.framework.data.jdbc.core.JdbcTemplate;
 import cn.jowen.framework.i18n.api.ResourceLoadException;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.Locale;
 import java.util.Map;
@@ -24,7 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * }</pre>
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class DatabaseMessageSource extends AbstractMessageSource {
@@ -43,7 +44,7 @@ public class DatabaseMessageSource extends AbstractMessageSource {
     /**
      * 构造消息源（默认列名 {@code locale/code/message}，表名 {@code i18n_message}）。
      *
-     * @param jdbcTemplate Spring JdbcTemplate，不可为 {@code null}
+     * @param jdbcTemplate framework-data-jdbc 的 JdbcTemplate，不可为 {@code null}
      */
     public DatabaseMessageSource(JdbcTemplate jdbcTemplate) {
         this(jdbcTemplate, "i18n_message", "locale", "code", "message");
@@ -52,7 +53,7 @@ public class DatabaseMessageSource extends AbstractMessageSource {
     /**
      * 构造消息源。
      *
-     * @param jdbcTemplate  Spring JdbcTemplate
+     * @param jdbcTemplate  framework-data-jdbc 的 JdbcTemplate
      * @param tableName     消息表名
      * @param localeColumn  区域列名
      * @param codeColumn    编码列名
@@ -84,15 +85,18 @@ public class DatabaseMessageSource extends AbstractMessageSource {
                 + " FROM " + tableName;
         try {
             Map<String, Map<String, String>> next = new ConcurrentHashMap<>();
-            jdbcTemplate.query(sql, rs -> {
-                String locale = rs.getString(localeColumn);
-                String code = rs.getString(codeColumn);
-                String message = rs.getString(messageColumn);
-                if (locale == null || code == null || message == null) {
-                    return;
+            for (Map<String, Object> row : jdbcTemplate.queryForMaps(sql)) {
+                Object localeObj = row.get(localeColumn);
+                Object codeObj = row.get(codeColumn);
+                Object messageObj = row.get(messageColumn);
+                if (localeObj == null || codeObj == null || messageObj == null) {
+                    continue;
                 }
+                String locale = String.valueOf(localeObj);
+                String code = String.valueOf(codeObj);
+                String message = String.valueOf(messageObj);
                 next.computeIfAbsent(locale, k -> new ConcurrentHashMap<>()).put(code, message);
-            });
+            }
             cache = next;
         } catch (RuntimeException ex) {
             throw new ResourceLoadException("加载数据库消息失败: " + tableName, ex);

@@ -13,7 +13,8 @@ import org.jspecify.annotations.Nullable;
  * 自定义策略可实现本接口并经 {@code ExtensionLoader} 发现。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @SPI
 @NullMarked

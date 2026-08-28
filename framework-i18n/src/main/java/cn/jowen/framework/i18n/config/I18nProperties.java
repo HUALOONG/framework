@@ -10,7 +10,8 @@ import java.util.List;
  * {@code BootI18nProperties} 完成。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class I18nProperties {

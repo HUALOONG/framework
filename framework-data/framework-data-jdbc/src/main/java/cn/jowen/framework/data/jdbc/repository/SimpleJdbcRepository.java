@@ -1,6 +1,8 @@
 package cn.jowen.framework.data.jdbc.repository;
 
 import cn.jowen.framework.data.core.exception.DataAccessException;
+import cn.jowen.framework.data.core.exception.DataIntegrityViolationException;
+import cn.jowen.framework.data.core.exception.DuplicateKeyException;
 import cn.jowen.framework.data.core.mapping.EntityMetadata;
 import cn.jowen.framework.data.core.mapping.EntityMetadataResolver;
 import cn.jowen.framework.data.core.mapping.PropertyMetadata;
@@ -35,7 +37,8 @@ import java.util.Optional;
  * @param <T>  实体类型
  * @param <ID> 主键类型
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class SimpleJdbcRepository<T, ID> implements JdbcRepository<T, ID> {
@@ -90,7 +93,6 @@ public class SimpleJdbcRepository<T, ID> implements JdbcRepository<T, ID> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public T save(T entity) {
         PropertyMetadata idProp = idProperty();
         Object idVal = idProp == null ? null : ReflectionUtils.getFieldValue(entity, idProp.getName());
@@ -106,10 +108,15 @@ public class SimpleJdbcRepository<T, ID> implements JdbcRepository<T, ID> {
         } else {
             if (idVal == null) {
                 insertExcludingId(entity, idProp);
-            } else if (existsById((ID) idVal)) {
-                update(entity);
             } else {
-                insertIncludingId(entity);
+                // upsert：非生成主键场景下，并发下 existsById 判断存在竞态
+                // （两个线程同时判定为不存在而都执行 insert 会触发唯一键冲突）。
+                // 这里不再依赖先查后插，而是直接尝试 insert，若因唯一键冲突失败则回退为 update。
+                try {
+                    insertIncludingId(entity);
+                } catch (DuplicateKeyException | DataIntegrityViolationException e) {
+                    update(entity);
+                }
             }
         }
         return entity;

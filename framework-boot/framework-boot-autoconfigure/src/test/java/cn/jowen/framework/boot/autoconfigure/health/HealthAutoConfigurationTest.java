@@ -22,7 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@link HealthAutoConfiguration} / {@link BootHealthIndicator} 测试。
  *
  * @author 王飞
- * @since 2026-08-26
+ * @since 0.0.1
+ * @version 0.0.1
  */
 class HealthAutoConfigurationTest {
 

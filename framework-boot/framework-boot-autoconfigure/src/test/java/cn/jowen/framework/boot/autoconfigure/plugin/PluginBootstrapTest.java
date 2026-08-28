@@ -21,7 +21,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * （端到端加载需示例插件 jar，超出单测范围。）
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 class PluginBootstrapTest {
 

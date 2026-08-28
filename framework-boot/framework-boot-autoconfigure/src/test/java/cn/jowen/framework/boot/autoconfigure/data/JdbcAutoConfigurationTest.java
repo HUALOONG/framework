@@ -31,7 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 验证模块可通过 {@code framework.data.datasource.url} 配置独立构建完整 JDBC 栈。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 class JdbcAutoConfigurationTest {
 

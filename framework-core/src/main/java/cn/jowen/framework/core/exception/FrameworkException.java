@@ -9,7 +9,8 @@ import org.jspecify.annotations.Nullable;
  * <p>统一承载 {@link ErrorCode}，使上层能够以错误码而非异常类型做分支处理。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class FrameworkException extends RuntimeException {

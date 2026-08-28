@@ -9,7 +9,8 @@ import java.util.Collection;
  * 实体扫描器（SPI），负责发现并返回所有可持久化的实体类。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @SPI
 @NullMarked

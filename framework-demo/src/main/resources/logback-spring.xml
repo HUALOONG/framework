@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  日志配置：接入框架脱敏能力。
+
+  说明：framework-logger 提供了 LogMaskLayout 装饰器，但不会自动接管应用的 Appender。
+  这里通过 LayoutWrappingEncoder + MaskingPatternLayout 完成接线，
+  使日志输出前自动对手机号/身份证等敏感信息打码。
+
+  若不需要脱敏，改用 Spring Boot 默认配置（删除本文件）或改用
+  ch.qos.logback.classic.PatternLayout 即可。
+-->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <property name="LOG_PATTERN"
+              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <!-- 使用自定义脱敏布局，替代默认的 PatternLayout -->
+            <layout class="cn.jowen.framework.demo.config.MaskingPatternLayout">
+                <pattern>${LOG_PATTERN}</pattern>
+            </layout>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <logger name="cn.jowen.framework.demo" level="DEBUG"/>
+</configuration>

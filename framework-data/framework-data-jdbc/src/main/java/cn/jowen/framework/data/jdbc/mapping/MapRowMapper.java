@@ -10,7 +10,8 @@ import java.util.Map;
  * 行映射器：原样返回「列名 → 值」的 {@link Map}，供无实体类的动态查询使用。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class MapRowMapper implements RowMapper<Map<String, Object>> {

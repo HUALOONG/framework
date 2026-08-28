@@ -18,7 +18,8 @@ import java.util.function.Consumer;
  * 其余方法全部透传到真实连接。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class ConnectionProxy {

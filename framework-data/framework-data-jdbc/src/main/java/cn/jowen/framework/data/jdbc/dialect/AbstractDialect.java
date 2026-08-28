@@ -9,7 +9,8 @@ import org.jspecify.annotations.NullMarked;
  * 方言抽象基类：提供 LIMIT/OFFSET 分页与计数的默认实现，子类按需覆写。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public abstract class AbstractDialect implements DatabaseDialect {

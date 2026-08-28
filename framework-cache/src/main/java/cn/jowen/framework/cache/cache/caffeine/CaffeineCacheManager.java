@@ -14,7 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 基于 {@link CaffeineCache} 的 {@link CacheManager} 实现，支持按需创建命名缓存并附加构建器配置。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class CaffeineCacheManager implements CacheManager {

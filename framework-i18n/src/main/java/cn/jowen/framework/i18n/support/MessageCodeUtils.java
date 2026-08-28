@@ -8,7 +8,8 @@ import org.jspecify.annotations.Nullable;
  * 约定编码格式为 {@code 模块.域.业务编码}，如 {@code user.validate.nameRequired}。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class MessageCodeUtils {

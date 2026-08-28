@@ -12,7 +12,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@link CacheStatsReporter} 单元测试，验证命中/未命中/命中率 gauge 注册。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 class CacheStatsReporterTest {
 

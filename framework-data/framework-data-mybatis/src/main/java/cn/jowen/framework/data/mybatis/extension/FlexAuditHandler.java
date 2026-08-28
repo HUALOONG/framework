@@ -10,7 +10,8 @@ import tools.jackson.databind.json.JsonMapper;
  * <p>默认 {@link #DEFAULT_SINK} 丢弃记录；业务方注入自定义 {@link AuditSink} 实现审计表写入。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class FlexAuditHandler implements ExtensionRegistry.Extension {

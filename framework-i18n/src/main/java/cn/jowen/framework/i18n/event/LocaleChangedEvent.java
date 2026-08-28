@@ -10,7 +10,8 @@ import java.util.Locale;
  * 供审计、指标或联动业务（如重新查询本地化文案）消费。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class LocaleChangedEvent extends I18nEvent {

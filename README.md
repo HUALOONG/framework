@@ -445,22 +445,25 @@ framework:
 
 ### 8.9 framework-extras — 扩展工具集
 
-**定位**：12 项场景化能力，全部按需引入、独立开关（统一 `framework.extras.<feature>.enabled`）。
+**定位**：扩展工具集聚合父模块（纯 POM，零代码），下挂 `common` / `message` / `storage` / `web` 四个子模块，将原先 12 项扁平能力按领域重新拆分。各能力全部按需引入、独立开关（统一 `framework.extras.<feature>.enabled`）。详细设计见 [framework-extras/README.md](framework-extras/README.md)。
 
-| 子包           | 能力        | 说明                                                                                     |
-| -------------- | ----------- | ---------------------------------------------------------------------------------------- |
-| lock           | 分布式锁    | Redis（Lettuce+Lua）可重入/公平/读写/联锁/红锁，Watchdog 自动续期，`@Lockable`           |
-| ratelimit      | 接口限流    | 固定窗口/滑动窗口/漏桶/令牌桶，集群维度基于 Redis，`@RateLimit`                          |
-| idempotent     | 幂等控制    | Token 模式 / Key 模式，防重复提交，`@Idempotent`                                         |
-| storage        | 文件存储    | 本地 / MinIO / 阿里云 OSS / AWS S3 统一抽象，`@StorageFile`                              |
-| notification   | 消息通知    | 邮件 / 短信 / 钉钉 / 企业微信 / Webhook                                                  |
-| excel          | Excel 处理  | 基于 EasyExcel，声明式导入导出、流式大数据、模板填充、多 Sheet                           |
-| captcha        | 验证码      | 图形 / 算术 / 滑块 / 短信验证码，生成与校验                                              |
-| ip2region      | IP 地域解析 | 离线库纯内存查询                                                                         |
-| desensitize    | 数据脱敏    | Jackson 序列化扩展，注解声明式字段脱敏（Jackson 3 适配）                                 |
-| operatelog     | 操作日志    | 注解自动记录，异步写入（虚拟线程），自定义模板                                           |
-| datapermission | 数据权限    | MyBatis 拦截器/SQL 改写，行级：部门/个人/自定义规则                                      |
-| config         | 配置与装配  | 各功能 `@ConfigurationProperties` 与 Bean 工厂，统一 `framework.extras.<feature>.*` 开关 |
+```text
+framework-extras（聚合父模块，纯 POM）
+├─ framework-extras-common   # L0 公共底座：12 项能力 Properties + Exception
+├─ framework-extras-message  # 消息通知（原 notification）
+├─ framework-extras-storage  # 文件存储
+└─ framework-extras-web      # Web 工具集：lock/ratelimit/idempotent/captcha/datapermission/operatelog
+```
+
+| 子模块                   | 能力（原 12 项归属）                                                  | 说明                                                                                         |
+| ------------------------ | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| framework-extras-common  | config / 异常类（12 项能力开关与异常统一收口）                        | L0 公共底座，仅依赖 framework-core                                                           |
+| framework-extras-message | notification                                                          | 邮件 / 短信 / 钉钉 / 企业微信 / Webhook，统一 `messageService`                               |
+| framework-extras-storage | storage                                                               | 本地 / MinIO / 阿里云 OSS / AWS S3 统一抽象，`FileStorage`                                   |
+| framework-extras-web     | lock / ratelimit / idempotent / captcha / datapermission / operatelog | 分布式锁 `@Lockable` / 限流 `@RateLimit` / 幂等 `@Idempotent` / 验证码 / 数据权限 / 操作日志 |
+| （待规划）               | excel / ip2region / desensitize                                       | 原 12 项中三项，新四域尚未显式承接（建议归入 web 或独立子域）                                |
+
+> 与 `framework-data` / `framework-boot` 一致：聚合器零代码、不注册 Bean；运行时行为由四子模块 + `framework-boot-autoconfigure`（ExtrasAutoConfiguration）承载。下游按需引入具体子模块，版本由 `framework-bom` 管理。
 
 ---
 
@@ -482,7 +485,7 @@ cn.jowen.framework.boot.autoconfigure/
 └─ runtime/   RuntimeHints 按领域拆分：Spi/Jdbc/Mybatis/Cache/I18n/Logger
 ```
 
-> 注：`web/`、`bridge/` 装配类暂未落地。`DataSourceAutoConfiguration` 仅装配数据源元信息与默认路由（不管理物理连接池，连接池由 Jdbc/MyBatis 装配各自管理）；`ObservabilityAutoConfiguration` 为指标集中总闸（各模块指标按各自条件接线）。
+> 注：`web/`、`bridge/` 装配类经评估不落地（原空壳类已随 P0-1 删除）。`DataSourceAutoConfiguration` 仅装配数据源元信息与默认路由（不管理物理连接池，连接池由 Jdbc/MyBatis 装配各自管理）；`ObservabilityAutoConfiguration` 为指标集中总闸（各模块指标按各自条件接线）。
 
 **注册文件**：`META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`（装配）、
 `META-INF/spring/aot.factories`（RuntimeHintsRegistrar）
@@ -755,4 +758,3 @@ public class OrderService {
 | 虚拟线程 + 连接池                 | 连接池参数需按虚拟线程场景重新压测调优                        |
 | GraalVM AOT                       | 各模块 RuntimeHints 需逐一完善并做原生镜像构建验证            |
 | ScopedValue 预览特性              | 依赖 JDK 预览开关，正式化前仅限 i18n 模块内部使用             |
-| 代码骨架                          | 各模块设计已定稿，尚未生成代码骨架                            |

@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
  * 事务定义，含传播行为、隔离级别、超时与只读标记。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class TransactionDefinition {

@@ -12,7 +12,8 @@ import java.util.regex.Pattern;
  * 与格式化器区分：本工具面向配置模板（如邮件/通知文案），不参与消息参数化。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class PlaceholderResolver {

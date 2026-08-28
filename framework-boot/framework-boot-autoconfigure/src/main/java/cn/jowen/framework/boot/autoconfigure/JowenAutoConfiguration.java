@@ -22,7 +22,8 @@ import org.springframework.context.annotation.Import;
  * 插件与 extras/health 装配。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @AutoConfiguration

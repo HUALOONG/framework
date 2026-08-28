@@ -11,7 +11,8 @@ import java.util.Objects;
  * 日志脱敏入口。按 {@link LoggerProperties} 的全局开关，委托 core 脱敏器对消息与参数做脱敏。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class LogMasker {

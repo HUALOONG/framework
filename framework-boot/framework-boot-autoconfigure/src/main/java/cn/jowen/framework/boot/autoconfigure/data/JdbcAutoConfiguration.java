@@ -58,7 +58,8 @@ import org.springframework.context.annotation.Bean;
  * <p>关闭方式：{@code framework.data.enabled=false} 或 {@code framework.data.type=mybatis}。
  *
  * @author 王飞
- * @since 2026-08-26
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @AutoConfiguration(after = JowenAutoConfiguration.class)

@@ -10,7 +10,8 @@ import java.util.Locale;
  * 携带受影响的区域与重载耗时，供监控与可观测性消费。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class ResourceReloadedEvent extends I18nEvent {

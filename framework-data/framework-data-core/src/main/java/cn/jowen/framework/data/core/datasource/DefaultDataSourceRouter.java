@@ -12,7 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 未显式切换或键名下不存在数据源时回退默认源。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class DefaultDataSourceRouter implements DataSourceRouter {

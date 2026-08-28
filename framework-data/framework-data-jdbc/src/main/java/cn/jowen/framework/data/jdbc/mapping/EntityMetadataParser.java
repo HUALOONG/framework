@@ -12,7 +12,8 @@ import org.jspecify.annotations.NullMarked;
  * 避免各处重复创建解析器实例。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class EntityMetadataParser {

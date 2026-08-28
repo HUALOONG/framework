@@ -12,7 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 默认 {@link CacheManager} 实现，基于 Caffeine 本地缓存按需创建命名缓存实例。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class DefaultCacheManager implements CacheManager {

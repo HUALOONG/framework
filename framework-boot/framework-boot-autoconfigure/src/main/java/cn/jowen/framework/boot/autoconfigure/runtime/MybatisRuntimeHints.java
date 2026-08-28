@@ -16,7 +16,8 @@ import org.springframework.aot.hint.RuntimeHintsRegistrar;
  * GraalVM 原生镜像提示：MyBatis Flex 扩展（注册中心与各扩展点反射实例化）。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class MybatisRuntimeHints implements RuntimeHintsRegistrar {

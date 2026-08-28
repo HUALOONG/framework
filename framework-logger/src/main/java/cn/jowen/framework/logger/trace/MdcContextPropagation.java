@@ -12,7 +12,8 @@ import org.jspecify.annotations.NullMarked;
  * 自动发现，或手动包装异步任务使用。
  *
  * @author 王飞
- * @since 2026-08-22
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class MdcContextPropagation implements ContextPropagator {

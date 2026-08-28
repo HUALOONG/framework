@@ -9,7 +9,8 @@ import java.util.List;
  * 排序定义，支持多字段升/降序。不可变。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class Sort {

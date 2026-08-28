@@ -52,6 +52,26 @@
                 <artifactId>framework-extras</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>cn.jowen.framework</groupId>
+                <artifactId>framework-extras-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.jowen.framework</groupId>
+                <artifactId>framework-extras-message</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.jowen.framework</groupId>
+                <artifactId>framework-extras-storage</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.jowen.framework</groupId>
+                <artifactId>framework-extras-web</artifactId>
+                <version>${revision}</version>
+            </dependency>
 
             <dependency>
                 <groupId>cn.jowen.framework</groupId>

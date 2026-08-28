@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
  * 连接池类型。由实现层根据枚举选择对应的连接池驱动。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public enum PoolType {

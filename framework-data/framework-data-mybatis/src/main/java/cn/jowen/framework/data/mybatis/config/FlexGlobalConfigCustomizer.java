@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
  * MyBatis Flex 全局配置定制回调。业务方可实现此接口自定义 MyBatis Flex 全局参数。
  *
  * @author 王飞
- * @since 2026-08-26
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @FunctionalInterface

@@ -13,7 +13,8 @@ import java.util.Map;
  *
  * @param <T> 目标类型
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class ScalarRowMapper<T> implements RowMapper<T> {

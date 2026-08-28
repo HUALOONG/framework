@@ -19,7 +19,8 @@ import org.springframework.context.annotation.Bean;
  * 注册为指标（{@code framework.cache.hitRate} 等），满足"多级缓存命中率可观测"的出口标准。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @AutoConfiguration(after = JowenAutoConfiguration.class)

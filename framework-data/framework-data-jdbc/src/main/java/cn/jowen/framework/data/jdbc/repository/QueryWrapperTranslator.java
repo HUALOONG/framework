@@ -23,7 +23,8 @@ import java.util.List;
  * <p>join 暂未实现（TODO）：当前直接忽略，避免破坏基础单表查询。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class QueryWrapperTranslator {

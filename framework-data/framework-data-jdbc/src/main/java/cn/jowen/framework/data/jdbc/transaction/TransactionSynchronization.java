@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
  * 事务同步回调：在事务提交/完成后执行额外逻辑（如清除线程本地资源、发送事件）。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface TransactionSynchronization {

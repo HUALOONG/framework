@@ -7,7 +7,8 @@ import org.jspecify.annotations.Nullable;
  * 类型处理器注册中心，按 Java 类型注册 {@link TypeHandler}，供实现层查询并使用。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class TypeHandlerRegistry {

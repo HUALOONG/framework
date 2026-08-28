@@ -28,7 +28,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * {@link RestartHotSwapStrategy} 端到端测试：生成真实插件 jar 验证加载/启动/卸载与类加载器持有。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 class RestartHotSwapStrategyTest {
 

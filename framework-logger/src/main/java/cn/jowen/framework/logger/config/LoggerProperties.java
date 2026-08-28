@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
  * 日志模块配置属性，对应 {@code framework.logger.*} 与 {@code framework.desensitize.enabled}。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class LoggerProperties {

@@ -11,7 +11,8 @@ import java.util.List;
  * 批量参数绑定器：针对同构 SQL，将多组参数依次 {@code addBatch}。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class BatchParameterBinder {

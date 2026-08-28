@@ -26,7 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 单点 API（{@link #registerExtensionPoint} / {@link #unregisterExtensionPoint}）供一次性注册使用。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class PluginSpiBridge {

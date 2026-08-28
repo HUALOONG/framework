@@ -12,7 +12,8 @@ import org.jspecify.annotations.NullMarked;
  * JDBC 仓储工厂（SPI 实现）：按实体类型创建 {@link SimpleJdbcRepository} 实例。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @SPIImplementation(name = "jdbc")
 @NullMarked

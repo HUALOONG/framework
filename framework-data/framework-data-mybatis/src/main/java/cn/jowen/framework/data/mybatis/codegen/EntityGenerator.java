@@ -12,16 +12,34 @@ import java.nio.file.Path;
 import java.util.List;
 
 @NullMarked
+/**
+ * 「EntityGenerator」封装相关能力。
+ *
+ * @author Jowen
+ * @since 0.0.1
+ * @version 0.0.1
+ */
 public class EntityGenerator {
 
+    /** logger 常量。 */
     private static final Logger logger = LoggerFactory.getLogger(EntityGenerator.class);
+    /** config 不可变字段。 */
     private final GeneratorConfig config;
 
+    /**
+     * 构造实例。
+     * @param config 参数 config
+     */
     public EntityGenerator(GeneratorConfig config) {
         if (config == null) throw new IllegalArgumentException("config must not be null");
         this.config = config;
     }
 
+    /**
+     * 执行generate操作。
+     * @param tableInfo 参数 tableInfo
+     * @return 结果
+     */
     public String generate(TableInfo tableInfo) {
         if (tableInfo == null) throw new IllegalArgumentException("tableInfo must not be null");
         String className = toClassName(tableInfo.tableName());
@@ -48,6 +66,11 @@ public class EntityGenerator {
         return sb.toString();
     }
 
+    /**
+     * 执行generate to file操作。
+     * @param tableInfo 参数 tableInfo
+     * @throws IOException IOException 异常
+     */
     public void generateToFile(TableInfo tableInfo) throws IOException {
         String code = generate(tableInfo);
         String className = toClassName(tableInfo.tableName());
@@ -92,6 +115,20 @@ public class EntityGenerator {
         };
     }
 
+    /**
+     * 「TableInfo」不可变数据载体。
+     *
+     * @author Jowen
+     * @since 0.0.1
+ * @version 0.0.1
+     */
     public record TableInfo(String tableName, List<ColumnInfo> columns) {}
+    /**
+     * 「ColumnInfo」不可变数据载体。
+     *
+     * @author Jowen
+     * @since 0.0.1
+ * @version 0.0.1
+     */
     public record ColumnInfo(String name, String type, boolean primaryKey, boolean autoIncrement) {}
 }

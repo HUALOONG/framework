@@ -17,7 +17,8 @@ import java.util.regex.Pattern;
  * <p>自定义策略可通过实现 {@link DesensitizeRule} 并注册到 {@link Desensitizer} 扩展。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public enum DesensitizeStrategies {

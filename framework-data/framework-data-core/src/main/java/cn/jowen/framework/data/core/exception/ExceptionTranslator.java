@@ -9,7 +9,8 @@ import java.util.concurrent.Callable;
  * 数据访问异常翻译器 SPI 接口，用于将底层数据访问异常转换为框架统一的异常类型。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @SPI
 public interface ExceptionTranslator {

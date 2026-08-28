@@ -14,7 +14,8 @@ import java.util.Optional;
  * 基于 Caffeine 的本地缓存实现，支持容量上限与 TTL 淘汰，并记录命中/未命中统计。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class CaffeineCache<K, V> implements Cache<K, V> {

@@ -11,7 +11,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@link FlexAuditHandler} 单元测试：验证快照 JSON 与审计记录落库出口。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 class FlexAuditHandlerTest {
 

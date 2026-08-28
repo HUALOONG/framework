@@ -9,7 +9,8 @@ import org.jspecify.annotations.NullMarked;
  * 模板负责管理事务边界：成功则提交，发生 {@link RuntimeException} 则回滚并重抛。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class TransactionTemplate {

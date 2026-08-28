@@ -17,7 +17,8 @@ import java.sql.Connection;
  * </ul>
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class ConnectionHolder {

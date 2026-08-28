@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
  * SQL 语法错误异常，当 SQL 语句存在语法错误或无法被数据库解析时抛出。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class BadSqlGrammarException extends DataAccessException {

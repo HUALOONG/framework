@@ -9,7 +9,8 @@ import java.time.Duration;
  * 缓存锁接口。用于防止缓存击穿，确保同一时刻只有一个线程回源查询。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface CacheLock {

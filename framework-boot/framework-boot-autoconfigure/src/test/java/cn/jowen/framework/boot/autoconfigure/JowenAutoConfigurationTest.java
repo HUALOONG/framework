@@ -1,7 +1,7 @@
 package cn.jowen.framework.boot.autoconfigure;
 
 import cn.jowen.framework.cache.api.CacheManager;
-import cn.jowen.framework.extras.lock.Lock;
+import cn.jowen.framework.extras.web.ratelimit.RateLimiterManager;
 import cn.jowen.framework.i18n.api.MessageSource;
 import cn.jowen.framework.logger.mask.LogMasker;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@link JowenAutoConfiguration} 集成测试：验证总装配入口正确聚合所有子装配类。
  *
  * @author 王飞
- * @since 2026-08-26
+ * @since 0.0.1
+ * @version 0.0.1
  */
 class JowenAutoConfigurationTest {
 
@@ -45,7 +46,7 @@ class JowenAutoConfigurationTest {
                     assertThat(ctx).hasSingleBean(CacheManager.class);
                     assertThat(ctx).hasSingleBean(LogMasker.class);
                     assertThat(ctx).hasSingleBean(MessageSource.class);
-                    assertThat(ctx).hasSingleBean(Lock.class);
+                    assertThat(ctx).hasSingleBean(RateLimiterManager.class);
                 });
     }
 

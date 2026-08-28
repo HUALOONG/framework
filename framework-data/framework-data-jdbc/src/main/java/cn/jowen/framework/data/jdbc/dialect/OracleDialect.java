@@ -8,7 +8,8 @@ import org.jspecify.annotations.NullMarked;
  * Oracle 方言：分页采用 {@code ROWNUM} 三层嵌套（兼容 11g 及更早版本）。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class OracleDialect extends AbstractDialect {

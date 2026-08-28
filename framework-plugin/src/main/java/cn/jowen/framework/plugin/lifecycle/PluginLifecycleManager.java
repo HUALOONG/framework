@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 插件生命周期管理器。状态机驱动插件的 initialize/start/stop/restart/destroy。
@@ -45,38 +46,55 @@ public final class PluginLifecycleManager implements PluginManager {
     private @Nullable ExtensionRegistry extensionRegistry;
 
     /**
+     * 全局生命周期锁：保证对同一插件的 initialize/start/restart/destroy 串行执行，
+     * 避免并发下 destroy 移除注册表后 start 仍使用旧上下文导致的 NPE 或重复启动竞态。
+     * 注意：{@link #stop(String)} 作为 destroy/restart 的内部调用方不再加锁，以免重入死锁。
+     */
+    private final ReentrantLock lifecycleLock = new ReentrantLock();
+
+    /**
      * 初始化插件（注入上下文，状态 CREATED → STARTING）。
      */
     @Override
     public void initialize(String pluginId, Plugin plugin, PluginContext context) {
-        plugins.put(pluginId, plugin);
-        states.put(pluginId, new AtomicReference<>(PluginState.CREATED));
-        contexts.put(pluginId, context);
-        transition(pluginId, PluginState.STARTING);
-        publish(new PluginStartingEvent(pluginId));
+        lifecycleLock.lock();
+        try {
+            plugins.put(pluginId, plugin);
+            states.put(pluginId, new AtomicReference<>(PluginState.CREATED));
+            contexts.put(pluginId, context);
+            transition(pluginId, PluginState.STARTING);
+            publish(new PluginStartingEvent(pluginId));
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     /**
      * 启动插件（校验依赖 → 注册扩展点 → plugin.start() → STARTED）。
      */
     public void start(String pluginId) {
-        Plugin plugin = plugins.get(pluginId);
-        if (plugin == null) return;
+        lifecycleLock.lock();
         try {
-            PluginContext ctx = contexts.get(pluginId);
-            if (ctx == null) {
-                throw new IllegalStateException("插件 " + pluginId + " 未初始化");
+            Plugin plugin = plugins.get(pluginId);
+            if (plugin == null) return;
+            try {
+                PluginContext ctx = contexts.get(pluginId);
+                if (ctx == null) {
+                    throw new IllegalStateException("插件 " + pluginId + " 未初始化");
+                }
+                if (getState(pluginId) == PluginState.STOPPED) {
+                    transition(pluginId, PluginState.STARTING);
+                }
+                plugin.start(ctx);
+                transition(pluginId, PluginState.STARTED);
+                publish(new PluginStartedEvent(pluginId));
+            } catch (Exception e) {
+                transition(pluginId, PluginState.FAILED);
+                publish(new PluginFailedEvent(pluginId, e.getMessage()));
+                throw new RuntimeException("插件启动失败：" + pluginId, e);
             }
-            if (getState(pluginId) == PluginState.STOPPED) {
-                transition(pluginId, PluginState.STARTING);
-            }
-            plugin.start(ctx);
-            transition(pluginId, PluginState.STARTED);
-            publish(new PluginStartedEvent(pluginId));
-        } catch (Exception e) {
-            transition(pluginId, PluginState.FAILED);
-            publish(new PluginFailedEvent(pluginId, e.getMessage()));
-            throw new RuntimeException("插件启动失败：" + pluginId, e);
+        } finally {
+            lifecycleLock.unlock();
         }
     }
 
@@ -105,23 +123,33 @@ public final class PluginLifecycleManager implements PluginManager {
      * 重启插件（stop + start）。
      */
     public void restart(String pluginId) {
-        stop(pluginId);
-        start(pluginId);
+        lifecycleLock.lock();
+        try {
+            stop(pluginId);
+            start(pluginId);
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     /**
      * 销毁插件（stop + 清理注册 + 关闭 ClassLoader + 移除注册）。
      */
     public void destroy(String pluginId) {
-        stop(pluginId);
-        // 清理该插件在扩展注册中心的扩展，避免卸载后残留可被查询，并触发桥接源缓存失效
-        if (extensionRegistry != null) {
-            extensionRegistry.unregisterPlugin(pluginId);
+        lifecycleLock.lock();
+        try {
+            stop(pluginId);
+            // 清理该插件在扩展注册中心的扩展，避免卸载后残留可被查询，并触发桥接源缓存失效
+            if (extensionRegistry != null) {
+                extensionRegistry.unregisterPlugin(pluginId);
+            }
+            plugins.remove(pluginId);
+            states.remove(pluginId);
+            contexts.remove(pluginId);
+            publish(new PluginUnloadedEvent(pluginId));
+        } finally {
+            lifecycleLock.unlock();
         }
-        plugins.remove(pluginId);
-        states.remove(pluginId);
-        contexts.remove(pluginId);
-        publish(new PluginUnloadedEvent(pluginId));
     }
 
     /**

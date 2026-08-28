@@ -29,7 +29,8 @@ import java.util.ResourceBundle;
  * 实现运行期热加载。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class ResourceBundleMessageSource extends AbstractMessageSource {

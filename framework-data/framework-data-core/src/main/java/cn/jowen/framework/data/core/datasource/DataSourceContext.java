@@ -10,7 +10,8 @@ import org.jspecify.annotations.Nullable;
  * 基于 {@link ContextCarrier}，虚拟线程切换时自动传播。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class DataSourceContext {

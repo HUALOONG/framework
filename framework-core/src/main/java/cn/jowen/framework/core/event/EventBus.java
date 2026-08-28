@@ -18,7 +18,8 @@ import java.util.concurrent.Executor;
  * 进程内事件总线。支持注册监听器并发布事件，可指定 {@link Executor} 实现异步派发。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class EventBus {

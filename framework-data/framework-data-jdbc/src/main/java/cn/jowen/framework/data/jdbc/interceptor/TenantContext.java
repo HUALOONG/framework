@@ -7,7 +7,8 @@ import org.jspecify.annotations.Nullable;
  * 多租户上下文：基于 {@link ThreadLocal} 传递当前租户标识，供 {@link TenantInterceptor} 注入查询条件。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class TenantContext {

@@ -9,7 +9,8 @@ import org.jspecify.annotations.Nullable;
  * <p>与 {@link SystemException} 区分：业务异常信息通常可安全暴露给调用方；系统异常应被收敛后返回通用错误。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class BusinessException extends FrameworkException {

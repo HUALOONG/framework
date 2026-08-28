@@ -12,7 +12,8 @@ import org.jspecify.annotations.Nullable;
  * @param password 密码，可为 {@code null}
  * @param poolType 连接池类型，不可为 {@code null}
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public record SimpleDataSource(

@@ -19,7 +19,8 @@ import java.util.Map;
  * 字符串原样保留，嵌套对象递归处理，循环引用自动保护。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class I18nFieldInterceptor {

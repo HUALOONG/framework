@@ -10,7 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 淘汰策略工厂，按类型名注册与获取 {@link EvictionPolicy} 实例，默认提供 LRU。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class EvictionPolicyFactory {

@@ -28,7 +28,8 @@ import java.util.Date;
  * 通过 {@link #getInstance()} 获取全局唯一实例，供 {@link cn.jowen.framework.data.jdbc.statement.ParameterBinder} 使用。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class DefaultTypeHandlers extends TypeHandlerRegistry {

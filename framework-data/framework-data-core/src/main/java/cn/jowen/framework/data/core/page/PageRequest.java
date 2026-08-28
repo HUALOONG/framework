@@ -8,7 +8,8 @@ import org.jspecify.annotations.Nullable;
  * 分页请求，从 1 起计的友好 API。内部委托 {@link Pageable}（从 0 起计）。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class PageRequest {

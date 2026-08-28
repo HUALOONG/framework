@@ -23,7 +23,8 @@ import org.springframework.context.annotation.Bean;
  * 与 {@code mybatis} 路径的路由实现互斥）。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @AutoConfiguration(after = JowenAutoConfiguration.class)

@@ -8,7 +8,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @param <ID> 主键类型
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public abstract class EntityBase<ID> {

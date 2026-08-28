@@ -8,7 +8,8 @@ import org.springframework.aot.hint.RuntimeHintsRegistrar;
  * GraalVM 原生镜像提示：国际化模块（消息资源文件纳入镜像）。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class I18nRuntimeHints implements RuntimeHintsRegistrar {

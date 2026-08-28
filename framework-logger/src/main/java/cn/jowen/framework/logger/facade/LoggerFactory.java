@@ -11,7 +11,8 @@ import java.util.List;
  * 日志工厂，按名/类获取 {@link Logger}，底层实现经 {@link LoggerAdapter} SPI 解析（默认 Logback）。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class LoggerFactory {

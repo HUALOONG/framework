@@ -11,7 +11,8 @@ import java.util.Objects;
  * 基于 {@link Map} 的 {@link PluginConfiguration} 默认实现，按 key 取值并做类型转换。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class MapPluginConfiguration implements PluginConfiguration {

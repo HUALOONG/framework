@@ -12,7 +12,8 @@ import java.util.concurrent.TimeUnit;
  * 基于 Redisson {@link RLock} 的 {@link CacheLock} 实现。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class RedissonCacheLock implements CacheLock {

@@ -10,7 +10,8 @@ import java.util.function.Supplier;
  * SQL 拦截器责任链：按注册顺序编排 {@link SqlInterceptor}，并最终执行终止执行器（访问数据库）。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class InterceptorChain {

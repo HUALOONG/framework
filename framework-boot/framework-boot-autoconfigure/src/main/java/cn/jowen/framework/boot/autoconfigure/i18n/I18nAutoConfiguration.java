@@ -13,6 +13,10 @@ import cn.jowen.framework.i18n.format.NamedParameterMessageFormatter;
 import cn.jowen.framework.i18n.locale.FixedLocaleResolver;
 import cn.jowen.framework.i18n.source.AbstractMessageSource;
 import cn.jowen.framework.i18n.metrics.I18nMetricsCollector;
+import cn.jowen.framework.data.jdbc.connection.ConnectionProvider;
+import cn.jowen.framework.data.jdbc.connection.DataSourceConnectionProvider;
+import cn.jowen.framework.data.jdbc.core.JdbcTemplate;
+import cn.jowen.framework.data.jdbc.interceptor.InterceptorChain;
 import cn.jowen.framework.i18n.source.CompositeMessageSource;
 import cn.jowen.framework.i18n.source.DatabaseMessageSource;
 import cn.jowen.framework.i18n.source.PropertiesMessageSource;
@@ -27,8 +31,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.redisson.api.RedissonClient;
+
+import javax.sql.DataSource;
 
 import java.util.List;
 import java.util.Locale;
@@ -46,7 +51,8 @@ import java.util.Locale;
  * </ul>
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @AutoConfiguration(after = JowenAutoConfiguration.class)
@@ -67,21 +73,23 @@ public class I18nAutoConfiguration {
     /**
      * 消息源（组合包装，便于扩展多源）。
      *
-     * @param properties   配置，不可为 {@code null}
-     * @param jdbcTemplate JdbcTemplate（DATABASE 源时注入，可为 {@code null}）
-     * @param customizers  消息源定制器（可选）
+     * @param properties  配置，不可为 {@code null}
+     * @param dataSource  JDBC 数据源（DATABASE 源时注入，可为 {@code null}）
+     * @param customizers 消息源定制器（可选）
      * @return 消息源，不可为 {@code null}
      */
     @Bean("frameworkMessageSource")
     @ConditionalOnMissingBean(name = "frameworkMessageSource")
     public MessageSource messageSource(BootI18nProperties properties,
-                                       @Autowired(required = false) JdbcTemplate jdbcTemplate,
+                                       @Autowired(required = false) DataSource dataSource,
                                        @Autowired(required = false) List<MessageSourceCustomizer> customizers,
                                        ObjectProvider<MeterRegistry> meterRegistry,
                                        ObjectProvider<RedissonClient> redisson) {
         CompositeMessageSource composite = new CompositeMessageSource();
         SourceType source = properties.getSource();
-        if (source == SourceType.DATABASE && jdbcTemplate != null) {
+        if (source == SourceType.DATABASE && dataSource != null) {
+            ConnectionProvider provider = new DataSourceConnectionProvider(dataSource);
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(provider, new InterceptorChain());
             DatabaseMessageSource dbSource = new DatabaseMessageSource(jdbcTemplate);
             applyFormatter(dbSource, properties.getFormatter());
             composite.add(dbSource);

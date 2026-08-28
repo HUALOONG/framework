@@ -7,7 +7,8 @@ import org.jspecify.annotations.NullMarked;
  * 主键生成器工厂：将 core 的 {@link GeneratedValue.Strategy} 映射为默认 {@link IdGenerator} 实例。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class IdGenerators {

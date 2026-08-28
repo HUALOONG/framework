@@ -11,7 +11,8 @@ import org.springframework.boot.health.contributor.HealthIndicator;
  * 插件健康指示器：任一插件处于 FAILED 状态时上报 DOWN。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class PluginHealthIndicator implements HealthIndicator {

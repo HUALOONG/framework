@@ -8,7 +8,8 @@ import org.jspecify.annotations.NullMarked;
  * SQL Server 方言：分页采用 {@code OFFSET ... ROWS FETCH NEXT ... ROWS ONLY}（需配合 ORDER BY）。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class SQLServerDialect extends AbstractDialect {

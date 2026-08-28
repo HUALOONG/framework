@@ -10,7 +10,8 @@ import java.lang.annotation.Target;
  * 缓存读取注解。命中则直接返回，未命中执行方法并缓存结果。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

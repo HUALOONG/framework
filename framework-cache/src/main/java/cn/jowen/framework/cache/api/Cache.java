@@ -12,7 +12,8 @@ import java.util.Optional;
  * @param <K> 键类型
  * @param <V> 值类型
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface Cache<K, V> {

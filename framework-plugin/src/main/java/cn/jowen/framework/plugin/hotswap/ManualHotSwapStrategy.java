@@ -11,7 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 手动热部署策略：不自动加载/卸载，仅收集变更清单待人工处置。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class ManualHotSwapStrategy implements PluginFileWatcher.FileChangeHandler {

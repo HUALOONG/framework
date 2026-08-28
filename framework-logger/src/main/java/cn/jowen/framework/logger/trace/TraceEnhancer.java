@@ -12,7 +12,8 @@ import java.util.Optional;
  * <p>使用方式：业务代码只需调用 {@link #enhance(Logger, String)} 获取增强后的日志信息字符串。
  *
  * @author 王飞
- * @since 2026-08-22
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class TraceEnhancer {

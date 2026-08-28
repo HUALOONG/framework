@@ -9,7 +9,8 @@ import org.jspecify.annotations.NullMarked;
  * 不调用 {@code proceed()} 将中断执行（如权限拦截器可短路返回）。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface SqlInterceptor {

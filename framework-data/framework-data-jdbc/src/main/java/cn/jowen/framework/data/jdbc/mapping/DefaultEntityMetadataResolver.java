@@ -32,7 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 解析结果按实体类缓存，避免重复反射。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class DefaultEntityMetadataResolver implements EntityMetadataResolver {

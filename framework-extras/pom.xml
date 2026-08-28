@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -11,143 +11,13 @@
     </parent>
 
     <artifactId>framework-extras</artifactId>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
-    <description>企业级扩展工具集，提供分布式锁、接口限流、幂等控制、文件存储、消息通知、Excel 处理、验证码、IP 地域识别、数据脱敏、操作日志、数据权限等 12 项高频能力，按需引入、互不耦合</description>
+    <description>扩展模块聚合（通用、消息、存储、Web）。</description>
 
-    <dependencies>
-        <dependency>
-            <groupId>cn.jowen.framework</groupId>
-            <artifactId>framework-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cn.jowen.framework</groupId>
-            <artifactId>framework-cache</artifactId>
-        </dependency>
-
-        <!-- 日志门面：操作日志/通知日志输出 -->
-        <dependency>
-            <groupId>cn.jowen.framework</groupId>
-            <artifactId>framework-logger</artifactId>
-        </dependency>
-
-        <!-- 数据脱敏 Jackson 3 序列化适配（仅 desensitize 需要，optional 避免向下游强传导） -->
-        <dependency>
-            <groupId>tools.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.assertj</groupId>
-            <artifactId>assertj-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- ========== Config 装配层（optional） ========== -->
-        <!-- Spring Boot autoconfigure：@EnableExtras 注解驱动装配（ExtrasBootstrapConfiguration）与 @ConditionalOn* 条件需要 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- ========== AOP 拦截器（optional） ========== -->
-        <!-- Spring AOP + AspectJ Weaver：版本由 spring-boot-dependencies BOM 管理，不写 version -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-aop</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-expression</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.aspectj</groupId>
-            <artifactId>aspectjweaver</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- ========== Notification 渠道（optional） ========== -->
-        <!-- Email -->
-        <dependency>
-            <groupId>org.eclipse.angus</groupId>
-            <artifactId>angus-mail</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <!-- SMS（阿里云） -->
-        <dependency>
-            <groupId>com.aliyun</groupId>
-            <artifactId>dysmsapi20170525</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <!-- 钉钉（骨架实现，无 SDK 依赖；集成时需替换为 com.dingtalk.open:dingtalk-stream） -->
-        <!-- 企业微信（骨架实现，无 SDK 依赖；集成时需替换为专用 SDK） -->
-        <!-- Webhook（HTTP） -->
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- ========== Storage 云后端（optional） ========== -->
-        <!-- MinIO -->
-        <dependency>
-            <groupId>io.minio</groupId>
-            <artifactId>minio</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <!-- 阿里云 OSS -->
-        <dependency>
-            <groupId>com.aliyun.oss</groupId>
-            <artifactId>aliyun-sdk-oss</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <!-- AWS S3 -->
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>s3</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- ========== Test（test scope） ========== -->
-        <!-- WireMock（云存储单测 mock） -->
-        <dependency>
-            <groupId>org.wiremock</groupId>
-            <artifactId>wiremock</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- ========== Excel 处理（optional） ========== -->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>easyexcel</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- ========== IP 地域解析（optional） ========== -->
-        <dependency>
-            <groupId>org.lionsoul</groupId>
-            <artifactId>ip2region</artifactId>
-            <version>2.7.0</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-        </dependency>
-    </dependencies>
-
+    <modules>
+        <module>framework-extras-common</module>
+        <module>framework-extras-message</module>
+        <module>framework-extras-storage</module>
+    </modules>
 </project>

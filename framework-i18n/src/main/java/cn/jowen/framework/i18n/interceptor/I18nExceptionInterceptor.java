@@ -15,7 +15,8 @@ import java.util.Locale;
  * 编码未找到时回退为异常原始消息。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class I18nExceptionInterceptor {

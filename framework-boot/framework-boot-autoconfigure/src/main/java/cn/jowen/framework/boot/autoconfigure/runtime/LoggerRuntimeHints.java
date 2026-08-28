@@ -10,7 +10,8 @@ import org.springframework.aot.hint.RuntimeHintsRegistrar;
  * GraalVM 原生镜像提示：日志模块（脱敏注解反射，扫描用户对象字段时保留元数据）。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class LoggerRuntimeHints implements RuntimeHintsRegistrar {

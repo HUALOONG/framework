@@ -8,7 +8,8 @@ import org.jspecify.annotations.Nullable;
  * 方言探测器：依据数据库产品名或 JDBC URL 推断 {@link DatabaseType}。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class JdbcDialectDetector {
@@ -63,7 +64,7 @@ public final class JdbcDialectDetector {
         if (u.contains(":mysql:") || u.contains("mariadb")) {
             return DatabaseType.MYSQL;
         }
-        if (u.contains(":postgre:")) {
+        if (u.contains(":postgre")) {
             return DatabaseType.POSTGRESQL;
         }
         if (u.contains(":oracle:")) {

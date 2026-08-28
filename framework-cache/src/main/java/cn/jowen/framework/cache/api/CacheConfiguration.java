@@ -11,7 +11,8 @@ import java.time.Duration;
  * 缓存配置。用于构建 {@link Cache} 实例的完整配置参数，支持链式构造。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class CacheConfiguration {

@@ -12,21 +12,43 @@ import org.jspecify.annotations.NullMarked;
 import java.util.concurrent.Callable;
 
 @NullMarked
+/**
+ * 「FlexTransactionAdapter」封装相关能力。
+ *
+ * @author Jowen
+ * @since 0.0.1
+ * @version 0.0.1
+ */
 public final class FlexTransactionAdapter implements TransactionManager {
 
+    /** logger 常量。 */
     private static final Logger logger = LoggerFactory.getLogger(FlexTransactionAdapter.class);
 
+    /** txManager 不可变字段。 */
     private final Object txManager;
 
+    /**
+     * 构造实例。
+     * @param txManager 参数 txManager
+     */
     public FlexTransactionAdapter(Object txManager) {
         if (txManager == null) throw new IllegalArgumentException("txManager must not be null");
         this.txManager = txManager;
     }
 
+    /**
+     * 执行template操作。
+     * @return 结果
+     */
     public TransactionTemplate template() {
         return new TransactionTemplate(this);
     }
 
+    /**
+     * 执行begin操作。
+     * @param definition 参数 definition
+     * @return 结果
+     */
     @Override
     public TransactionStatus begin(TransactionDefinition definition) {
         if (definition == null) throw new IllegalArgumentException("definition must not be null");
@@ -40,6 +62,10 @@ public final class FlexTransactionAdapter implements TransactionManager {
         return status;
     }
 
+    /**
+     * 执行commit操作。
+     * @param status 参数 status
+     */
     @Override
     public void commit(TransactionStatus status) {
         if (status == null) throw new IllegalArgumentException("status must not be null");
@@ -54,6 +80,10 @@ public final class FlexTransactionAdapter implements TransactionManager {
         }
     }
 
+    /**
+     * 执行rollback操作。
+     * @param status 参数 status
+     */
     @Override
     public void rollback(TransactionStatus status) {
         if (status == null) throw new IllegalArgumentException("status must not be null");
@@ -68,6 +98,11 @@ public final class FlexTransactionAdapter implements TransactionManager {
         }
     }
 
+    /**
+     * 执行execute操作。
+     * @param callback 参数 callback
+     * @param action 参数 action
+     */
     public void execute(TransactionCallback callback, String action) {
         if (callback == null) throw new IllegalArgumentException("callback must not be null");
         if (action == null) throw new IllegalArgumentException("action must not be null");
@@ -81,6 +116,11 @@ public final class FlexTransactionAdapter implements TransactionManager {
         }
     }
 
+    /**
+     * 执行execute操作。
+     * @param action 参数 action
+     * @return 结果
+     */
     public <R> R execute(Callable<R> callback, String action) {
         if (callback == null) throw new IllegalArgumentException("callback must not be null");
         if (action == null) throw new IllegalArgumentException("action must not be null");
@@ -98,12 +138,24 @@ public final class FlexTransactionAdapter implements TransactionManager {
         }
     }
 
+    /**
+     * 「FlexTxStatus」封装相关能力。
+     *
+     * @author Jowen
+     * @since 0.0.1
+ * @version 0.0.1
+     */
     private static final class FlexTxStatus implements TransactionStatus {
+        /** rollbackOnly 字段。 */
         private boolean rollbackOnly;
+        /** committed 字段。 */
         private boolean committed;
 
+        /** rollbackOnly 字段。 */
         @Override public boolean isRollbackOnly() { return rollbackOnly; }
+        /** void 字段。 */
         @Override public void setRollbackOnly() { this.rollbackOnly = true; }
+        /** committed 字段。 */
         @Override public boolean isCompleted() { return committed; }
     }
 }

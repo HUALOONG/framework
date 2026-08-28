@@ -11,7 +11,8 @@ import org.springframework.aot.hint.RuntimeHintsRegistrar;
  * GraalVM 原生镜像提示：缓存模块（默认/可选序列化器反射实例化）。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class CacheRuntimeHints implements RuntimeHintsRegistrar {

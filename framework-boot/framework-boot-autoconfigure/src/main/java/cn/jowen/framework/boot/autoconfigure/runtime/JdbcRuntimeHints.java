@@ -14,7 +14,8 @@ import org.springframework.aot.hint.RuntimeHintsRegistrar;
  * GraalVM 原生镜像提示：JDBC 数据层（实体元注解反射、行映射器构造反射）。
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class JdbcRuntimeHints implements RuntimeHintsRegistrar {

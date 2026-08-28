@@ -20,7 +20,8 @@ import java.util.Map;
  * （列名 → 值），再交由 {@code RowMapper} 完成对象映射，从而与 core 抽象层解耦。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class JdbcUtils {

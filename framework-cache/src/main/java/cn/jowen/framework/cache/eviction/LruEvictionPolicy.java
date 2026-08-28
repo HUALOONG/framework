@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
  * LRU（最近最少使用）淘汰策略。淘汰访问时间最久的条目。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class LruEvictionPolicy implements EvictionPolicy {

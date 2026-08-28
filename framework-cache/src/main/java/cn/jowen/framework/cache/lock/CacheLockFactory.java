@@ -11,7 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 缓存锁工厂，基于 Redisson 按锁名创建并缓存 {@link CacheLock} 实例。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class CacheLockFactory {

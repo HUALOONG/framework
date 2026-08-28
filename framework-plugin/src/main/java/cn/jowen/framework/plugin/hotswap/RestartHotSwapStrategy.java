@@ -29,7 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>类加载器由本策略持有（随插件生命周期存活），卸载时释放旧类加载器，关闭时统一清理。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class RestartHotSwapStrategy implements PluginFileWatcher.FileChangeHandler, Closeable {

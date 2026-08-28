@@ -9,7 +9,8 @@ import java.util.Locale;
  * 消息源。零耦合的国际化消息解析抽象，不依赖 Servlet 或 Spring。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface MessageSource {

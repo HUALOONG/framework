@@ -12,7 +12,21 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
+/**
+ * 「GeneratedValue」接口定义。
+ *
+ * @author Jowen
+ * @since 0.0.1
+ * @version 0.0.1
+ */
 public @interface GeneratedValue {
     Strategy value() default Strategy.AUTO;
+    /**
+     * 「Strategy」枚举定义。
+     *
+     * @author Jowen
+     * @since 0.0.1
+ * @version 0.0.1
+     */
     enum Strategy { AUTO, SNOWFLAKE, UUID, ASSIGNED }
 }

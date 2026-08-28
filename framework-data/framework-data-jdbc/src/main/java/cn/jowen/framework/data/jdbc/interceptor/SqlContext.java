@@ -16,7 +16,8 @@ import java.util.function.Supplier;
  * 最终由 JdbcTemplate 提供的终止执行器（terminal）落地到数据库。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class SqlContext {

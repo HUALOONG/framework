@@ -17,7 +17,8 @@ import static cn.jowen.framework.core.util.StringUtils.isEmpty;
  * <p>所有方法均为静态；满足即正常返回，不满足即抛异常。用于替代散落的 {@code if (x == null) throw ...} 模板代码。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class Assert {

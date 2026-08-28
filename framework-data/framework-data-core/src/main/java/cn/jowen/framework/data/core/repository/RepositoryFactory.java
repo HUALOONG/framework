@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
  * 仓储工厂，按实体类型创建 {@link Repository} 实例。各实现模块提供对应工厂实现（经 SPI 或装配层注册）。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface RepositoryFactory {

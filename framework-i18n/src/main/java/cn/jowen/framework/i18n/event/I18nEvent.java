@@ -9,7 +9,8 @@ import org.jspecify.annotations.Nullable;
  * 通过 {@link cn.jowen.framework.core.event.EventBus} 发布与订阅。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public abstract class I18nEvent extends FrameworkEvent {

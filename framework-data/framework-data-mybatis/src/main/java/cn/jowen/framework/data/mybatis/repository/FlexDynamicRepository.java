@@ -10,16 +10,35 @@ import java.util.List;
 import java.util.Map;
 
 @NullMarked
+/**
+ * 「FlexDynamicRepository」封装相关能力。
+ *
+ * @author Jowen
+ * @since 0.0.1
+ * @version 0.0.1
+ */
 public class FlexDynamicRepository implements DynamicRepository {
 
+    /** logger 常量。 */
     private static final Logger logger = LoggerFactory.getLogger(FlexDynamicRepository.class);
 
+    /** sqlSessionFactory 不可变字段。 */
     private final Object sqlSessionFactory;
 
+    /**
+     * 构造实例。
+     * @param sqlSessionFactory 参数 sqlSessionFactory
+     */
     public FlexDynamicRepository(Object sqlSessionFactory) {
         this.sqlSessionFactory = sqlSessionFactory;
     }
 
+    /**
+     * 执行query操作。
+     * @param sql 参数 sql
+     * @param params 参数 params
+     * @return 结果
+     */
     @Override
     public List<Map<String, Object>> query(String sql, Object... params) {
         try {
@@ -32,6 +51,12 @@ public class FlexDynamicRepository implements DynamicRepository {
         }
     }
 
+    /**
+     * 执行update操作。
+     * @param sql 参数 sql
+     * @param params 参数 params
+     * @return 结果
+     */
     @Override
     public int update(String sql, Object... params) {
         try {
@@ -42,6 +67,12 @@ public class FlexDynamicRepository implements DynamicRepository {
         }
     }
 
+    /**
+     * 执行query one操作。
+     * @param sql 参数 sql
+     * @param params 参数 params
+     * @return 结果
+     */
     @Override
     public Map<String, Object> queryOne(String sql, Object... params) {
         List<Map<String, Object>> rows = query(sql, params);

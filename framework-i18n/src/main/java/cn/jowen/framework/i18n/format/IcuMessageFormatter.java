@@ -18,7 +18,8 @@ import java.util.Locale;
  * 已引入时自动使用 ICU 能力，无需改动调用方。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class IcuMessageFormatter implements MessageFormatter {

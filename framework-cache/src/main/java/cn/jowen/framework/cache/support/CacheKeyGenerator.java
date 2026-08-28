@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
  * 缓存键生成器接口。支持自定义缓存键的生成逻辑。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public interface CacheKeyGenerator {

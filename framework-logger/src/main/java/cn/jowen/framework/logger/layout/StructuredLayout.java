@@ -11,7 +11,8 @@ import java.util.Arrays;
  * 结构化日志布局。当前提供文本行格式（含时间戳/级别/logger/消息），JSON 输出待 Jackson 3 集成后扩展。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class StructuredLayout {

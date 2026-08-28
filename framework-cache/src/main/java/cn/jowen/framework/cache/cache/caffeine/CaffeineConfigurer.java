@@ -15,7 +15,8 @@ import org.jspecify.annotations.NullMarked;
  * }</pre>
  *
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @FunctionalInterface
 @NullMarked

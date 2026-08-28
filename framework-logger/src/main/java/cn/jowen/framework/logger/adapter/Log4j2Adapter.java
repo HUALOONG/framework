@@ -11,7 +11,8 @@ import org.jspecify.annotations.NullMarked;
  * 可选日志适配器，桥接 Log4j2（经 SLF4J 绑定 {@code log4j-slf4j-impl}）。order 高于 Logback，存在时优先。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @Activate(order = -10)

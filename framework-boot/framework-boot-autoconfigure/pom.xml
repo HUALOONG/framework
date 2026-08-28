@@ -46,9 +46,27 @@
             <artifactId>framework-plugin</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <!-- extras 具体实现模块（optional，装配类按需生效） -->
         <dependency>
             <groupId>cn.jowen.framework</groupId>
-            <artifactId>framework-extras</artifactId>
+            <artifactId>framework-extras-common</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-extras-message</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-extras-storage</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>cn.jowen.framework</groupId>
+            <artifactId>framework-boot-web</artifactId>
+            <version>${revision}</version>
             <optional>true</optional>
         </dependency>
 
@@ -75,11 +93,7 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- 数据源装配层强依赖：JDBC 模板与事务抽象（由框架直接聚合，用户无需额外引入） -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-jdbc</artifactId>
-        </dependency>
+        <!-- 数据源装配层强依赖：事务抽象（JDBC 模板已由 framework-data-jdbc 自带的 JdbcTemplate 替代，零 Spring 依赖） -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-tx</artifactId>
@@ -161,6 +175,11 @@
         <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>cn.jowen.framework</groupId>

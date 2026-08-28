@@ -16,7 +16,8 @@ import java.util.List;
  * 调用 {@link Desensitizer#getInstance()} 默认规则脱敏后再打印。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class LoggingInterceptor implements SqlInterceptor {

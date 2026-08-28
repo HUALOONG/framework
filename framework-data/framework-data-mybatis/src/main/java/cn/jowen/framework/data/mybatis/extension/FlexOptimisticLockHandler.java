@@ -4,11 +4,25 @@ import java.lang.reflect.Method;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
+/**
+ * 「FlexOptimisticLock」封装相关能力。
+ *
+ * @author Jowen
+ * @since 0.0.1
+ * @version 0.0.1
+ */
 public class FlexOptimisticLockHandler implements ExtensionRegistry.Extension {
 
+    /** return 字段。 */
     @Override public String name() { return "optimisticLock"; }
+    /** return 字段。 */
     @Override public int order() { return 400; }
 
+    /**
+     * 执行check update result操作。
+     * @param entity 参数 entity
+     * @param rows 参数 rows
+     */
     public void checkUpdateResult(Object entity, int rows) {
         if (rows == 0 && hasVersionField(entity)) {
             throw new cn.jowen.framework.data.mybatis.exception.FlexOptimisticLockException(
@@ -16,6 +30,10 @@ public class FlexOptimisticLockHandler implements ExtensionRegistry.Extension {
         }
     }
 
+    /**
+     * 执行increment version操作。
+     * @param entity 参数 entity
+     */
     public void incrementVersion(Object entity) {
         try {
             var getter = findMethod(entity.getClass(), "getVersion");

@@ -27,18 +27,10 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- DB 消息源/轮询 watcher（source/reload 子包）按需使用 -->
+        <!-- DB 消息源/轮询 watcher（source/reload 子包）基于 framework-data-jdbc 的 JdbcTemplate 实现（零 Spring 依赖） -->
         <dependency>
             <groupId>cn.jowen.framework</groupId>
             <artifactId>framework-data-jdbc</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- Spring JDBC：DatabaseMessageSource / DatabasePollingWatcher 需 JdbcTemplate（非 Spring Boot，仅提供 API） -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-jdbc</artifactId>
-            <optional>true</optional>
         </dependency>
 
         <!-- Micrometer 2.0 指标（可选）：I18nMetricsCollector 上报消息解析统计 -->
@@ -63,6 +55,18 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

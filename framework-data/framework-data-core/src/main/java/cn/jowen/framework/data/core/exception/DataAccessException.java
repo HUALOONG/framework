@@ -4,7 +4,8 @@ package cn.jowen.framework.data.core.exception;
  * 数据访问异常基类，涵盖所有数据访问层的通用异常。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 public class DataAccessException extends DataException {
 

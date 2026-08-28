@@ -15,7 +15,8 @@ import java.util.regex.Pattern;
  * {@link FormatException}。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class NamedParameterMessageFormatter implements MessageFormatter {

@@ -16,7 +16,8 @@ import java.util.ServiceLoader;
  *
  * @param <T> 扩展点接口类型
  * @author 王飞
- * @since 2026-08-27
+ * @since 0.0.1
+ * @version 0.0.1
  */
 public final class ServiceLoaderExtensionSource<T> implements ExtensionSource<T> {
 

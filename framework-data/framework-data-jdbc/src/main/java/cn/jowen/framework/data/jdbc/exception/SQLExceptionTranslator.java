@@ -15,7 +15,8 @@ import java.util.concurrent.Callable;
  * 同时实现 core 的 {@link ExceptionTranslator#translate(String, Callable)} 以兼容统一异常翻译入口。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @SPIImplementation(name = "jdbc")
 public final class SQLExceptionTranslator implements ExceptionTranslator {

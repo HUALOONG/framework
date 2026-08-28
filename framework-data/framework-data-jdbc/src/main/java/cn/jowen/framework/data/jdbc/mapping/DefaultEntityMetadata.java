@@ -15,7 +15,8 @@ import java.util.List;
  * @param properties  可持久化属性列表
  * @param idColumn    主键列名，无主键为 {@code null}
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public record DefaultEntityMetadata(Class<?> entityClass, String tableName,

@@ -14,7 +14,8 @@ import java.util.stream.Collectors;
  * data-core {@link QueryWrapper} 与 MyBatis Flex {@code QueryWrapper} 之间的条件操作符映射表。
  *
  * @author 王飞
- * @since 2026-08-26
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 final class ConditionMapper {

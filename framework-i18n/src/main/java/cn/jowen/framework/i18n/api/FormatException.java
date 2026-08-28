@@ -7,7 +7,8 @@ import org.jspecify.annotations.NullMarked;
  * 通常源于参数数量不匹配、占位符语法错误或类型不兼容。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class FormatException extends I18nException {

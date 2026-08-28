@@ -35,7 +35,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 重载期间新请求继续读取旧快照，重载完成后一次性原子切换，避免读到半更新状态。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class PropertiesMessageSource implements ReloadableMessageSource, CountableMessageSource {

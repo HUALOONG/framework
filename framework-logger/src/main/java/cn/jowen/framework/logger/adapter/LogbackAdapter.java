@@ -11,7 +11,8 @@ import org.slf4j.LoggerFactory;
  * 默认日志适配器，桥接 SLF4J/Logback。当 classpath 存在 SLF4J 时由 {@link LoggerFactory} 自动激活。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 @Activate(order = 0)

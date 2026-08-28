@@ -17,7 +17,8 @@ import java.util.concurrent.TimeUnit;
  * 基于 Redisson {@code RMapCache} 的分布式缓存实现，支持逐键独立 TTL 与容量上限。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class RedissonCache<K extends Serializable, V extends Serializable> implements Cache<K, V> {

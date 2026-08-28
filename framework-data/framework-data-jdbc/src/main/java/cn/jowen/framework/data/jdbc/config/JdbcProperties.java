@@ -11,7 +11,8 @@ import org.jspecify.annotations.NullMarked;
  * 避免重复定义同名属性类。boot 层通过继承本类（{@code BootJdbcProperties}）绑定 Spring 配置。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class JdbcProperties {

@@ -10,7 +10,8 @@ import java.lang.annotation.Target;
  * 缓存清除注解。方法执行后清除指定缓存键或全部缓存。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

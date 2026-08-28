@@ -11,7 +11,8 @@ import java.util.Map;
  * 支持按需覆盖与追加（如启用 {@link IcuMessageFormatter}）。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class FormatterRegistry {

@@ -12,7 +12,8 @@ import java.time.Instant;
  * <p>使用 Jackson 3（{@code tools.jackson}）进行序列化，字段包含时间戳、级别、logger 名、追踪 ID、消息。
  *
  * @author 王飞
- * @since 2026-08-22
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class JsonLogFormatter {

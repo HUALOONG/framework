@@ -4,7 +4,8 @@ package cn.jowen.framework.data.core.sort;
  * 排序中 NULL 值的处理策略。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 public enum NullHandling {
 

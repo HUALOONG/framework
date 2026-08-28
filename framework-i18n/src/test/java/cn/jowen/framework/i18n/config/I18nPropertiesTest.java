@@ -11,7 +11,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@link I18nProperties} 测试。
  *
  * @author 王飞
- * @since 2026-08-24
+ * @since 0.0.1
+ * @version 0.0.1
  */
 class I18nPropertiesTest {
 

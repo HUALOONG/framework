@@ -9,7 +9,8 @@ import java.util.Objects;
  * 类与类加载相关工具。优先使用线程上下文类加载器，回退到当前类加载器。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class ClassUtils {

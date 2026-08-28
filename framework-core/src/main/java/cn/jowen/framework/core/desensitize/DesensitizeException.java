@@ -8,7 +8,8 @@ import org.jspecify.annotations.Nullable;
  * 脱敏异常：脱敏配置错误（未知策略、非法保留位数等）时抛出。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class DesensitizeException extends FrameworkException {

@@ -7,7 +7,8 @@ import org.jspecify.annotations.Nullable;
  * 系统异常，表示框架或运行环境内部错误（如配置错误、不可用资源），不应对外暴露细节。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class SystemException extends FrameworkException {

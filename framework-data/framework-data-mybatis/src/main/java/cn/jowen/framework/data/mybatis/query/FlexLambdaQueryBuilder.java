@@ -17,7 +17,8 @@ import java.util.function.Function;
  *
  * @param <T> 实体类型
  * @author 王飞
- * @since 2026-08-26
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class FlexLambdaQueryBuilder<T> {

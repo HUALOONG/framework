@@ -12,7 +12,8 @@ import java.util.Map;
  * 直接返回「列名 → 值」的 {@code Map}。
  *
  * @author 王飞
- * @since 2026-08-25
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public final class SqlRunner {

@@ -20,7 +20,8 @@ import java.util.Locale;
  * 无请求区域时写入系统默认语言标签。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class I18nResponseInterceptor implements Filter {

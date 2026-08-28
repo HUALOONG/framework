@@ -7,7 +7,8 @@ import org.jspecify.annotations.NullMarked;
  * 与 {@code ResourceLoadFailedEvent} 互为补充：本异常面向同步调用方，事件面向异步监控。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class ResourceLoadException extends I18nException {

@@ -7,7 +7,8 @@ import org.jspecify.annotations.Nullable;
  * 资源加载失败事件。热加载过程中底层资源读取/解析抛错时发布，携带失败原因供告警与排障。
  *
  * @author 王飞
- * @since 2026-08-21
+ * @since 0.0.1
+ * @version 0.0.1
  */
 @NullMarked
 public class ResourceLoadFailedEvent extends I18nEvent {
