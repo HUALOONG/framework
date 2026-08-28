@@ -6,6 +6,7 @@ import cn.jowen.framework.cache.annotation.Cacheable;
 import cn.jowen.framework.cache.annotation.CachePut;
 import cn.jowen.framework.cache.api.Cache;
 import cn.jowen.framework.cache.api.CacheManager;
+import cn.jowen.framework.cache.event.CacheEventListener;
 import cn.jowen.framework.cache.event.*;
 import cn.jowen.framework.cache.support.CacheKeyGenerator;
 import cn.jowen.framework.cache.support.CacheOperationContext;
@@ -18,10 +19,15 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.DefaultParameterNameDiscoverer;
+import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.core.annotation.Order;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -44,12 +50,30 @@ public class SpringCacheAnnotationProcessor extends CacheAnnotationProcessor {
     private final Map<String, CacheKeyGenerator> keyGenerators = new ConcurrentHashMap<>();
 
     /**
+     * 缓存事件监听器（无 EventBus，直接逐个分发）。
+     */
+    private final List<CacheEventListener> eventListeners = new java.util.ArrayList<>();
+
+    private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();
+    private static final ParameterNameDiscoverer PARAMETER_NAMES = new DefaultParameterNameDiscoverer();
+
+    /**
      * 从 Spring 容器注入所有 CacheKeyGenerator Bean。
      */
     @Autowired(required = false)
     public void setKeyGenerators(Map<String, CacheKeyGenerator> beans) {
         if (beans != null) {
             keyGenerators.putAll(beans);
+        }
+    }
+
+    /**
+     * 从 Spring 容器注入所有缓存事件监听器。
+     */
+    @Autowired(required = false)
+    public void setEventListeners(List<CacheEventListener> listeners) {
+        if (listeners != null) {
+            eventListeners.addAll(listeners);
         }
     }
 
@@ -215,26 +239,57 @@ public class SpringCacheAnnotationProcessor extends CacheAnnotationProcessor {
     }
 
     private String evaluateSpEL(String expression, CacheOperationContext ctx) {
-        // TODO: 接入 SpEL 表达式解析（Spring Expression）
-        return expression;
+        if (expression == null || expression.isBlank()) {
+            return expression;
+        }
+        StandardEvaluationContext eval = new StandardEvaluationContext();
+        eval.setVariable("target", ctx.target());
+        Object[] args = ctx.args() == null ? new Object[0] : ctx.args();
+        Method method = ctx.method();
+        String[] names = method == null ? null : PARAMETER_NAMES.getParameterNames(method);
+        for (int i = 0; i < args.length; i++) {
+            // 支持 #a0/#p0 索引引用与按参数名引用（如 #id）
+            eval.setVariable("a" + i, args[i]);
+            eval.setVariable("p" + i, args[i]);
+            if (names != null && i < names.length && names[i] != null) {
+                eval.setVariable(names[i], args[i]);
+            }
+        }
+        return String.valueOf(SPEL_PARSER.parseExpression(expression).getValue(eval));
     }
 
     private void publishEvent(CacheEvent event) {
-        // TODO: 通过 EventBus SPI 异步分发
+        // cache 模块无 EventBus，直接逐个分发；单监听失败不阻断缓存主流程
+        for (CacheEventListener listener : eventListeners) {
+            try {
+                listener.onEvent(event);
+            } catch (RuntimeException ignored) {
+                // 事件监听属旁路能力，失败仅忽略
+            }
+        }
     }
 
     @Override
     public void processCacheable(CacheOperationContext context, CacheManager cacheManager, @Nullable CacheKeyGenerator keyGenerator) {
-
+        // 基类 SPI 签名为 void、无法返回方法结果，故委托既有的读-写缓存实现
+        try {
+            processRead(context);
+        } catch (Throwable e) {
+            throw new IllegalStateException("缓存读取失败", e);
+        }
     }
 
     @Override
     public void processCachePut(CacheOperationContext context, CacheManager cacheManager, @Nullable CacheKeyGenerator keyGenerator) {
-
+        try {
+            processWrite(context);
+        } catch (Throwable e) {
+            throw new IllegalStateException("缓存写入失败", e);
+        }
     }
 
     @Override
     public void processCacheEvict(CacheOperationContext context, CacheManager cacheManager, @Nullable CacheKeyGenerator keyGenerator) {
-
+        evict(context);
     }
 }
