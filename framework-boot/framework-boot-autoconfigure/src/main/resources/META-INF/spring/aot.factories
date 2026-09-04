@@ -4,4 +4,5 @@ cn.jowen.framework.boot.autoconfigure.runtime.I18nRuntimeHints,\
 cn.jowen.framework.boot.autoconfigure.runtime.JdbcRuntimeHints,\
 cn.jowen.framework.boot.autoconfigure.runtime.LoggerRuntimeHints,\
 cn.jowen.framework.boot.autoconfigure.runtime.MybatisRuntimeHints,\
-cn.jowen.framework.boot.autoconfigure.runtime.SpiRuntimeHints
+cn.jowen.framework.boot.autoconfigure.runtime.SpiRuntimeHints,\
+cn.jowen.framework.boot.autoconfigure.runtime.ExtrasRuntimeHints
