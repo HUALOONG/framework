@@ -90,21 +90,92 @@
 
     <build>
         <plugins>
+            <!-- 让 jacoco:check 在 pom 聚合模块上真正生效：本模块 packaging=pom，无 target/classes，
+                 check 目标会因缺失 classes 目录而静默跳过（闸门形同虚设）。故在 prepare-package 阶段
+                 把各 framework 叶子模块（cn.jowen.framework 组、compile 范围）的编译 class 解包到
+                 target/classes，使 verify 阶段的 check 能基于合并后的 jacoco-merged.exec 计算真实
+                 聚合行覆盖并据 0.95 阈值门禁。该插件声明于 jacoco 插件之前。 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-leaf-classes</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <includeGroupIds>cn.jowen.framework</includeGroupIds>
+                            <includeScope>compile</includeScope>
+                            <outputDirectory>${project.build.directory}/classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- 真正的聚合报告：report-aggregate 收集 reactor 内各依赖模块的 jacoco.exec，
                  在 verify 阶段生成全工程统一 HTML 报告到 target/site/jacoco-aggregate -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <executions>
+                    <!-- 合并各叶子模块 target/jacoco.exec 为单一文件，供 report 与 check 使用。
+                         绑定在 package 阶段而非 verify：父 pom 为所有模块声明了 id=report 的执行，
+                         本模块同 id 重声明会继承父执行的位置槽位（排在 verify 阶段最前），
+                         若 merge 也在 verify 则会晚于 report 执行，导致 report 读到上一轮的旧数据。
+                         package 早于 verify，可彻底规避执行顺序问题。 -->
                     <execution>
-                        <id>report-aggregate</id>
-                        <phase>verify</phase>
+                        <id>merge-results</id>
+                        <phase>package</phase>
                         <goals>
-                            <goal>report-aggregate</goal>
+                            <goal>merge</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate</outputDirectory>
+                            <fileSets>
+                                <fileSet>
+                                    <directory>${session.executionRootDirectory}</directory>
+                                    <includes>
+                                        <include>**/target/jacoco.exec</include>
+                                    </includes>
+                                </fileSet>
+                            </fileSets>
+                            <destFile>${project.build.directory}/jacoco-merged.exec</destFile>
+                        </configuration>
+                    </execution>
+                    <!-- 全工程聚合 HTML 报告：基于刚合并的 jacoco-merged.exec 渲染。 -->
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/site/jacoco-aggregate</outputDirectory>
                             <sourceEncoding>UTF-8</sourceEncoding>
+                            <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
+                        </configuration>
+                    </execution>
+                    <!-- 覆盖率门禁：BUNDLE 行覆盖 COVEREDRATIO 必须 > 0.95。
+                         声明于最后，verify 阶段先出报告、合并后再校验，失败即亮红灯。 -->
+                    <execution>
+                        <id>check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.95</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
                         </configuration>
                     </execution>
                 </executions>
