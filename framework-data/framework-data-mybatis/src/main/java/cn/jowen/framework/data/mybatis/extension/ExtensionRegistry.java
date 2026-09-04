@@ -87,8 +87,17 @@ public final class ExtensionRegistry {
     /** return 字段。 */
     public FlexLogicDeleteHandler getLogicDeleteHandler() { return (FlexLogicDeleteHandler) extensionMap.get("logicDelete"); }
 
-    /** void 字段。 */
-    public void firePreSave(Object entity) {}
+    /**
+     * 执行fire pre save操作：透明加密（{@link Encrypted} 字段）+ 租户 ID 注入。
+     *
+     * @param entity 参数 entity
+     */
+    public void firePreSave(Object entity) {
+        FlexEncryptProcessor encryptProcessor = getEncryptProcessor();
+        if (encryptProcessor != null) encryptProcessor.encryptEntity(entity);
+        FlexTenantHandler tenantHandler = getTenantHandler();
+        if (tenantHandler != null) tenantHandler.injectTenant(entity, "tenantId");
+    }
 
     /**
      * 执行fire post save操作。
@@ -119,6 +128,27 @@ public final class ExtensionRegistry {
         if (processor != null) processor.maskObject(entity);
         FlexAuditHandler auditHandler = getAuditHandler();
         if (auditHandler != null) auditHandler.onUpdate(entity);
+    }
+
+    /**
+     * 执行fire post delete操作：将删除标记字段置为已删除值（逻辑删除）。
+     *
+     * @param entity 参数 entity
+     * @return 成功写入删除标记返回 {@code true}；无逻辑删除处理器或实体无对应字段返回 {@code false}
+     */
+    public boolean firePostDelete(Object entity) {
+        FlexLogicDeleteHandler handler = getLogicDeleteHandler();
+        return handler != null && handler.toLogicDelete(entity);
+    }
+
+    /**
+     * 执行fire post load操作：对 {@link Encrypted} 字段执行透明解密。
+     *
+     * @param entity 参数 entity
+     */
+    public void firePostLoad(Object entity) {
+        FlexEncryptProcessor encryptProcessor = getEncryptProcessor();
+        if (encryptProcessor != null) encryptProcessor.decryptEntity(entity);
     }
 
     /**

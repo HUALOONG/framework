@@ -55,4 +55,36 @@ class FlexAuditHandlerTest {
         // 默认 sink 为丢弃实现，仅验证不抛异常
         assertThat(handler.name()).isEqualTo("audit");
     }
+
+    @Test
+    void order() {
+        assertThat(new FlexAuditHandler().order()).isEqualTo(200);
+    }
+
+    @Test
+    void onUpdate_writesAfterSnapshot() {
+        List<FlexAuditHandler.AuditRecord> records = new ArrayList<>();
+        FlexAuditHandler handler = new FlexAuditHandler(records::add);
+
+        handler.onUpdate(new DemoEntity("dave", 35));
+
+        assertThat(records).hasSize(1);
+        FlexAuditHandler.AuditRecord record = records.get(0);
+        assertThat(record.changeType()).isEqualTo(FlexAuditHandler.ChangeType.UPDATE);
+        assertThat(record.beforeJson()).isNull();
+        assertThat(record.afterJson()).contains("\"name\":\"dave\"");
+    }
+
+    @Test
+    void snapshot_serializationFailure_returnsNull() {
+        FlexAuditHandler handler = new FlexAuditHandler();
+        // getter 抛异常 -> Jackson 序列化失败 -> snapshot 返回 null
+        assertThat(handler.snapshot(new BoomEntity())).isNull();
+    }
+
+    static class BoomEntity {
+        public String getBoom() {
+            throw new RuntimeException("boom");
+        }
+    }
 }

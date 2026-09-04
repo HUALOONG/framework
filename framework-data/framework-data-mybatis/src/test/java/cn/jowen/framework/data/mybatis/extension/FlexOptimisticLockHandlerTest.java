@@ -40,9 +40,83 @@ class FlexOptimisticLockHandlerTest {
         assertThat(entity.version).isEqualTo(6);
     }
 
+    @Test
+    void name() {
+        assertThat(handler.name()).isEqualTo("optimisticLock");
+    }
+
+    @Test
+    void order() {
+        assertThat(handler.order()).isEqualTo(400);
+    }
+
+    @Test
+    void incrementVersion_longType() {
+        LongEntity entity = new LongEntity();
+        entity.version = 5L;
+        handler.incrementVersion(entity);
+        assertThat(entity.version).isEqualTo(6L);
+    }
+
+    @Test
+    void incrementVersion_nullVersion_noop() {
+        NullVersionEntity entity = new NullVersionEntity();
+        entity.version = null;
+        handler.incrementVersion(entity);
+        assertThat(entity.version).isNull();
+    }
+
+    @Test
+    void incrementVersion_noSetter_noop() {
+        NoSetterEntity entity = new NoSetterEntity();
+        entity.version = 1;
+        handler.incrementVersion(entity);
+        assertThat(entity.version).isEqualTo(1);
+    }
+
+    @Test
+    void incrementVersion_noVersionField_catchesException() {
+        // entity without a getVersion method -> reflection NPE is swallowed
+        assertThatCode(() -> handler.incrementVersion(new Object())).doesNotThrowAnyException();
+    }
+
     static class VersionedEntity {
         Integer version;
         Integer getVersion() { return version; }
         void setVersion(Integer v) { this.version = v; }
+    }
+
+    static class LongEntity {
+        Long version;
+        Long getVersion() { return version; }
+        void setVersion(Long v) { this.version = v; }
+    }
+
+    static class NullVersionEntity {
+        Integer version;
+        Integer getVersion() { return version; }
+        void setVersion(Integer v) { this.version = v; }
+    }
+
+    static class NoSetterEntity {
+        Integer version;
+        Integer getVersion() { return version; }
+    }
+
+    @Test
+    void incrementVersion_versionInSuperclass() {
+        SubVersionedEntity entity = new SubVersionedEntity();
+        entity.version = 3;
+        handler.incrementVersion(entity);
+        assertThat(entity.version).isEqualTo(4);
+    }
+
+    static class BaseVersioned {
+        Integer version;
+        Integer getVersion() { return version; }
+        void setVersion(Integer v) { this.version = v; }
+    }
+
+    static class SubVersionedEntity extends BaseVersioned {
     }
 }

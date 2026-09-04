@@ -44,7 +44,7 @@ public class MapperGenerator {
         String className = toClassName(tableInfo.tableName());
         StringBuilder sb = new StringBuilder();
         sb.append("package ").append(config.getMapperPackage()).append(";\n\n");
-        sb.append("import cn.jowen.framework.data.mybatis.repository.FlexRepositoryFactory.BaseMapper;\n\n");
+        sb.append("import com.mybatisflex.core.BaseMapper;\n\n");
         sb.append("/** ").append(tableInfo.tableName()).append(" 表 Mapper。 */\n");
         sb.append("public interface ").append(className).append("Mapper extends BaseMapper<").append(className).append("> {}\n");
         logger.info("生成 Mapper: " + className + "Mapper");

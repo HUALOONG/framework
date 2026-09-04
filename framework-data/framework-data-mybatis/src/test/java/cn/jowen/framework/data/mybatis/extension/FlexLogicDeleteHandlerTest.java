@@ -32,9 +32,50 @@ class FlexLogicDeleteHandlerTest {
         assertThat(handler.deleteCondition()).isEqualTo("is_removed = 0");
     }
 
+    @Test
+    void name() {
+        assertThat(new FlexLogicDeleteHandler().name()).isEqualTo("logicDelete");
+    }
+
+    @Test
+    void order() {
+        assertThat(new FlexLogicDeleteHandler().order()).isEqualTo(600);
+    }
+
+    @Test
+    void getSetDeleteField() {
+        FlexLogicDeleteHandler handler = new FlexLogicDeleteHandler();
+        handler.setDeleteField("is_removed");
+        assertThat(handler.getDeleteField()).isEqualTo("is_removed");
+    }
+
+    @Test
+    void getSetDeletedValue() {
+        FlexLogicDeleteHandler handler = new FlexLogicDeleteHandler();
+        handler.setDeletedValue("Y");
+        assertThat(handler.getDeletedValue()).isEqualTo("Y");
+    }
+
+    @Test
+    void toLogicDelete_setterInSuperclass() {
+        FlexLogicDeleteHandler handler = new FlexLogicDeleteHandler("deleted", 1);
+        SubEntity entity = new SubEntity();
+        assertThat(handler.toLogicDelete(entity)).isTrue();
+        assertThat(entity.getDeleted()).isEqualTo(1);
+    }
+
     static class DeletableEntity {
         Integer deleted;
         Integer getDeleted() { return deleted; }
         void setDeleted(Integer v) { this.deleted = v; }
+    }
+
+    static class BaseEntity {
+        Integer deleted;
+        Integer getDeleted() { return deleted; }
+        void setDeleted(Integer v) { this.deleted = v; }
+    }
+
+    static class SubEntity extends BaseEntity {
     }
 }
