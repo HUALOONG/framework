@@ -35,7 +35,10 @@ public interface PluginManager {
     /**
      * 注册已加载的插件实例与上下文（状态 CREATED → STARTING），供引导器或手动装配调用。
      *
-     * <p>默认实现不支持，由 {@code PluginLifecycleManager} 等实现覆盖。
+     * <p>本默认实现为<b>契约引导</b>：故意抛出 {@link UnsupportedOperationException}，
+     * 引导调用方改用 {@code PluginLifecycleManager}（其 {@code loadPlugins}/{@code loadPlugin}
+     * 同样以抛出来引导使用 {@code PluginLoader}）。这是设计意图而非未完成的缺陷，
+     * 既有测试 {@code PluginLifecycleManagerTest} 会断言该异常行为。
      *
      * @param pluginId 插件 id，不可为 {@code null}
      * @param plugin  插件实例，不可为 {@code null}

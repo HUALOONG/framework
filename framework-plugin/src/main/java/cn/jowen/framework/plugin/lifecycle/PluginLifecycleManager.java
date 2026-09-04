@@ -138,7 +138,13 @@ public final class PluginLifecycleManager implements PluginManager {
     public void destroy(String pluginId) {
         lifecycleLock.lock();
         try {
-            stop(pluginId);
+            // 仅对运行中（STARTED/STARTING）的插件执行停止。已 STOPPED/CREATED/FAILED 等终态无需再 stop，
+            // 否则会触发非法的 STOPPED->STOPPING / FAILED->STOPPING 状态转换导致 destroy 失败。
+            // destroy 对终态同样安全幂等（仅执行清理与事件发布）。
+            PluginState state = getState(pluginId);
+            if (state == PluginState.STARTED || state == PluginState.STARTING) {
+                stop(pluginId);
+            }
             // 清理该插件在扩展注册中心的扩展，避免卸载后残留可被查询，并触发桥接源缓存失效
             if (extensionRegistry != null) {
                 extensionRegistry.unregisterPlugin(pluginId);
@@ -169,11 +175,19 @@ public final class PluginLifecycleManager implements PluginManager {
 
     // region PluginManager 接口实现
 
+    /**
+     * 故意不支持：插件加载须走 {@code PluginLoader}（扫描 jar、构建沙箱上下文），
+     * 加载完成后再调用 {@link #initialize} 注册。本方法的异常是契约引导，
+     * 既有测试会断言该行为，请勿移除。
+     */
     @Override
     public List<Plugin> loadPlugins(Path pluginsDir) {
         throw new UnsupportedOperationException("请使用 PluginLoader 直接加载后调用 initialize");
     }
 
+    /**
+     * 故意不支持：见 {@link #loadPlugins}。单插件加载同样由 {@code PluginLoader} 负责。
+     */
     @Override
     public Plugin loadPlugin(Path pluginPath) {
         throw new UnsupportedOperationException("请使用 PluginLoader 直接加载后调用 initialize");
