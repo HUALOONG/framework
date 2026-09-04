@@ -88,12 +88,20 @@ public class CacheAutoConfiguration {
     @Bean
     public static BeanPostProcessor cacheSyncBroadcasterRegistrar(
             ObjectProvider<CacheSyncBroadcasterFactory> factoryProvider) {
-        return (bean, name) -> {
-            if (bean instanceof MultilevelCacheManager manager
-                    && factoryProvider.getIfAvailable() != null) {
-                manager.setCacheSyncBroadcasterFactory(factoryProvider.getIfAvailable());
+        return new BeanPostProcessor() {
+            @Override
+            public Object postProcessBeforeInitialization(Object bean, String beanName) {
+                return bean;
             }
-            return bean;
+
+            @Override
+            public Object postProcessAfterInitialization(Object bean, String beanName) {
+                if (bean instanceof MultilevelCacheManager manager
+                        && factoryProvider.getIfAvailable() != null) {
+                    manager.setCacheSyncBroadcasterFactory(factoryProvider.getIfAvailable());
+                }
+                return bean;
+            }
         };
     }
 }
