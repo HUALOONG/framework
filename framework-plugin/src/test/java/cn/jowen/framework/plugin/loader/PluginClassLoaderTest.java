@@ -1,8 +1,15 @@
 package cn.jowen.framework.plugin.loader;
 
-import org.junit.jupiter.api.Test;
+import com.example.demo.DemoPlugin;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -72,5 +79,46 @@ class PluginClassLoaderTest {
         protected Class<?> doLoadClass(String name, boolean resolve) throws ClassNotFoundException {
             return getParent().loadClass(name);
         }
+    }
+
+    @Test
+    void getResource_fallsThroughToFindResource(@TempDir Path dir) throws IOException {
+        Path res = dir.resolve("res.txt");
+        Files.writeString(res, "hello");
+        URL url = res.getParent().toUri().toURL();
+        TestPluginClassLoader cl = new TestPluginClassLoader(new URL[]{url},
+                getClass().getClassLoader(), List.of(), List.of(), List.of());
+        assertThat(cl.getResource("res.txt")).isNotNull();
+        assertThat(cl.getResource("missing.txt")).isNull();
+    }
+
+    /** 自行定义类的加载器，用于覆盖已加载缓存与 resolve 分支。 */
+    static final class SelfDefiningClassLoader extends PluginClassLoader {
+        SelfDefiningClassLoader(URL[] urls, ClassLoader parent) {
+            super(urls, parent, List.of(), List.of(), List.of());
+        }
+
+        @Override
+        protected Class<?> doLoadClass(String name, boolean resolve) throws ClassNotFoundException {
+            try {
+                Class<?> c = findClass(name);
+                if (resolve) resolveClass(c);
+                return c;
+            } catch (ClassNotFoundException e) {
+                return getParent().loadClass(name);
+            }
+        }
+    }
+
+    @Test
+    void loadClass_cachedAndResolve() throws Exception {
+        URL url = DemoPlugin.class.getProtectionDomain().getCodeSource().getLocation().toURI().toURL();
+        SelfDefiningClassLoader cl = new SelfDefiningClassLoader(new URL[]{url}, getClass().getClassLoader());
+        Class<?> first = cl.loadClass("com.example.demo.DemoPlugin");
+        Class<?> second = cl.loadClass("com.example.demo.DemoPlugin");
+        assertThat(second).isSameAs(first);
+        // 第二次命中 findLoadedClass 缓存；resolve=true 触发 resolveClass 分支
+        Class<?> resolved = cl.loadClass("com.example.demo.DemoPlugin", true);
+        assertThat(resolved).isSameAs(first);
     }
 }

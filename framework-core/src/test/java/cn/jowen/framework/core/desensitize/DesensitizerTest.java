@@ -108,6 +108,20 @@ class DesensitizerTest {
     }
 
     @Test
+    void maskObject_skipsUnannotatedNullAndBlankFields() {
+        // 无注解字段、null 字段、空白字段均须跳过；keep 字段作为对照证明跳过判定精确
+        UserVOWithSkippedFields vo = new UserVOWithSkippedFields();
+
+        Object result = desensitizer.maskObject(vo);
+
+        assertThat(result).isSameAs(vo);
+        assertThat(vo.nickname).isEqualTo("张三");
+        assertThat(vo.phone).isNull();
+        assertThat(vo.empty).isEqualTo("   ");
+        assertThat(vo.keep).isEqualTo("138****5678");
+    }
+
+    @Test
     void maskMap_nullReturnsNull() {
         assertThat(desensitizer.maskMap(null, "PHONE")).isNull();
     }
@@ -152,5 +166,18 @@ class DesensitizerTest {
     static class UserVOInvalid {
         @DesensitizeField(strategy = "NO_SUCH_STRATEGY")
         String phone;
+    }
+
+    static class UserVOWithSkippedFields {
+        String nickname = "张三"; // 无 @DesensitizeField：注解为空跳过
+
+        @DesensitizeField(strategy = "PHONE")
+        String phone; // null：原值跳过
+
+        @DesensitizeField(strategy = "PHONE")
+        String empty = "   "; // 空白：原值跳过
+
+        @DesensitizeField(strategy = "PHONE")
+        String keep = "13812345678"; // 对照字段：应正常脱敏
     }
 }

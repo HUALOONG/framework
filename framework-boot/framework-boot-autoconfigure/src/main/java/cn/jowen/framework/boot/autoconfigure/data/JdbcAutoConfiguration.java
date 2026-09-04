@@ -3,9 +3,6 @@ package cn.jowen.framework.boot.autoconfigure.data;
 import cn.jowen.framework.boot.autoconfigure.JowenAutoConfiguration;
 import cn.jowen.framework.data.core.dialect.DatabaseDialect;
 import cn.jowen.framework.data.core.mapping.EntityMetadataResolver;
-import cn.jowen.framework.data.core.repository.RepositoryFactory;
-import cn.jowen.framework.data.core.transaction.TransactionManager;
-import cn.jowen.framework.data.core.transaction.TransactionTemplate;
 import cn.jowen.framework.data.jdbc.connection.ConnectionProvider;
 import cn.jowen.framework.data.jdbc.context.JdbcContext;
 import cn.jowen.framework.data.jdbc.core.BatchTemplate;
@@ -13,9 +10,6 @@ import cn.jowen.framework.data.jdbc.core.JdbcTemplate;
 import cn.jowen.framework.data.jdbc.core.NamedParameterTemplate;
 import cn.jowen.framework.data.jdbc.core.SqlRunner;
 import cn.jowen.framework.data.jdbc.dialect.DialectRegistry;
-import cn.jowen.framework.data.jdbc.repository.DefaultIdGenerator;
-import cn.jowen.framework.data.jdbc.repository.IdGenerator;
-import cn.jowen.framework.data.jdbc.repository.JdbcRepositoryFactory;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.ObjectProvider;
@@ -33,9 +27,10 @@ import org.springframework.context.annotation.Bean;
  * <ol>
  *     <li>绑定 {@code framework.data.datasource.*} 数据源属性与 {@code framework.data.jdbc.*} JDBC 属性；</li>
  *     <li>以 {@link JdbcContext} 为轻量 IoC 上下文装配连接池、方言、实体元信息解析器、
- *         拦截器责任链（日志/性能/租户）、JDBC 模板与事务管理器；</li>
- *     <li>向 Spring 容器暴露 {@link JdbcTemplate}、{@link RepositoryFactory}、{@link TransactionManager}、
- *         {@link TransactionTemplate}、{@link DialectRegistry} 等组件，供业务方注入使用。</li>
+ *         拦截器责任链（日志/性能/租户）与各类 JDBC 模板；</li>
+ *     <li>向 Spring 容器暴露 {@link JdbcTemplate}、{@link NamedParameterTemplate}、{@link BatchTemplate}、
+ *         {@link SqlRunner}、{@link DialectRegistry} 等组件，供业务方注入使用；
+ *         事务交由 Spring 声明式事务（{@code @Transactional}）处理。</li>
  * </ol>
  *
  * <p>典型配置：
@@ -70,42 +65,25 @@ import org.springframework.context.annotation.Bean;
 public class JdbcAutoConfiguration {
 
     /**
-     * 轻量 IoC 上下文：聚合连接提供者、方言、实体元信息解析器、拦截器、模板与事务管理器。
+     * 轻量 IoC 上下文：聚合连接提供者、方言、实体元信息解析器、拦截器与各类模板。
      *
      * @param dataSourceProperties 数据源属性（{@code framework.data.*}）
      * @param jdbcProperties       JDBC 属性（{@code framework.data.jdbc.*}）
-     * @param idGenerator          可选的主键生成器，缺省使用 {@link DefaultIdGenerator}
-     * @return JDBC 上下文
+         * @return JDBC 上下文
      */
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
     public JdbcContext jdbcContext(BootDataSourceProperties dataSourceProperties,
                                    BootJdbcProperties jdbcProperties,
-                                   ObjectProvider<IdGenerator> idGenerator,
                                    ObjectProvider<MeterRegistry> meterRegistry) {
         JdbcContext.Builder builder = JdbcContext.builder()
                 .properties(dataSourceProperties)
                 .jdbc(jdbcProperties);
-        IdGenerator idGen = idGenerator.getIfAvailable();
-        if (idGen != null) {
-            builder.idGenerator(idGen);
-        }
         MeterRegistry registry = meterRegistry.getIfAvailable();
         if (registry != null) {
             builder.meterRegistry(registry);
         }
         return builder.build();
-    }
-
-    /**
-     * 主键生成器缺省实现；业务方可通过 {@link IdGenerator} Bean 覆盖。
-     *
-     * @return 默认主键生成器
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public IdGenerator idGenerator() {
-        return new DefaultIdGenerator();
     }
 
     /**
@@ -154,44 +132,6 @@ public class JdbcAutoConfiguration {
     @ConditionalOnMissingBean
     public SqlRunner sqlRunner(JdbcContext context) {
         return context.getSqlRunner();
-    }
-
-    /**
-     * 仓储工厂：按实体类型获取 {@link cn.jowen.framework.data.core.repository.Repository}。
-     * 与 {@link JdbcContext} 内部工厂共用同一模板、方言与主键生成器，保证行为一致。
-     *
-     * @param context JDBC 上下文
-     * @return 仓储工厂
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public RepositoryFactory repositoryFactory(JdbcContext context, IdGenerator idGenerator) {
-        return new JdbcRepositoryFactory(context.getJdbcTemplate(), context.getEntityMetadataResolver(),
-                context.getDialectRegistry(), idGenerator);
-    }
-
-    /**
-     * 事务管理器（框架自有事务抽象）。
-     *
-     * @param context JDBC 上下文
-     * @return 事务管理器
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public TransactionManager transactionManager(JdbcContext context) {
-        return context.getTransactionManager();
-    }
-
-    /**
-     * 编程式事务模板：成功提交、运行时异常回滚。
-     *
-     * @param transactionManager 事务管理器
-     * @return 事务模板
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public TransactionTemplate transactionTemplate(TransactionManager transactionManager) {
-        return new TransactionTemplate(transactionManager);
     }
 
     /**

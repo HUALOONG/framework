@@ -236,6 +236,17 @@ class WebExtrasAutoConfigurationTest {
     }
 
     @Test
+    void excelConfiguration_exporterIsConstructibleWithoutEasyExcel() {
+        // ExcelConfiguration 构造器与 excelExporter() 的 ExcelExporter 构造器均不引用 EasyExcel，
+        // 故无需 easyexcel SDK 即可覆盖该内部配置类的导出分支；excelImporter() 因 ExcelImporter 类加载即依赖
+        // com.alibaba.excel.event.AnalysisEventListener（EasyExcel 缺失），离线不可构造，已据规则在报告中标注为不可测。
+        WebExtrasAutoConfiguration.ExcelConfiguration config =
+                new WebExtrasAutoConfiguration.ExcelConfiguration(new BootWebExtrasProperties());
+        assertThat(config.excelExporter()).isNotNull();
+    }
+
+
+    @Test
     void customSmsCaptchaSenderTakesPrecedence() {
         runner.withUserConfiguration(MessageServiceConfig.class, CustomSmsSenderConfig.class)
                 .withPropertyValues("framework.extras.web.captcha.enabled=true")

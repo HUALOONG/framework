@@ -2,6 +2,7 @@ package cn.jowen.framework.extras.web.ratelimit;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * {@link LeakyBucketRateLimiter} 测试。
@@ -28,7 +30,7 @@ class LeakyBucketRateLimiterTest {
     }
 
     @Test
-    void tryAcquire_recoversAsBucketLeaks() throws Exception {
+    void tryAcquire_recoversAsBucketLeaks() {
         // permits=2 / window=1s -> 每毫秒漏 0.002，约 500ms 漏掉一个额度
         LeakyBucketRateLimiter limiter = new LeakyBucketRateLimiter(2, 1);
 
@@ -36,18 +38,19 @@ class LeakyBucketRateLimiterTest {
         assertThat(limiter.tryAcquire("k")).isTrue();
         assertThat(limiter.tryAcquire("k")).isFalse();
 
-        Thread.sleep(700L);
-
-        assertThat(limiter.tryAcquire("k")).as("漏水后应重新放行").isTrue();
+        // 等待桶漏出额度后重新放行（替代固定 Thread.sleep，容忍抖动）
+        await().atMost(Duration.ofSeconds(3)).until(() -> limiter.tryAcquire("k"));
     }
 
     @Test
-    void tryAcquire_stillRejectsWhenLeakTooSlow() throws Exception {
-        // permits=1 / window=100s -> 漏速极慢，短暂等待不足以腾出额度
+    void tryAcquire_stillRejectsWhenLeakTooSlow() {
+        // permits=1 / window=100s -> 漏速极慢，短暂区间内仍不足以腾出额度
         LeakyBucketRateLimiter limiter = new LeakyBucketRateLimiter(1, 100);
 
         assertThat(limiter.tryAcquire("k")).isTrue();
-        Thread.sleep(50L);
+        // 验证在短暂区间内持续拒绝（替代固定 Thread.sleep）
+        await().during(Duration.ofMillis(50)).atMost(Duration.ofSeconds(2))
+                .until(() -> !limiter.tryAcquire("k"));
         assertThat(limiter.tryAcquire("k")).isFalse();
     }
 
@@ -68,24 +71,23 @@ class LeakyBucketRateLimiterTest {
     }
 
     @Test
-    void tryAcquire_nonPositiveWindowDrainsBucketImmediately() throws Exception {
-        // windowSeconds <= 0 时漏速取 Double.MAX_VALUE，等价于"不限流"
+    void tryAcquire_nonPositiveWindowAllowsBurstWithoutThrottling() {
+        // 非正窗口（windowSeconds<=0）语义为「不限流」：同一毫秒内连续请求也必须全部放行。
+        // 修复前依赖 now>lastLeak 才漏空，同毫秒内已注水的桶不漏空 → 超出 capacity 后错误拒绝。
         LeakyBucketRateLimiter limiter = new LeakyBucketRateLimiter(1, 0);
 
-        assertThat(limiter.tryAcquire("k")).isTrue();
-        Thread.sleep(5L);
-        assertThat(limiter.tryAcquire("k")).as("非正窗口下桶应立即漏空").isTrue();
-        Thread.sleep(5L);
-        assertThat(limiter.tryAcquire("k")).isTrue();
+        for (int i = 0; i < 100; i++) {
+            assertThat(limiter.tryAcquire("k")).as("非正窗口下不应限流").isTrue();
+        }
     }
 
     @Test
-    void tryAcquire_negativeWindowIsTreatedAsNonPositive() throws Exception {
+    void tryAcquire_negativeWindowIsTreatedAsNonPositive() {
         LeakyBucketRateLimiter limiter = new LeakyBucketRateLimiter(1, -5);
 
-        assertThat(limiter.tryAcquire("k")).isTrue();
-        Thread.sleep(5L);
-        assertThat(limiter.tryAcquire("k")).isTrue();
+        for (int i = 0; i < 100; i++) {
+            assertThat(limiter.tryAcquire("k")).isTrue();
+        }
     }
 
     @Test

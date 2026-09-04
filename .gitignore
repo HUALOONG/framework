@@ -18,6 +18,7 @@ target/
 .settings/
 .classpath
 .project
+.factorypath
 
 # 工具 / 工作区配置
 .workbuddy/

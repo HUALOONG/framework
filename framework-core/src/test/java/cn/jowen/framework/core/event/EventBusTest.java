@@ -42,6 +42,34 @@ class EventBusTest {
         }
     }
 
+    /**
+     * 中间泛型接口：事件类型经父接口类型变量绑定解析（覆盖 {@code resolveEventType} 的 vars 绑定与
+     * {@code resolveType} 的 TypeVariable 分支）。
+     */
+    interface OrderEventListener<E extends FrameworkEvent> extends EventListener<E> {
+    }
+
+    static class GenericOrderListener implements OrderEventListener<OrderEvent> {
+        final List<OrderEvent> events = new ArrayList<>();
+
+        @Override
+        public void onEvent(@NonNull OrderEvent event) {
+            events.add(event);
+        }
+    }
+
+    /**
+     * 泛型事件子类，用于构造 ParameterizedType 事件类型（无法解析为具体 Class，触发 {@code resolveType} 兜底分支）。
+     */
+    static class GenericPayloadEvent<T> extends FrameworkEvent {
+        GenericPayloadEvent() {
+            super();
+        }
+    }
+
+    interface ParameterizedEventListener extends EventListener<GenericPayloadEvent<String>> {
+    }
+
     @Test
     void register_and_publish_sync() {
         EventBus bus = new EventBus();
@@ -107,5 +135,31 @@ class EventBusTest {
         assertThatThrownBy(() -> bus.publish(new OrderEvent("o1")))
                 .isInstanceOf(SystemException.class)
                 .hasMessageContaining("事件监听器执行失败");
+    }
+
+    @Test
+    void register_viaIntermediateGenericInterface_resolvesEventType() {
+        EventBus bus = new EventBus();
+        GenericOrderListener listener = new GenericOrderListener();
+        bus.register(listener);
+
+        bus.publish(new OrderEvent("o1"));
+        assertThat(listener.events).hasSize(1);
+        assertThat(listener.events.getFirst().orderId).isEqualTo("o1");
+    }
+
+    @Test
+    void register_unresolvableParameterizedEventType_throws() {
+        EventBus bus = new EventBus();
+        EventListener<GenericPayloadEvent<String>> listener = new ParameterizedEventListener() {
+            @Override
+            public void onEvent(@NonNull GenericPayloadEvent<String> event) {
+                // 不会被执行
+            }
+        };
+
+        assertThatThrownBy(() -> bus.register(listener))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("无法推断监听器事件类型");
     }
 }

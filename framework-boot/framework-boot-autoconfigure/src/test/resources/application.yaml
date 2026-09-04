@@ -174,3 +174,31 @@ framework:
       default-dept-column: dept_id
       default-user-column: create_by
       ignore-tables: []
+
+    # Web 能力总开关（默认 true）；各子能力可独立关闭
+    web:
+      enabled: true
+      ratelimit:
+        enabled: true
+      idempotent:
+        enabled: true
+      lock:
+        enabled: true
+      crypto:
+        enabled: true
+      sign:
+        enabled: true
+      captcha:
+        enabled: false
+      operatelog:
+        enabled: false
+      datapermission:
+        enabled: false
+      desensitize:
+        enabled: false
+      excel:
+        enabled: false
+      ip2region:
+        enabled: false
+      notification:
+        enabled: false

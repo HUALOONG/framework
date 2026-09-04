@@ -1,6 +1,6 @@
 # Jowen Framework 框架整体设计方案
 
-> **基于 Spring Boot 4.x + Java 21 的完整架构设计**
+> **基于 Spring Boot 4.x + Java 21 的框架脚手架**
 
 ---
 
@@ -25,6 +25,7 @@
 ### 1.3 非目标
 
 - 不兼容 Spring Boot 2.x 下游（备选方案另行处理）
+- 不内置微服务基础设施（无 Gateway / DiscoveryClient / Feign），下游可自由接入 Spring Cloud
 - 不做代码生成器以外的代码脚手架
 - 不包含具体业务实现
 
@@ -175,19 +176,23 @@
 ```
 L0 (零依赖)        framework-core
                       ▲
-L1 (依赖 L0)        framework-logger / framework-data-core
+L1 (依赖 L0)        framework-logger / framework-data-core / framework-extras-common
                       ▲
 L2 (依赖 L0+L1)     framework-data-jdbc / framework-data-mybatis
-                    framework-cache / framework-i18n
+                    framework-cache / framework-i18n / framework-plugin
+                    framework-extras-message / framework-extras-storage
                       ▲
 L3 (依赖 L0~L2)     framework-boot-autoconfigure
-                    framework-extras / framework-plugin
+                    framework-boot-web
                       ▲
 L4 (聚合)           framework-boot-starter
 ```
 
-**核心原则（第 25 轮明确）**：`*-core` 模块保持对 Spring Boot **零依赖/弱依赖**——只定义接口、抽象类、领域模型；Spring Boot 由
-autoconfigure 层依赖 core，方向不可颠倒。这样 core 可脱离 Spring 做单元测试，版本升级也不绑架下游。
+**核心原则**：
+1. **core 零 Spring**：`framework-core` 仅 JDK 21 + JSpecify，可脱离容器做单测。
+2. **L1/L2 不强求零 Spring**：`framework-logger` / `framework-cache` 等模块按功能需要可依赖 Spring Boot 相关组件，但 `@AutoConfiguration` 统一收口在 L3 的 `framework-boot-autoconfigure`。
+3. **plugin 属 L2**：仅依赖 core + logger，与 data 完全解耦，开发不受 data 进度阻塞。
+4. **方向不可倒**：autoconfigure 层依赖 core，核心模块不得反向依赖 autoconfigure。
 
 ---
 
@@ -445,25 +450,29 @@ framework:
 
 ### 8.9 framework-extras — 扩展工具集
 
-**定位**：扩展工具集聚合父模块（纯 POM，零代码），下挂 `common` / `message` / `storage` / `web` 四个子模块，将原先 12 项扁平能力按领域重新拆分。各能力全部按需引入、独立开关（统一 `framework.extras.<feature>.enabled`）。详细设计见 [framework-extras/README.md](framework-extras/README.md)。
+**定位**：扩展工具集聚合父模块（纯 POM，零代码），下挂 `common` / `message` / `storage` 三个子模块。Web 层能力（lock/ratelimit/idempotent/captcha/datapermission/operatelog/crypto/sign）已归入 `framework-boot-web`（见 §8.10），不再作为 extras 子模块。
 
 ```text
 framework-extras（聚合父模块，纯 POM）
-├─ framework-extras-common   # L0 公共底座：12 项能力 Properties + Exception
-├─ framework-extras-message  # 消息通知（原 notification）
-├─ framework-extras-storage  # 文件存储
-└─ framework-extras-web      # Web 工具集：lock/ratelimit/idempotent/captcha/datapermission/operatelog
+├─ framework-extras-common   # L0 公共底座：配置 Properties + Exception
+├─ framework-extras-message  # 消息通知：邮件/短信/钉钉/企微/Webhook
+└─ framework-extras-storage  # 文件存储：本地/MinIO/阿里云OSS/AWS S3
+
+framework-boot-web（独立模块，8 项 Web 能力）
+├─ lock / ratelimit / idempotent / captcha / datapermission
+├─ operatelog / crypto / sign
 ```
 
-| 子模块                   | 能力（原 12 项归属）                                                  | 说明                                                                                         |
-| ------------------------ | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| framework-extras-common  | config / 异常类（12 项能力开关与异常统一收口）                        | L0 公共底座，仅依赖 framework-core                                                           |
-| framework-extras-message | notification                                                          | 邮件 / 短信 / 钉钉 / 企业微信 / Webhook，统一 `messageService`                               |
-| framework-extras-storage | storage                                                               | 本地 / MinIO / 阿里云 OSS / AWS S3 统一抽象，`FileStorage`                                   |
-| framework-extras-web     | lock / ratelimit / idempotent / captcha / datapermission / operatelog | 分布式锁 `@Lockable` / 限流 `@RateLimit` / 幂等 `@Idempotent` / 验证码 / 数据权限 / 操作日志 |
-| （待规划）               | excel / ip2region / desensitize                                       | 原 12 项中三项，新四域尚未显式承接（建议归入 web 或独立子域）                                |
+| 子模块                     | 能力                              | 说明                                              |
+| -------------------------- | --------------------------------- | ------------------------------------------------- |
+| framework-extras-common    | 配置 / 异常                       | L0 公共底座，仅依赖 framework-core                |
+| framework-extras-message   | 消息通知                          | 邮件 / 短信 / 钉钉 / 企业微信 / Webhook           |
+| framework-extras-storage   | 文件存储                          | 本地 / MinIO / 阿里云 OSS / AWS S3，统一 `FileStorage` |
+| framework-boot-web         | Web 工具集（8 项）                | `@Lockable` / `@RateLimit` / `@Idempotent` / 验证码 / 数据权限 / 操作日志 / `@Encrypt` / `@Sign` |
 
-> 与 `framework-data` / `framework-boot` 一致：聚合器零代码、不注册 Bean；运行时行为由四子模块 + `framework-boot-autoconfigure`（ExtrasAutoConfiguration）承载。下游按需引入具体子模块，版本由 `framework-bom` 管理。
+> 3 项原能力已落位：Excel → boot-web `excel/` 子包（`@ExcelExport` / `@ExcelImport`）；ip2region → core `util/IpRegion.java`；脱敏适配 → boot-web `desensitize/` 子包（core 已有 Desensitizer 内核，logger 已有 mask 适配）。
+
+> 与 `framework-data` / `framework-boot` 一致：聚合器零代码、不注册 Bean；运行时行为由子模块 + `framework-boot-autoconfigure`（ExtrasAutoConfiguration）承载。下游按需引入具体子模块，版本由 `framework-bom` 管理。
 
 ---
 
@@ -667,7 +676,7 @@ spring:
         <dependency>
             <groupId>cn.jowen.framework</groupId>
             <artifactId>framework-bom</artifactId>
-            <version>0.0.1</version>
+            <version>${revision}</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>

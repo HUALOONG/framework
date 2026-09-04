@@ -155,4 +155,43 @@ class VersionRangeTest {
         VersionRange range = new VersionRange("[1.0,2.0]");
         assertThat(range.contains("1.5")).isTrue();
     }
+
+    @Test
+    void intersect_thisLowerGreater_usesThisLower() {
+        VersionRange r1 = new VersionRange("[2.0.0,5.0.0]");
+        VersionRange r2 = new VersionRange("[1.0.0,4.0.0]");
+        VersionRange intersection = r1.intersect(r2);
+        assertThat(intersection).isNotNull();
+        assertThat(intersection.getLower()).isEqualTo("2.0.0");
+    }
+
+    @Test
+    void intersect_equalLower_andsInclusivity() {
+        VersionRange r1 = new VersionRange("[1.0.0,5.0.0]");
+        VersionRange r2 = new VersionRange("[1.0.0,4.0.0]");
+        VersionRange intersection = r1.intersect(r2);
+        assertThat(intersection).isNotNull();
+        assertThat(intersection.getLower()).isEqualTo("1.0.0");
+        assertThat(intersection.isLowerInclusive()).isTrue();
+    }
+
+    @Test
+    void intersect_thisUpperGreater_usesStricterUpper() {
+        VersionRange r1 = new VersionRange("[1.0.0,4.0.0]");
+        VersionRange r2 = new VersionRange("[2.0.0,3.0.0]");
+        VersionRange intersection = r1.intersect(r2);
+        assertThat(intersection).isNotNull();
+        // 交集上界取更严格的较小值（other.upper）
+        assertThat(intersection.getUpper()).isEqualTo("3.0.0");
+    }
+
+    @Test
+    void intersect_equalUpper_andsInclusivity() {
+        VersionRange r1 = new VersionRange("[1.0.0,3.0.0]");
+        VersionRange r2 = new VersionRange("[2.0.0,3.0.0]");
+        VersionRange intersection = r1.intersect(r2);
+        assertThat(intersection).isNotNull();
+        assertThat(intersection.getUpper()).isEqualTo("3.0.0");
+        assertThat(intersection.isUpperInclusive()).isTrue();
+    }
 }

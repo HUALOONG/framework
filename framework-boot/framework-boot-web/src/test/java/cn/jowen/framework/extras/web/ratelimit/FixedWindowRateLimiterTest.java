@@ -2,6 +2,7 @@ package cn.jowen.framework.extras.web.ratelimit;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * {@link FixedWindowRateLimiter} 测试。
@@ -29,21 +31,17 @@ class FixedWindowRateLimiterTest {
     }
 
     @Test
-    void tryAcquire_resetsCountWhenWindowRolls() throws Exception {
+    void tryAcquire_resetsCountWhenWindowRolls() {
         FixedWindowRateLimiter limiter = new FixedWindowRateLimiter(2, 1);
-
-        // 对齐到窗口起始，避免刚好跨界导致的假失败
-        alignToWindowStart(1_000L);
 
         assertThat(limiter.tryAcquire("k")).isTrue();
         assertThat(limiter.tryAcquire("k")).isTrue();
         assertThat(limiter.tryAcquire("k")).isFalse();
 
-        // 等待进入下一个固定窗口
-        Thread.sleep(1_050L);
+        // 等待窗口滚动后计数清零（替代固定 Thread.sleep，容忍调度抖动）
+        await().atMost(Duration.ofSeconds(3)).until(() -> limiter.tryAcquire("k"));
 
         assertThat(limiter.tryAcquire("k")).as("窗口滚动后计数应清零").isTrue();
-        assertThat(limiter.tryAcquire("k")).isTrue();
         assertThat(limiter.tryAcquire("k")).isFalse();
     }
 
@@ -97,14 +95,5 @@ class FixedWindowRateLimiterTest {
         }
 
         assertThat(allowed.get()).isEqualTo(permits);
-    }
-
-    /** 睡到下一个窗口边界，使后续请求落在同一窗口内。 */
-    private static void alignToWindowStart(long windowMillis) throws InterruptedException {
-        long offset = System.currentTimeMillis() % windowMillis;
-        long remaining = windowMillis - offset;
-        if (remaining < windowMillis / 2) {
-            Thread.sleep(remaining + 5L);
-        }
     }
 }

@@ -48,6 +48,28 @@ class PluginFileWatcherTest {
     }
 
     @Test
+    void watchLoop_runsWhileActive(@TempDir Path tmpDir) throws Exception {
+        // 让 watchLoop 真正迭代若干轮（poll 返回 null 后 continue），覆盖循环体与防抖分发路径
+        PluginFileWatcher.FileChangeHandler handler = new PluginFileWatcher.FileChangeHandler() {
+            @Override
+            public void onFileCreated(String fileName) {
+            }
+
+            @Override
+            public void onFileModified(String fileName) {
+            }
+
+            @Override
+            public void onFileDeleted(String fileName) {
+            }
+        };
+        PluginFileWatcher watcher = new PluginFileWatcher(tmpDir, handler, 100);
+        watcher.start();
+        Thread.sleep(300);
+        watcher.close();
+    }
+
+    @Test
     void constructor_createsWatcher(@TempDir Path tmpDir) {
         PluginFileWatcher watcher = new PluginFileWatcher(tmpDir, emptyHandler(), 100);
         assertThat(watcher).isNotNull();

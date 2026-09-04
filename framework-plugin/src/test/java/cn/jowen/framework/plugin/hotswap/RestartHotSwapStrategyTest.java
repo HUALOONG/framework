@@ -4,6 +4,7 @@ import cn.jowen.framework.core.exception.SystemException;
 import cn.jowen.framework.core.spi.ExtensionLoader;
 import cn.jowen.framework.core.spi.SPI;
 import cn.jowen.framework.plugin.api.PluginState;
+import cn.jowen.framework.plugin.loader.PluginLoader;
 import cn.jowen.framework.plugin.lifecycle.PluginLifecycleManager;
 import cn.jowen.framework.plugin.registry.Extension;
 import cn.jowen.framework.plugin.registry.ExtensionRegistry;
@@ -15,11 +16,15 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+
+import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -41,6 +46,16 @@ class RestartHotSwapStrategyTest {
     @BeforeEach
     void setUp() {
         manager = new PluginLifecycleManager();
+    }
+
+    @Test
+    void onFileModified_missingFileAndAliases_areNoOps() {
+        RestartHotSwapStrategy strategy = new RestartHotSwapStrategy(manager, pluginsDir);
+        strategy.onFileModified("ghost.jar");
+        strategy.onFileCreated("ghost.jar");
+        strategy.onPluginChange("ghost.jar");
+        strategy.onFileDeleted("ghost.jar");
+        assertThat(manager.getPlugin("ghost")).isNull();
     }
 
     @Test
@@ -177,5 +192,43 @@ class RestartHotSwapStrategyTest {
     }
 
     static final class HotSwapPointImpl implements HotSwapPoint {
+    }
+
+    private void buildBadJar(String name) throws IOException {
+        // 描述符非法 -> PluginLoader 构造即抛 DescriptorParseException（被 loadPlugin 的 catch 吞掉），
+        // 不会打开 URLClassLoader，避免 Windows 下 jar 文件被锁定导致 @TempDir 清理失败
+        writeJar(name, "{\"pluginId\":\"demo\", \"version\":\"1.0.0\"");
+    }
+
+    @Test
+    void onFileModified_loadFailure_isSwallowed() throws IOException {
+        buildBadJar("bad.jar");
+        RestartHotSwapStrategy strategy = new RestartHotSwapStrategy(manager, pluginsDir);
+        // 加载失败被 loadPlugin 的 catch 吞掉，不抛异常，插件未注册
+        strategy.onFileModified("bad.jar");
+        assertThat(manager.getPlugin("demo")).isNull();
+        strategy.close();
+    }
+
+    @Test
+    void onFileDeleted_loaderCloseThrows_isSwallowed() throws Exception {
+        RestartHotSwapStrategy strategy = new RestartHotSwapStrategy(manager, pluginsDir);
+        PluginLoader mockLoader = Mockito.mock(PluginLoader.class);
+        Mockito.doThrow(new IOException("boom")).when(mockLoader).close();
+
+        Field loadersField = RestartHotSwapStrategy.class.getDeclaredField("loaders");
+        loadersField.setAccessible(true);
+        Map<String, PluginLoader> loaders = (Map<String, PluginLoader>) loadersField.get(strategy);
+        loaders.put("demo", mockLoader);
+
+        Field jarField = RestartHotSwapStrategy.class.getDeclaredField("jarFileByPluginId");
+        jarField.setAccessible(true);
+        Map<String, String> jarMap = (Map<String, String>) jarField.get(strategy);
+        jarMap.put("demo", "bad.jar");
+
+        // loader.close() 抛 IOException 被 unloadPluginByJar 的 catch 吞掉
+        strategy.onFileDeleted("bad.jar");
+        Mockito.verify(mockLoader).close();
+        strategy.close();
     }
 }

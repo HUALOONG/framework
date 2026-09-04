@@ -2,6 +2,7 @@ package cn.jowen.framework.cache.cache.caffeine;
 
 import cn.jowen.framework.cache.api.Cache;
 import cn.jowen.framework.cache.api.CacheConfiguration;
+import cn.jowen.framework.cache.api.CacheManager;
 import cn.jowen.framework.cache.api.CacheStats;
 import org.junit.jupiter.api.Test;
 
@@ -103,5 +104,32 @@ class CaffeineCacheManagerTest {
         CaffeineCacheManager manager = new CaffeineCacheManager(config);
         Cache<String, String> cache = manager.getCache("configCache");
         assertThat(cache).isNotNull();
+    }
+
+    @Test
+    void createDefault_returnsNewManager() {
+        CacheManager manager = CaffeineCacheManager.createDefault();
+        assertThat(manager).isNotNull();
+        assertThat(manager.getCache("d1")).isNotNull();
+    }
+
+    @Test
+    void create_withNameAndConfig_registersCache() {
+        CaffeineCacheManager manager = new CaffeineCacheManager();
+        CacheConfiguration config = CacheConfiguration.builder().maxSize(10).build();
+        Cache<String, String> created = manager.create("explicit", config);
+        assertThat(created).isNotNull();
+        assertThat(created.name()).isEqualTo("explicit");
+        assertThat(manager.cacheNames()).contains("explicit");
+    }
+
+    @Test
+    void configure_withConfigurer_appliesOnCacheCreation() {
+        CaffeineCacheManager manager = new CaffeineCacheManager();
+        boolean[] invoked = {false};
+        manager.configure(builder -> invoked[0] = true);
+        Cache<String, String> cache = manager.getCache("configured");
+        assertThat(cache).isNotNull();
+        assertThat(invoked[0]).isTrue();
     }
 }

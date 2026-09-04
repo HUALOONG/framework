@@ -50,24 +50,15 @@ class LoggerFactoryTest {
     }
 
     @Test
-    void resolveAdapter_throwsWhenNoAdapter() {
-        // 使用 mock 适配器，强制 SPI 返回空列表
-        LoggerFactory.setAdapter(new LoggerAdapter() {
-            @Override
-            public Logger getLogger(String name) {
-                return null;
-            }
-        });
-        // 验证异常信息：如果 SPI 找到实现，说明环境中有适配，测试应跳过
-        // 这里直接验证异常信息内容是否合理
-        try {
-            LoggerFactory.resolveAdapter();
-            // 如果未抛出异常，说明 SPI 找到了实现，这在测试环境中是正常的
-            // 验证返回的适配器不为空即可
-            assertThat(LoggerFactory.resolveAdapter()).isNotNull();
-        } catch (IllegalStateException ex) {
-            assertThat(ex.getMessage()).contains("未找到可用的 LoggerAdapter");
-        }
+    void resolveAdapter_withoutSetAdapter_resolvesViaSpiAndCaches() {
+        // setUp 已将 adapter 置空，此处不预设，强制走 DCL 慢路径经 ExtensionLoader 解析
+        // （原先此处用 try-catch 双重通过，两种结果均算成功，属无断言空壳测试）
+        LoggerAdapter resolved = LoggerFactory.resolveAdapter();
+        assertThat(resolved).isNotNull();
+        // 经 SPI 解析出的适配器必须真正可用，而非空实现
+        assertThat(resolved.getLogger("spi.resolved.logger")).isNotNull();
+        // 解析结果应被缓存，二次调用命中缓存返回同一实例
+        assertThat(LoggerFactory.resolveAdapter()).isSameAs(resolved);
     }
 
     @Test

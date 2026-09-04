@@ -2,6 +2,7 @@ package cn.jowen.framework.extras.web.ratelimit;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * {@link SlidingWindowRateLimiter} 测试。
@@ -28,32 +30,39 @@ class SlidingWindowRateLimiterTest {
     }
 
     @Test
-    void tryAcquire_allowsAgainAfterOldHitsSlideOut() throws Exception {
+    void tryAcquire_allowsAgainAfterOldHitsSlideOut() {
         SlidingWindowRateLimiter limiter = new SlidingWindowRateLimiter(2, 1);
 
         assertThat(limiter.tryAcquire("k")).isTrue();
         assertThat(limiter.tryAcquire("k")).isTrue();
         assertThat(limiter.tryAcquire("k")).isFalse();
 
-        Thread.sleep(1_050L);
+        // 等待旧时间戳滑出窗口后再次放行（替代固定 Thread.sleep，容忍抖动）
+        await().atMost(Duration.ofSeconds(3)).until(() -> limiter.tryAcquire("k"));
 
         assertThat(limiter.tryAcquire("k")).as("旧时间戳滑出窗口后应放行").isTrue();
-        assertThat(limiter.tryAcquire("k")).isTrue();
         assertThat(limiter.tryAcquire("k")).isFalse();
     }
 
     @Test
-    void tryAcquire_slidesPartially_notWholeWindowReset() throws Exception {
+    void tryAcquire_slidesPartially_notWholeWindowReset() {
         SlidingWindowRateLimiter limiter = new SlidingWindowRateLimiter(2, 1);
 
-        assertThat(limiter.tryAcquire("k")).isTrue();   // t0
-        Thread.sleep(600L);
-        assertThat(limiter.tryAcquire("k")).isTrue();   // t0+600
+        long t0 = System.currentTimeMillis();
+        assertThat(limiter.tryAcquire("k")).isTrue();   // 第一笔命中
+
+        // 等约 600ms 让第二笔命中落在 t0 之后，制造「部分滑出」窗口
+        await().atMost(Duration.ofSeconds(2)).until(() -> System.currentTimeMillis() - t0 >= 600L);
+        assertThat(limiter.tryAcquire("k")).isTrue();   // 第二笔命中，窗口满载
         assertThat(limiter.tryAcquire("k")).isFalse();
 
-        // t0 的命中滑出，t0+600 的仍在窗口内 -> 仅腾出一个额度
-        Thread.sleep(500L);
-        assertThat(limiter.tryAcquire("k")).isTrue();
+        // 最早一笔命中滑出窗口、但稍晚一笔仍在窗口内 -> 仅腾出一个额度（非整体重置）
+        await().atMost(Duration.ofSeconds(3)).until(() -> {
+            boolean first = limiter.tryAcquire("k");
+            boolean second = limiter.tryAcquire("k");
+            return first && !second;
+        });
+
         assertThat(limiter.tryAcquire("k")).as("滑动窗口非整体重置").isFalse();
     }
 

@@ -61,4 +61,10 @@ class HashStrategyTest {
         assertThat(strategy.type()).isEqualTo(NamingStrategy.HASH);
         assertThat(strategy.generate("a.bin", null)).isNotNull();
     }
+
+    @Test
+    void md5HexStringUtility_matchesKnownDigest() {
+        // 覆盖包级静态工具 md5Hex(String)：MD5("hello") 已知值
+        assertThat(HashStrategy.md5Hex("hello")).isEqualTo("5d41402abc4b2a76b9719d911017c592");
+    }
 }

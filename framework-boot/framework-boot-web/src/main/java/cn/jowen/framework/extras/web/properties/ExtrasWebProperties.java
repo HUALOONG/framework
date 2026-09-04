@@ -476,6 +476,9 @@ public class ExtrasWebProperties {
         /** 是否启用 */
         private boolean enabled = false;
 
+        /** 单次导入/导出的最大行数，超出直接拒绝，防止大结果集打爆内存。 */
+        private int maxRows = 100000;
+
         /**
          * 是否启用。
          * @return 是否启用
@@ -490,6 +493,23 @@ public class ExtrasWebProperties {
          */
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        /**
+         * 单次导入/导出的最大行数。
+         * @return 行数上限
+         */
+        public int getMaxRows() {
+            return maxRows;
+        }
+
+        /**
+         * 设置单次导入/导出的最大行数。
+         * @param maxRows 行数上限，必须为正数
+         */
+        public void setMaxRows(int maxRows) {
+            if (maxRows <= 0) throw new IllegalArgumentException("maxRows must be positive");
+            this.maxRows = maxRows;
         }
     }
 

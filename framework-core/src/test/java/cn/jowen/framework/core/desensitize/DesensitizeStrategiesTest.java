@@ -91,4 +91,27 @@ class DesensitizeStrategiesTest {
     void defaultEndKeep() {
         assertThat(DesensitizeStrategies.PHONE.defaultEndKeep()).isEqualTo(4);
     }
+
+    @Test
+    void matches_noRegexConstraint_alwaysTrue() {
+        // ADDRESS / PASSWORD / CUSTOM 无正则约束：非空非空白即视为匹配
+        assertThat(DesensitizeStrategies.ADDRESS.matches("任意字符串")).isTrue();
+        assertThat(DesensitizeStrategies.PASSWORD.matches("x")).isTrue();
+        assertThat(DesensitizeStrategies.CUSTOM.matches("z")).isTrue();
+    }
+
+    @Test
+    void mask_nullOrBlank_returnsRaw() {
+        // null / 空白输入原样返回，不抛异常也不脱敏
+        assertThat(DesensitizeStrategies.PHONE.mask(null)).isNull();
+        assertThat(DesensitizeStrategies.EMAIL.mask("   ")).isEqualTo("   ");
+    }
+
+    @Test
+    void mask_contextSkip_returnsRaw() {
+        // 上下文 skip=true（配置开关 / 审计豁免）时原样返回，且优先于格式校验
+        DesensitizeContext skipCtx = new DesensitizeContext(3, 4, "*", true);
+        assertThat(DesensitizeStrategies.PHONE.mask("13812345678", skipCtx)).isEqualTo("13812345678");
+        assertThat(DesensitizeStrategies.EMAIL.mask("test@example.com", skipCtx)).isEqualTo("test@example.com");
+    }
 }

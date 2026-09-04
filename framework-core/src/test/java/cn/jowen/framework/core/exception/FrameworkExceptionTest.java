@@ -73,6 +73,28 @@ class FrameworkExceptionTest {
     }
 
     @Test
+    void businessException_withCause() {
+        Throwable cause = new RuntimeException("cause");
+        BusinessException ex = new BusinessException("msg", cause);
+        assertThat(ex.getCause()).isSameAs(cause);
+    }
+
+    @Test
+    void businessException_errorCode_only() {
+        BusinessException ex = new BusinessException(TestCode.ERR);
+        assertThat(ex.getErrorCode()).isEqualTo(TestCode.ERR);
+        assertThat(ex.getMessage()).isEqualTo("业务失败");
+    }
+
+    @Test
+    void businessException_errorCodeAndCause() {
+        Throwable cause = new RuntimeException("cause");
+        BusinessException ex = new BusinessException(TestCode.ERR, cause);
+        assertThat(ex.getErrorCode()).isEqualTo(TestCode.ERR);
+        assertThat(ex.getCause()).isSameAs(cause);
+    }
+
+    @Test
     void systemException_getErrorCode() {
         SystemException ex = new SystemException(TestCode.SYS_ERR, "msg");
         assertThat(ex.getErrorCode()).isEqualTo(TestCode.SYS_ERR);
@@ -82,5 +104,23 @@ class FrameworkExceptionTest {
     void systemException_noErrorCode() {
         SystemException ex = new SystemException("msg");
         assertThat(ex.getErrorCode()).isNull();
+    }
+
+    @Test
+    void systemException_errorCode_only() {
+        // 仅错误码构造：消息取错误码默认文案
+        SystemException ex = new SystemException(TestCode.SYS_ERR);
+        assertThat(ex.getErrorCode()).isEqualTo(TestCode.SYS_ERR);
+        assertThat(ex.getMessage()).isEqualTo("系统错误");
+    }
+
+    @Test
+    void systemException_errorCodeAndCause() {
+        // 错误码 + 原因构造：错误码与原始原因均须保留
+        Throwable cause = new RuntimeException("cause");
+        SystemException ex = new SystemException(TestCode.SYS_ERR, cause);
+        assertThat(ex.getErrorCode()).isEqualTo(TestCode.SYS_ERR);
+        assertThat(ex.getMessage()).isEqualTo("系统错误");
+        assertThat(ex.getCause()).isSameAs(cause);
     }
 }

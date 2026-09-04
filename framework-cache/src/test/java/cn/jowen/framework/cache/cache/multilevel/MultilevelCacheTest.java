@@ -2,155 +2,181 @@ package cn.jowen.framework.cache.cache.multilevel;
 
 import cn.jowen.framework.cache.api.Cache;
 import cn.jowen.framework.cache.api.CacheStats;
+import cn.jowen.framework.cache.api.NullValue;
+
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-/**
- * {@link MultilevelCache} 测试。
- */
-@SuppressWarnings("unchecked")
 class MultilevelCacheTest {
 
-    private final Cache<String, String> local = mock(Cache.class);
-    private final Cache<String, String> remote = mock(Cache.class);
+    static final class MapCache<K, V> implements Cache<K, V> {
+        @SuppressWarnings("unchecked")
+        private final Map<Object, Object> store = new ConcurrentHashMap<>();
+        private final String name;
 
-    private MultilevelCache<String, String> newCache() {
-        return new MultilevelCache<>("multi", local, remote);
+        MapCache(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public V get(K key) {
+            return (V) store.get(key);
+        }
+
+        @Override
+        public void put(K key, V value) {
+            store.put(key, value);
+        }
+
+        @Override
+        public void put(K key, V value, Duration ttl) {
+            store.put(key, value);
+        }
+
+        @Override
+        public boolean putIfAbsent(K key, V value) {
+            return store.putIfAbsent(key, value) == null;
+        }
+
+        @Override
+        public void evict(K key) {
+            store.remove(key);
+        }
+
+        @Override
+        public void clear() {
+            store.clear();
+        }
+
+        @Override
+        public long size() {
+            return store.size();
+        }
+
+        @Override
+        public CacheStats stats() {
+            return new CacheStats();
+        }
     }
 
     @Test
-    void name_returnsConfiguredName() {
-        assertThat(newCache().name()).isEqualTo("multi");
+    void put_get_missFillsLocal() {
+        MapCache<String, String> local = new MapCache<>("local");
+        MapCache<String, String> remote = new MapCache<>("remote");
+        MultilevelCache<String, String> cache = new MultilevelCache<>("mc", local, remote);
+
+        // 远程命中：回填本地
+        remote.put("k", "v");
+        assertThat(cache.get("k")).isEqualTo("v");
+        assertThat(local.get("k")).isEqualTo("v");
+
+        // 直接写入：双写
+        cache.put("k2", "v2");
+        assertThat(local.get("k2")).isEqualTo("v2");
+        assertThat(remote.get("k2")).isEqualTo("v2");
+
+        // 缺失返回 null
+        assertThat(cache.get("missing")).isNull();
+
+        // 基础方法
+        assertThat(cache.name()).isEqualTo("mc");
+        assertThat(cache.size()).isEqualTo(2);
+        cache.evict("k");
+        cache.clear();
+        assertThat(cache.size()).isZero();
     }
 
     @Test
-    void get_localHit_returnsLocalValue() {
-        when(local.get("k")).thenReturn("v");
-        assertThat(newCache().get("k")).isEqualTo("v");
-        verify(remote, never()).get(any());
-    }
-
-    @Test
-    void get_localMiss_remoteHit_backfillsLocal() {
-        when(local.get("k")).thenReturn(null);
-        when(remote.get("k")).thenReturn("rv");
-        assertThat(newCache().get("k")).isEqualTo("rv");
-        verify(local).put("k", "rv");
-    }
-
-    @Test
-    void get_bothMiss_returnsNull() {
-        when(local.get("k")).thenReturn(null);
-        when(remote.get("k")).thenReturn(null);
-        assertThat(newCache().get("k")).isNull();
-        verify(local, never()).put(any(), any());
-    }
-
-    @Test
-    void get_remoteMissWithNullValueCache_putsNullValue() {
-        when(local.get("k")).thenReturn(null);
-        when(remote.get("k")).thenReturn(null);
+    void nullValueCache_cachesPlaceholder() {
+        MapCache<String, String> local = new MapCache<>("local");
+        MapCache<String, String> remote = new MapCache<>("remote");
         MultilevelCache<String, String> cache =
-                new MultilevelCache<>("multi", local, remote, true, Duration.ofMinutes(1), false);
-        assertThat(cache.get("k")).isNull();
-        verify(local).put(eq("k"), any());
+                new MultilevelCache<>("mc", local, remote, true, Duration.ZERO, false);
+
+        // 远程未命中且开启空值缓存：写入占位并返回 null，占位不对外泄漏
+        assertThat(cache.get("absent")).isNull();
+        @SuppressWarnings("unchecked")
+        MapCache rawLocal = local;
+        assertThat(rawLocal.get("absent")).isInstanceOf(NullValue.class);
     }
 
     @Test
-    void get_mutexLock_serializesAndReturnsRemoteValue() {
-        when(local.get("k")).thenReturn(null);
-        when(remote.get("k")).thenReturn("rv");
+    void mutexLock_doubleChecks() {
+        MapCache<String, String> local = new MapCache<>("local");
+        MapCache<String, String> remote = new MapCache<>("remote");
         MultilevelCache<String, String> cache =
-                new MultilevelCache<>("multi", local, remote, false, Duration.ZERO, true);
-        assertThat(cache.get("k")).isEqualTo("rv");
-        verify(local).put("k", "rv");
+                new MultilevelCache<>("mc", local, remote, false, Duration.ZERO, true);
+
+        remote.put("k", "v");
+        assertThat(cache.get("k")).isEqualTo("v");
     }
 
     @Test
-    void put_writesRemoteThenLocal() {
-        newCache().put("k", "v");
-        verify(remote).put("k", "v");
-        verify(local).put("k", "v");
+    void handleCacheMiss_loadsAndFills() {
+        MapCache<String, String> local = new MapCache<>("local");
+        MapCache<String, String> remote = new MapCache<>("remote");
+        MultilevelCache<String, String> cache =
+                new MultilevelCache<>("mc", local, remote, true, Duration.ZERO, false);
+
+        String loaded = cache.handleCacheMiss("k", key -> "loaded-" + key);
+        assertThat(loaded).isEqualTo("loaded-k");
+        assertThat(remote.get("k")).isEqualTo("loaded-k");
+
+        // 二次命中本地缓存，loader 不再执行
+        String second = cache.handleCacheMiss("k", key -> "should-not-run");
+        assertThat(second).isEqualTo("loaded-k");
     }
 
     @Test
-    void putWithTtl_writesBothWithTtl() {
-        Duration ttl = Duration.ofSeconds(10);
-        newCache().put("k", "v", ttl);
-        verify(remote).put("k", "v", ttl);
-        verify(local).put("k", "v", ttl);
+    void mutexWithTtl_cachesNullPlaceholderWithTtl() {
+        MapCache<String, String> local = new MapCache<>("local");
+        MapCache<String, String> remote = new MapCache<>("remote");
+        MultilevelCache<String, String> cache =
+                new MultilevelCache<>("mc", local, remote, true, Duration.ofSeconds(5), true);
+
+        // 互斥锁路径：double-check 后远程未命中且开启空值缓存（带 TTL）→ 写入占位并返回 null
+        assertThat(cache.get("absent")).isNull();
+        @SuppressWarnings("unchecked")
+        MapCache rawLocal2 = local;
+        assertThat(rawLocal2.get("absent")).isInstanceOf(NullValue.class);
     }
 
     @Test
-    void putIfAbsent_existingLocalValue_returnsFalse() {
-        when(local.get("k")).thenReturn("v");
-        assertThat(newCache().putIfAbsent("k", "nv")).isFalse();
-        verify(remote, never()).put(any(), any());
+    void putWithTtl_writesBothLevels() {
+        MapCache<String, String> local = new MapCache<>("local");
+        MapCache<String, String> remote = new MapCache<>("remote");
+        MultilevelCache<String, String> cache = new MultilevelCache<>("mc", local, remote);
+
+        // 带 TTL 写入必须同时落到远程与本地，两级不能只写一侧
+        cache.put("k", "v", Duration.ofSeconds(30));
+        assertThat(local.get("k")).isEqualTo("v");
+        assertThat(remote.get("k")).isEqualTo("v");
     }
 
     @Test
-    void putIfAbsent_missingValue_putsAndReturnsTrue() {
-        when(local.get("k")).thenReturn(null);
-        assertThat(newCache().putIfAbsent("k", "v")).isTrue();
-        verify(remote).put("k", "v");
-        verify(local).put("k", "v");
-    }
+    void putIfAbsent_absentReturnsTrue_existingShortCircuits() {
+        MapCache<String, String> local = new MapCache<>("local");
+        MapCache<String, String> remote = new MapCache<>("remote");
+        MultilevelCache<String, String> cache = new MultilevelCache<>("mc", local, remote);
 
-    @Test
-    void evict_removesFromBothLevels() {
-        newCache().evict("k");
-        verify(remote).evict("k");
-        verify(local).evict("k");
-    }
+        // 本地不存在：写入成功返回 true，且双写两级
+        assertThat(cache.putIfAbsent("k", "v")).isTrue();
+        assertThat(local.get("k")).isEqualTo("v");
+        assertThat(remote.get("k")).isEqualTo("v");
 
-    @Test
-    void clear_clearsBothLevels() {
-        newCache().clear();
-        verify(remote).clear();
-        verify(local).clear();
-    }
-
-    @Test
-    void size_delegatesToLocal() {
-        when(local.size()).thenReturn(3L);
-        assertThat(newCache().size()).isEqualTo(3L);
-    }
-
-    @Test
-    void stats_delegatesToLocal() {
-        CacheStats stats = mock(CacheStats.class);
-        when(local.stats()).thenReturn(stats);
-        assertThat(newCache().stats()).isSameAs(stats);
-    }
-
-    @Test
-    void handleCacheMiss_localHit_returnsLocalValue() {
-        when(local.get("k")).thenReturn("v");
-        assertThat(newCache().handleCacheMiss("k", key -> "loaded")).isEqualTo("v");
-        verify(remote, never()).get(any());
-    }
-
-    @Test
-    void handleCacheMiss_remoteMiss_loaderLoadsAndBackfills() {
-        when(local.get("k")).thenReturn(null);
-        assertThat(newCache().handleCacheMiss("k", key -> "loaded")).isEqualTo("loaded");
-        verify(remote).put("k", "loaded");
-        verify(local).put("k", "loaded");
-    }
-
-    @Test
-    void handleCacheMiss_loaderReturnsNull_returnsNull() {
-        when(local.get("k")).thenReturn(null);
-        assertThat(newCache().handleCacheMiss("k", key -> null)).isNull();
-        verify(local, never()).put(any(), any());
+        // 本地已存在：以本地为判定基准短路返回 false，原值不得被覆盖
+        assertThat(cache.putIfAbsent("k", "v2")).isFalse();
+        assertThat(cache.get("k")).isEqualTo("v");
     }
 }

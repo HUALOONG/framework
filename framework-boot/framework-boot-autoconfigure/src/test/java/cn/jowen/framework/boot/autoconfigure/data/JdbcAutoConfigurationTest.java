@@ -2,8 +2,6 @@ package cn.jowen.framework.boot.autoconfigure.data;
 
 import cn.jowen.framework.data.core.datasource.PoolType;
 import cn.jowen.framework.data.core.mapping.EntityMetadataResolver;
-import cn.jowen.framework.data.core.repository.RepositoryFactory;
-import cn.jowen.framework.data.core.transaction.TransactionManager;
 import cn.jowen.framework.data.jdbc.connection.ConnectionProvider;
 import cn.jowen.framework.data.jdbc.config.JdbcProperties;
 import cn.jowen.framework.data.jdbc.core.BatchTemplate;
@@ -11,7 +9,6 @@ import cn.jowen.framework.data.jdbc.core.JdbcTemplate;
 import cn.jowen.framework.data.jdbc.core.NamedParameterTemplate;
 import cn.jowen.framework.data.jdbc.core.SqlRunner;
 import cn.jowen.framework.data.jdbc.dialect.DialectRegistry;
-import cn.jowen.framework.data.jdbc.repository.JdbcRepositoryFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -86,16 +83,6 @@ class JdbcAutoConfigurationTest {
             assertThat(ctx).hasSingleBean(NamedParameterTemplate.class);
             assertThat(ctx).hasSingleBean(BatchTemplate.class);
             assertThat(ctx).hasSingleBean(SqlRunner.class);
-            assertThat(ctx).hasSingleBean(RepositoryFactory.class);
-            assertThat(ctx).hasSingleBean(TransactionManager.class);
-        });
-    }
-
-    @Test
-    void shouldResolveJdbcRepositoryFactoryBean() {
-        context.run(ctx -> {
-            RepositoryFactory factory = ctx.getBean(RepositoryFactory.class);
-            assertThat(factory).isInstanceOf(JdbcRepositoryFactory.class);
         });
     }
 

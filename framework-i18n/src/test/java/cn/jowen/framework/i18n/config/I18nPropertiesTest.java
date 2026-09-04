@@ -109,6 +109,24 @@ class I18nPropertiesTest {
     }
 
     @Test
+    void setDatabase_replacesConfig() {
+        // 业务方可整体替换数据库消息源配置（如多数据源场景下切换表结构约定）
+        I18nProperties.DatabaseSource custom = new I18nProperties.DatabaseSource();
+        custom.setTableName("localization_entry");
+        custom.setLocaleColumn("language");
+        custom.setCodeColumn("entry_key");
+        custom.setMessageColumn("entry_value");
+
+        properties.setDatabase(custom);
+
+        assertThat(properties.getDatabase()).isSameAs(custom);
+        assertThat(properties.getDatabase().getTableName()).isEqualTo("localization_entry");
+        assertThat(properties.getDatabase().getLocaleColumn()).isEqualTo("language");
+        assertThat(properties.getDatabase().getCodeColumn()).isEqualTo("entry_key");
+        assertThat(properties.getDatabase().getMessageColumn()).isEqualTo("entry_value");
+    }
+
+    @Test
     void allSettersTogether() {
         properties.setEnabled(false);
         properties.setSource(SourceType.DATABASE);

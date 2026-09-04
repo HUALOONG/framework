@@ -2,11 +2,9 @@ package cn.jowen.framework.boot.autoconfigure.data;
 
 import cn.jowen.framework.boot.autoconfigure.JowenAutoConfiguration;
 import cn.jowen.framework.data.core.exception.ExceptionTranslator;
-import cn.jowen.framework.data.core.repository.RepositoryFactory;
 import cn.jowen.framework.data.mybatis.adapter.FlexExceptionTranslator;
 import cn.jowen.framework.data.mybatis.config.FlexGlobalConfigCustomizer;
 import cn.jowen.framework.data.mybatis.extension.ExtensionRegistry;
-import cn.jowen.framework.data.mybatis.repository.FlexRepositoryFactory;
 import com.mybatisflex.core.BaseMapper;
 import com.mybatisflex.core.FlexGlobalConfig;
 import com.mybatisflex.core.audit.AuditManager;
@@ -27,6 +25,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -70,8 +69,8 @@ import java.util.List;
  *     <li>构建 {@link javax.sql.DataSource}（优先 HikariCP，缺省回退 MyBatis 内置连接池）；</li>
  *     <li>以 {@link FlexConfiguration} + {@link FlexSqlSessionFactoryBuilder} 装配
  *         {@link SqlSessionFactory}，注册类型别名、加载 Mapper XML、扫描并注册 Flex 基础 Mapper；</li>
- *     <li>向 Spring 容器暴露 {@link SqlSessionManager}、{@link RepositoryFactory}（{@code flexRepositoryFactory}）、
- *         {@link ExtensionRegistry}、{@link ExceptionTranslator} 等组件；</li>
+ *     <li>向 Spring 容器暴露 {@link SqlSessionManager}、{@link ExtensionRegistry}、
+ *         {@link ExceptionTranslator} 等组件；业务 Mapper 继承 {@link BaseMapper} 直接使用 Flex 能力；</li>
  *     <li>扫描 {@code framework.data.mybatis.type-aliases-package} 下的 {@code @Mapper} 或继承
  *         {@link BaseMapper} 的接口，注册为 Spring Bean，支持 {@code @Autowired} 直接注入。</li>
  * </ol>
@@ -93,7 +92,7 @@ import java.util.List;
  * <p>关闭方式：{@code framework.data.mybatis.enabled=false}。
  *
  * <p>说明：多租户 / 逻辑删除 / 乐观锁 / 脱敏 / 字段加密等扩展通过 {@link ExtensionRegistry}
- * 在 {@link FlexRepositoryFactory} 路径生效，不依赖 MyBatis Flex 全局管理器；
+ * 与 MyBatis Flex 全局配置生效，业务 Mapper 直接继承 {@link BaseMapper} 即可使用全部能力；
  * 业务方可通过 {@link FlexGlobalConfigCustomizer} Bean 定制全局配置。
  *
  * @author 王飞
@@ -242,21 +241,6 @@ public class MybatisAutoConfiguration {
     }
 
     /**
-     * 仓储工厂：按实体类型获取 {@link cn.jowen.framework.data.core.repository.Repository}。
-     *
-     * @param sqlSessionManager  会话管理器
-     * @param extensionRegistry  扩展注册中心
-     * @return 仓储工厂
-     */
-    @Bean("flexRepositoryFactory")
-    @ConditionalOnMissingBean
-    @ConditionalOnBean(SqlSessionManager.class)
-    public RepositoryFactory flexRepositoryFactory(SqlSessionManager sqlSessionManager,
-                                                    ExtensionRegistry extensionRegistry) {
-        return new FlexRepositoryFactory(sqlSessionManager, extensionRegistry);
-    }
-
-    /**
      * Mapper 扫描器：将 {@code framework.data.mybatis.type-aliases-package} 下标注 {@code @Mapper}
      * 或继承 {@link BaseMapper} 的接口注册为 Spring Bean（{@code @Autowired} 可注入）。
      *
@@ -348,7 +332,16 @@ public class MybatisAutoConfiguration {
             if (!StringUtils.hasText(basePackages)) {
                 return;
             }
-            ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
+            ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false) {
+                /**
+                 * 覆盖默认候选判定：MyBatis Mapper 均为接口，而父类默认拒绝非具体类，
+                 * 与本扫描器的包含过滤器（仅接口）互斥，会导致任何 Mapper 都扫描不到。
+                 */
+                @Override
+                protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
+                    return beanDefinition.getMetadata().isIndependent();
+                }
+            };
             scanner.addIncludeFilter((metadataReader, metadataReaderFactory) -> {
                 AnnotationMetadata metadata = metadataReader.getAnnotationMetadata();
                 if (!metadata.isInterface()) {

@@ -12,6 +12,9 @@ import cn.jowen.framework.extras.web.crypto.CryptoProcessor;
 import cn.jowen.framework.extras.web.captcha.SmsCaptchaGenerator;
 import cn.jowen.framework.extras.web.captcha.SmsCaptchaSender;
 import cn.jowen.framework.extras.web.datapermission.DataPermissionAspect;
+import cn.jowen.framework.extras.web.desensitize.DesensitizeAspect;
+import cn.jowen.framework.extras.web.excel.ExcelExporter;
+import cn.jowen.framework.extras.web.excel.ExcelImporter;
 import cn.jowen.framework.extras.web.datapermission.DataPermissionRule;
 import cn.jowen.framework.extras.web.datapermission.DataPermissionUserProvider;
 import cn.jowen.framework.extras.web.idempotent.IdempotentAspect;
@@ -48,11 +51,26 @@ import java.util.concurrent.ForkJoinPool;
 /**
  * Web 扩展能力自动装配：锁 / 限流 / 幂等 / 加解密 / 签名 / 验证码 / 操作日志 / 数据权限。
  *
- * <p>装配条件：
+ * <p>装配条件（两级总开关，均默认开启）：
  * <ul>
- *   <li>{@code framework.extras.enabled=true}（默认）；</li>
- *   <li>仅当 classpath 存在 Spring AOP 时生效。</li>
+ *   <li>{@code framework.extras.enabled=true}；</li>
+ *   <li>{@code framework.extras.web.enabled=true}；</li>
+ *   <li>classpath 存在 Spring AOP（AspectJ 注解）。</li>
  * </ul>
+ *
+ * <p>能力级开关（各能力独立 {@code @ConditionalOnProperty}，互不影响）：
+ * <pre>{@code
+ * framework.extras.web:
+ *   enabled: true
+ *   lock.enabled: true
+ *   ratelimit.enabled: true
+ *   idempotent.enabled: true
+ *   crypto.enabled: true
+ *   sign.enabled: true
+ *   captcha.enabled: false        # 默认关闭
+ *   datapermission.enabled: false # 默认关闭
+ *   operatelog.enabled: false     # 默认关闭
+ * }</pre>
  *
  * <p>配置统一绑定自 {@link BootWebExtrasProperties}（前缀 {@code framework.extras.web}），
  * 由构造注入提供。绑定类置于 Boot 层，web 实现模块保持零 Spring 依赖。
@@ -65,6 +83,7 @@ import java.util.concurrent.ForkJoinPool;
 @AutoConfiguration
 @ConditionalOnClass(name = "org.aspectj.lang.annotation.Aspect")
 @ConditionalOnProperty(prefix = "framework.extras", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "framework.extras.web", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties({BootWebExtrasProperties.class, BootExtrasProperties.class})
 public class WebExtrasAutoConfiguration {
 
@@ -231,6 +250,67 @@ public class WebExtrasAutoConfiguration {
     public DataPermissionAspect dataPermissionAspect(DataPermissionRule rule,
                                                      BootExtrasProperties commonProps) {
         return new DataPermissionAspect(rule, commonProps.getDatapermission().getDefaultScope());
+    }
+
+    /**
+     * 脱敏切面：方法标注 {@link Desensitized} 后，返回值按 {@code @DesensitizeField} 策略脱敏。
+     *
+     * <p>默认关闭（{@code framework.extras.web.desensitize.enabled=false}），
+     * 需业务方显式开启，避免无差别改写返回值。
+     *
+     * @return 脱敏切面，不可为 {@code null}
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "framework.extras.web.desensitize", name = "enabled", havingValue = "true")
+    public DesensitizeAspect desensitizeAspect() {
+        return new DesensitizeAspect();
+    }
+
+    /**
+     * Excel 装配：仅当 classpath 存在 EasyExcel 时生效。
+     *
+     * <p><b>为什么必须独立成内部类</b>：{@code easyexcel} 为 optional 依赖（会传递引入 POI，
+     * 体积较大）。隔离在本类中并以 {@code @ConditionalOnClass(name = ...)}（字符串形式）保护，
+     * 确保未引入时本类整体被跳过，不影响其他 web 能力。
+     */
+    @NullMarked
+    @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(name = "com.alibaba.excel.EasyExcel")
+    @ConditionalOnProperty(prefix = "framework.extras.web.excel", name = "enabled", havingValue = "true")
+    public static class ExcelConfiguration {
+
+        private final BootWebExtrasProperties props;
+
+        /**
+         * 构造实例。
+         *
+         * @param props Web 扩展配置
+         */
+        public ExcelConfiguration(BootWebExtrasProperties props) {
+            this.props = props;
+        }
+
+        /**
+         * Excel 导出器。
+         *
+         * @return 导出器，不可为 {@code null}
+         */
+        @Bean
+        @ConditionalOnMissingBean(ExcelExporter.class)
+        public ExcelExporter excelExporter() {
+            return new ExcelExporter(props.getExcel().getMaxRows());
+        }
+
+        /**
+         * Excel 导入器。
+         *
+         * @return 导入器，不可为 {@code null}
+         */
+        @Bean
+        @ConditionalOnMissingBean(ExcelImporter.class)
+        public ExcelImporter excelImporter() {
+            return new ExcelImporter(props.getExcel().getMaxRows());
+        }
     }
 
     /**

@@ -3,7 +3,10 @@ package cn.jowen.framework.core.spi;
 import cn.jowen.framework.core.exception.SystemException;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
  * {@link ExtensionLoader} 测试。
@@ -52,6 +55,47 @@ class ExtensionLoaderTest {
     void getActivateExtensions_emptyList() {
         ExtensionLoader<TestSPI> loader = ExtensionLoader.getExtensionLoader(TestSPI.class);
         assertThat(loader.getActivateExtensions()).isEmpty();
+    }
+
+    @Test
+    void removeSource_null_throws() {
+        ExtensionLoader<TestSPI> loader = ExtensionLoader.getExtensionLoader(TestSPI.class);
+        assertThatThrownBy(() -> loader.removeSource(null))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("sourceId 不能为 null");
+    }
+
+    @Test
+    void getExtensionsBySource_null_throws() {
+        ExtensionLoader<TestSPI> loader = ExtensionLoader.getExtensionLoader(TestSPI.class);
+        assertThatThrownBy(() -> loader.getExtensionsBySource(null))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("sourceId 不能为 null");
+    }
+
+    @Test
+    void refreshDynamicSources_doesNotThrow() {
+        ExtensionLoader<TestSPI> loader = ExtensionLoader.getExtensionLoader(TestSPI.class);
+        assertThatCode(loader::refreshDynamicSources).doesNotThrowAnyException();
+    }
+
+    @Test
+    void addSource_sourceWithoutOverride_usesDefaultNoopListener() {
+        // 未重写 addChangeListener 的源走接口默认空实现（静态源内容不可变），注册不得抛异常
+        ExtensionLoader<TestSPI> loader = ExtensionLoader.getExtensionLoader(TestSPI.class);
+        ExtensionSource<TestSPI> staticSource = new ExtensionSource<>() {
+            @Override
+            public String sourceId() {
+                return "test-noop-listener-source";
+            }
+
+            @Override
+            public List<NamedExtension<TestSPI>> load(Class<TestSPI> extensionPoint, ClassLoader classLoader) {
+                return List.of();
+            }
+        };
+
+        assertThatCode(() -> loader.addSource(staticSource)).doesNotThrowAnyException();
     }
 
     @SPI

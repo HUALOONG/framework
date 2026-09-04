@@ -10,29 +10,30 @@
 
 ## 一、模块定位
 
-`framework-extras-web` 是框架的 **Web 层工具集模块**，提供 6 项高频能力：分布式锁、接口限流、幂等控制、验证码、数据权限、操作日志。全部能力基于 `framework-cache` 作为存储底座，通过 AOP 实现声明式使用。
+`framework-extras-web` 是框架的 **Web 层工具集模块**，提供 6 项高频能力：分布式锁、接口限流、幂等控制、验证码、数据权限、操作日志。全部能力基于
+`framework-cache` 作为存储底座，通过 AOP 实现声明式使用。
 
 **核心价值**：
 
-| 场景         | 没有本模块                         | 有本模块                           |
-|:-------------|:-----------------------------------|:-----------------------------------|
-| 分布式锁     | 各业务自行封装 Redis 锁            | @Lockable 声明式，Watchdog 自动续期|
-| 接口限流     | 自行实现限流算法                   | 4 种算法可选，集群维度基于 Redis   |
-| 幂等控制     | 重复提交导致数据异常               | @Idempotent 自动校验，Token/Key 双模式 |
-| 验证码       | 自行实现图形/滑块验证码            | 4 种类型，自动存储校验             |
-| 数据权限     | 手写 SQL WHERE 条件                | @DataPermission 自动改写 SQL       |
-| 操作日志     | 手动记录操作日志                   | @OperateLog 自动异步记录           |
+| 场景     | 没有本模块              | 有本模块                               |
+|:---------|:------------------------|:---------------------------------------|
+| 分布式锁 | 各业务自行封装 Redis 锁 | @Lockable 声明式，Watchdog 自动续期    |
+| 接口限流 | 自行实现限流算法        | 4 种算法可选，集群维度基于 Redis       |
+| 幂等控制 | 重复提交导致数据异常    | @Idempotent 自动校验，Token/Key 双模式 |
+| 验证码   | 自行实现图形/滑块验证码 | 4 种类型，自动存储校验                 |
+| 数据权限 | 手写 SQL WHERE 条件     | @DataPermission 自动改写 SQL           |
+| 操作日志 | 手动记录操作日志        | @OperateLog 自动异步记录               |
 
 ---
 
 ## 二、功能清单与依赖矩阵
 
-| 功能         | 子包           | 核心依赖           | 可选依赖       |
-|:-------------|:---------------|:-------------------|:---------------|
-| 接口限流     | ratelimit      | framework-core     | Bucket4j（可选） |
-| 幂等控制     | idempotent     | framework-core     | Redis（后续）   |
-| 字段加解密   | crypto         | framework-core     | —              |
-| 请求签名     | sign           | framework-core     | —              |
+| 功能       | 子包       | 核心依赖       | 可选依赖         |
+|:-----------|:-----------|:---------------|:-----------------|
+| 接口限流   | ratelimit  | framework-core | Bucket4j（可选） |
+| 幂等控制   | idempotent | framework-core | Redis（后续）    |
+| 字段加解密 | crypto     | framework-core | —                |
+| 请求签名   | sign       | framework-core | —                |
 
 > 说明：本模块当前实现限流、幂等、加解密、签名四类能力的抽象与单机兜底；分布式锁、验证码、数据权限、操作日志等为后续规划，不在本次实现范围。
 
@@ -72,11 +73,13 @@ cn.jowen.framework.extras.web.lock
 **使用示例**：
 
 ```java
+
 @Lockable(key = "'order:' + #orderId", waitTime = 5000, leaseTime = 30000)
-public void processOrder(Long orderId) { ... }
+public void processOrder(Long orderId) { ...}
 ```
 
 ### 4.2 ratelimit/ — 接口限流
+
 ```text
 cn.jowen.framework.extras.web.ratelimit
 ├─ RateLimiter                    # 接口：tryAcquire / getAvailablePermits
@@ -96,11 +99,13 @@ cn.jowen.framework.extras.web.ratelimit
 **使用示例**：
 
 ```java
+
 @RateLimit(key = "'api:user:list'", permits = 100, period = 60000, scope = USER)
-public List<User> listUsers() { ... }
+public List<User> listUsers() { ...}
 ```
 
 ### 4.3 idempotent/ — 幂等控制
+
 ```text
 cn.jowen.framework.extras.web.idempotent
 ├─ IdempotentValidator            # 接口：validate / mark / remove
@@ -115,9 +120,10 @@ cn.jowen.framework.extras.web.idempotent
 **使用示例**：
 
 ```java
+
 @Idempotent(mode = IdempotentMode.TOKEN, ttl = 120000)
 @PostMapping("/order")
-public Order createOrder(@RequestBody OrderRequest request) { ... }
+public Order createOrder(@RequestBody OrderRequest request) { ...}
 ```
 
 ### 4.4 captcha/ — 验证码
@@ -150,6 +156,7 @@ boolean valid = captchaService.verify(result.getCaptchaId(), "ABCD");
 ```
 
 ### 4.5 datapermission/ — 数据权限
+
 ```text
 cn.jowen.framework.extras.web.datapermission
 ├─ DataPermission                 # 注解：enabled / deptColumn / userColumn / ignoreTables
@@ -168,11 +175,14 @@ cn.jowen.framework.extras.web.datapermission
 **使用示例**：
 
 ```java
+
 @DataPermission(deptColumn = "dept_id", userColumn = "create_by")
-public interface OrderMapper extends BaseMapper<Order> { }
+public interface OrderMapper extends BaseMapper<Order> {
+}
 ```
 
 ### 4.6 operatelog/ — 操作日志
+
 ```text
 cn.jowen.framework.extras.web.datapermission
 cn.jowen.framework.extras.web.operatelog
@@ -192,8 +202,9 @@ cn.jowen.framework.extras.web.operatelog
 **使用示例**：
 
 ```java
+
 @OperateLog(module = "用户管理", action = "CREATE", description = "'新增用户: ' + #user.username")
-public void createUser(User user) { ... }
+public void createUser(User user) { ...}
 ```
 
 ---
@@ -252,6 +263,7 @@ L0 (零内部依赖)    framework-extras-web
 ## 七、外部依赖
 
 ```xml
+
 <dependencies>
     <dependency>
         <groupId>cn.jowen.framework</groupId>
@@ -337,7 +349,7 @@ framework:
       enabled: true
       default-dept-column: dept_id
       default-user-column: create_by
-      ignore-tables: [sys_config]
+      ignore-tables: [ sys_config ]
     operatelog:
       enabled: true
       async: true
@@ -355,7 +367,7 @@ framework:
 @Idempotent(mode = IdempotentMode.TOKEN, ttl = 120000)
 @OperateLog(module = "订单", action = "CREATE", description = "'下单: ' + #request.orderNo")
 @Lockable(key = "'order:' + #request.orderNo", waitTime = 5000)
-public Order createOrder(OrderCreateRequest request) { ... }
+public Order createOrder(OrderCreateRequest request) { ...}
 ```
 
 ## 十、SPI 扩展点汇总
@@ -369,7 +381,6 @@ public Order createOrder(OrderCreateRequest request) { ... }
 | `CaptchaStore`        | captcha/store     | 自定义验证码存储     |
 | `DataPermissionRule`  | datapermission    | 自定义数据权限规则   |
 | `OperateLogHandler`   | operatelog        | 自定义操作日志处理器 |
-
 
 ---
 

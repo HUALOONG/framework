@@ -155,8 +155,22 @@
                             <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
                         </configuration>
                     </execution>
-                    <!-- 覆盖率门禁：BUNDLE 行覆盖 COVEREDRATIO 必须 > 0.95。
-                         声明于最后，verify 阶段先出报告、合并后再校验，失败即亮红灯。 -->
+                    <!-- 覆盖率门禁（全工程聚合口径）：BUNDLE 行覆盖 COVEREDRATIO 必须 > 0.95。
+                         声明于最后，verify 阶段先出报告、合并后再校验，失败即亮红灯。
+
+                         【为何不用关停父 pom 继承来的 check —— 重要，勿改】
+                         父 pom 已为所有模块声明了 id=check 的 per-module 门禁。Maven 对插件 execution
+                         按 <id> 做合并而非并列：本模块重声明同 id 的 check，会与父声明合并成
+                         「唯一一个」execution，子配置（dataFile、rules）覆盖父配置，
+                         <phase> 从父继承为 verify。已用 help:effective-pom 核实：本模块最终只有
+                         prepare-agent / report / check / merge-results 四个 execution，check 仅执行一次，
+                         不存在叠加、重复计算或误报。
+                         因此切勿在此处加 <phase>none</phase> 或 <skip>true</skip> 试图「关停继承」——
+                         那会连同本模块的聚合门禁一起停掉，闸门再次失效。
+                         同理，若日后重命名本 execution 的 id（如改成 check-aggregate），
+                         合并关系即断开，父的 check 会以默认 dataFile=target/jacoco.exec
+                         对本模块解包出来的全量 class 计算覆盖率并必然判定为 0%，构建直接失败。
+                         修改 id 前必须先与父 pom 的门禁配置对齐。 -->
                     <execution>
                         <id>check</id>
                         <goals>

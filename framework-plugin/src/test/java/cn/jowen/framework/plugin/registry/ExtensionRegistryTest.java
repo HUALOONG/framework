@@ -1,157 +1,135 @@
 package cn.jowen.framework.plugin.registry;
 
-import org.junit.jupiter.api.BeforeEach;
+import com.example.demo.DemoPlugin;
+
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.List;
-
 class ExtensionRegistryTest {
 
-    private ExtensionRegistry registry;
+    private final ExtensionRegistry registry = new ExtensionRegistry();
 
-    @BeforeEach
-    void setUp() {
-        registry = new ExtensionRegistry();
+    private Extension ext(String id, String point, int order, String pluginId) {
+        return new Extension(id, point, new Object(), order, pluginId, null);
     }
 
     @Test
-    void register_andGetExtension() {
-        Extension ext = new Extension("e1", "ep1", new Object(), 0, "p1", null);
-        registry.register(ext);
-        @SuppressWarnings("unchecked")
-        List<Object> list = (List<Object>) (List<?>) registry.getExtensions("ep1");
-        assertThat(list).hasSize(1);
+    void register_sortsByOrder() {
+        Extension a = ext("a", "ep1", 2, "p1");
+        Extension b = ext("b", "ep1", 1, "p2");
+        registry.register(a);
+        registry.register(b);
+        assertThat(registry.getExtensions("ep1")).containsExactly(b, a);
     }
 
     @Test
-    void register_duplicateId_throwsIllegalArgument() {
-        Extension ext1 = new Extension("e1", "ep1", new Object(), 0, "p1", null);
-        Extension ext2 = new Extension("e1", "ep1", new Object(), 1, "p1", null);
-        registry.register(ext1);
-        assertThatThrownBy(() -> registry.register(ext2))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("重复");
-    }
-
-    @Test
-    void register_null_throwsIllegalArgument() {
+    void register_null_throws() {
         assertThatThrownBy(() -> registry.register(null))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("extension cannot be null");
     }
 
     @Test
-    void register_multipleExtensions_sameExtensionPoint() {
-        registry.register(new Extension("e1", "ep1", new Object(), 10, "p1", null));
-        registry.register(new Extension("e2", "ep1", new Object(), 5, "p1", null));
-        @SuppressWarnings("unchecked")
-        List<Extension> list = (List<Extension>) (List<?>) registry.getExtensions("ep1");
-        assertThat(list).hasSize(2);
-        assertThat(list.getFirst().id()).isEqualTo("e2");
-        assertThat(list.getLast().id()).isEqualTo("e1");
+    void register_duplicateId_throws() {
+        registry.register(ext("a", "ep1", 0, "p1"));
+        assertThatThrownBy(() -> registry.register(ext("a", "ep1", 0, "p1")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("扩展实现 id 重复");
     }
 
     @Test
-    void unregister_removesExtension() {
-        registry.register(new Extension("e1", "ep1", new Object(), 0, "p1", null));
-        Extension removed = registry.unregister("ep1", "e1");
-        assertThat(removed).isNotNull();
+    void unregister_missingReturnsNull_presentRemoved() {
+        registry.register(ext("a", "ep1", 0, "p1"));
+        assertThat(registry.unregister("ep1", "missing")).isNull();
+        assertThat(registry.unregister("ep1", "a")).isNotNull();
         assertThat(registry.getExtensions("ep1")).isEmpty();
     }
 
     @Test
-    void unregister_nonExistent_returnsNull() {
-        assertThat(registry.unregister("ep1", "missing")).isNull();
+    void getExtensions_emptyPoint_returnsEmpty() {
+        assertThat(registry.getExtensions("nope")).isEmpty();
     }
 
     @Test
-    void getExtensionPointIds_returnsAllRegisteredIds() {
-        registry.register(new Extension("e1", "ep1", new Object(), 0, "p1", null));
-        registry.register(new Extension("e2", "ep2", new Object(), 0, "p2", null));
+    void getExtensionPointIds() {
+        registry.register(ext("a", "ep1", 0, "p1"));
+        registry.register(ext("b", "ep2", 0, "p1"));
         assertThat(registry.getExtensionPointIds()).containsExactlyInAnyOrder("ep1", "ep2");
     }
 
     @Test
     void clear_removesAll() {
-        registry.register(new Extension("e1", "ep1", new Object(), 0, "p1", null));
+        registry.register(ext("a", "ep1", 0, "p1"));
         registry.clear();
-        assertThat(registry.getExtensions("ep1")).isEmpty();
         assertThat(registry.getExtensionPointIds()).isEmpty();
     }
 
     @Test
-    void getExtensions_nonExistentExtensionPoint_returnsEmpty() {
-        assertThat(registry.getExtensions("nonexistent")).isEmpty();
+    void unregisterPlugin_removesByPluginId() {
+        registry.register(ext("a", "ep1", 0, "plug1"));
+        registry.register(ext("b", "ep1", 0, "plug2"));
+        assertThat(registry.unregisterPlugin("plug1")).isEqualTo(1);
+        assertThat(registry.getExtensions("ep1")).hasSize(1);
+        assertThatThrownBy(() -> registry.unregisterPlugin(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("pluginId cannot be null");
     }
 
     @Test
-    void addChangeListener_registerAndUnregisterAndClear_trigger() {
-        java.util.concurrent.atomic.AtomicInteger fired = new java.util.concurrent.atomic.AtomicInteger();
-        registry.addChangeListener(fired::incrementAndGet);
-
-        registry.register(new Extension("e1", "ep1", new Object(), 0, "p1", null));
-        assertThat(fired.get()).isEqualTo(1);
-
-        registry.unregister("ep1", "e1");
-        assertThat(fired.get()).isEqualTo(2);
-
-        registry.register(new Extension("e1", "ep1", new Object(), 0, "p1", null));
-        registry.clear();
-        assertThat(fired.get()).isEqualTo(4);
+    void getExtensionsByType_jdkInterface_returnsEmpty() {
+        // Runnable 由启动类加载器加载（classloader 为 null），匹配分支跳过，返回空
+        registry.register(ext("r", "epR", 0, "p1"));
+        assertThat(registry.getExtensionsByType(Runnable.class)).isEmpty();
     }
 
     @Test
-    void addChangeListener_duplicateIdException_doesNotTrigger() {
-        java.util.concurrent.atomic.AtomicInteger fired = new java.util.concurrent.atomic.AtomicInteger();
-        registry.addChangeListener(fired::incrementAndGet);
-        registry.register(new Extension("e1", "ep1", new Object(), 0, "p1", null));
-
-        assertThatThrownBy(() -> registry.register(new Extension("e1", "ep1", new Object(), 1, "p1", null)))
-                .isInstanceOf(IllegalArgumentException.class);
-        assertThat(fired.get()).isEqualTo(1);
+    void addChangeListener_null_throws() {
+        assertThatThrownBy(() -> registry.addChangeListener(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("listener cannot be null");
     }
 
     @Test
-    void addChangeListener_unregisterNonExistent_doesNotTrigger() {
-        java.util.concurrent.atomic.AtomicInteger fired = new java.util.concurrent.atomic.AtomicInteger();
-        registry.addChangeListener(fired::incrementAndGet);
-        assertThat(registry.unregister("ep1", "missing")).isNull();
-        assertThat(fired.get()).isZero();
+    void changeListener_invokedAndExceptionTolerated() {
+        List<String> fired = new ArrayList<>();
+        registry.addChangeListener(() -> fired.add("changed"));
+        registry.register(ext("a", "ep1", 0, "p1"));
+        assertThat(fired).containsExactly("changed");
+
+        // 监听抛出异常不影响注册表自身操作（notifyChanged 吞掉异常）
+        registry.addChangeListener(() -> { throw new RuntimeException("boom"); });
+        registry.register(ext("b", "ep1", 1, "p2"));
+        // 第二次注册再次触发首个监听；抛异常监听被吞掉
+        assertThat(fired).containsExactly("changed", "changed");
     }
 
     @Test
-    void unregisterPlugin_removesOnlyMatchingPlugin() {
-        registry.register(new Extension("p1e1", "ep1", new Object(), 0, "p1", null));
-        registry.register(new Extension("p1e2", "ep1", new Object(), 0, "p1", null));
-        registry.register(new Extension("p2e1", "ep1", new Object(), 0, "p2", null));
-        registry.register(new Extension("p2e2", "ep2", new Object(), 0, "p2", null));
-
-        int removed = registry.unregisterPlugin("p1");
-
-        assertThat(removed).isEqualTo(2);
-        List<Extension> ep1 = registry.getExtensions("ep1");
-        assertThat(ep1).extracting(Extension::id).containsExactly("p2e1");
-        assertThat(registry.getExtensions("ep2")).hasSize(1);
+    void getExtensionsByType_appLoadedInterface_matches() {
+        // Plugin 由应用类加载器加载（classloader 非 null），匹配分支被覆盖
+        registry.register(new Extension("a", "ep1", new DemoPlugin(), 0, "p1", null));
+        List<cn.jowen.framework.plugin.api.Plugin> result = registry.getExtensionsByType(cn.jowen.framework.plugin.api.Plugin.class);
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0)).isInstanceOf(DemoPlugin.class);
     }
 
     @Test
-    void unregisterPlugin_unknownPlugin_returnsZeroWithoutNotify() {
-        java.util.concurrent.atomic.AtomicInteger fired = new java.util.concurrent.atomic.AtomicInteger();
-        registry.addChangeListener(fired::incrementAndGet);
-        assertThat(registry.unregisterPlugin("missing")).isZero();
-        assertThat(fired.get()).isZero();
+    void getExtensionsByType_multipleMatches_invokesComparator() {
+        // 两个匹配扩展触发排序比较器（lambda 体 return 0 被执行）
+        registry.register(new Extension("a", "ep1", new DemoPlugin(), 0, "p1", null));
+        registry.register(new Extension("b", "ep1", new DemoPlugin(), 0, "p2", null));
+        List<cn.jowen.framework.plugin.api.Plugin> result = registry.getExtensionsByType(cn.jowen.framework.plugin.api.Plugin.class);
+        assertThat(result).hasSize(2);
     }
 
     @Test
-    void unregisterPlugin_triggersChangeNotification() {
-        java.util.concurrent.atomic.AtomicInteger fired = new java.util.concurrent.atomic.AtomicInteger();
-        registry.addChangeListener(fired::incrementAndGet);
-        registry.register(new Extension("e1", "ep1", new Object(), 0, "p1", null));
-        assertThat(fired.get()).isEqualTo(1);
-
-        registry.unregisterPlugin("p1");
-        assertThat(fired.get()).isEqualTo(2);
+    void getExtensionsByType_arrayComponentClass_loadClassThrows_isSwallowed() {
+        // 数组类的 classloader 非 null，但 loadClass(数组描述符) 抛 ClassNotFoundException，被桥接吞掉
+        registry.register(ext("a", "ep1", 0, "p1"));
+        assertThat(registry.getExtensionsByType(DemoPlugin[].class)).isEmpty();
     }
 }

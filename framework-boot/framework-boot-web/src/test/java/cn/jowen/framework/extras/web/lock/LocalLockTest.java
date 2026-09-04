@@ -193,13 +193,15 @@ class LocalLockTest {
     void lock_withWaitMillis_succeedsOnceHolderReleases() throws Exception {
         String key = uniqueKey();
         CountDownLatch acquired = new CountDownLatch(1);
+        CountDownLatch contenderWaiting = new CountDownLatch(1);
 
         Thread holder = new Thread(() -> {
             LocalLock lock = new LocalLock(key, 0);
             try {
                 lock.lock();
                 acquired.countDown();
-                Thread.sleep(120L);
+                // 等竞争线程真正进入等待后再释放，确保「等待期内释放即成功」语义被验证
+                contenderWaiting.await(10, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } finally {
@@ -210,7 +212,10 @@ class LocalLockTest {
         assertThat(acquired.await(5, TimeUnit.SECONDS)).isTrue();
 
         LocalLock contender = new LocalLock(key, 5_000);
-        assertThatCode(contender::lock).as("等待期内持有者释放后应成功").doesNotThrowAnyException();
+        assertThatCode(() -> {
+            contenderWaiting.countDown();
+            contender.lock();
+        }).as("等待期内持有者释放后应成功").doesNotThrowAnyException();
         contender.close();
 
         holder.join(10_000);

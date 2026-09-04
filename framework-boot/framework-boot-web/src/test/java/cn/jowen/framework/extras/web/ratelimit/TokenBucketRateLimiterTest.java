@@ -2,6 +2,7 @@ package cn.jowen.framework.extras.web.ratelimit;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * {@link TokenBucketRateLimiter} 测试。
@@ -29,7 +31,7 @@ class TokenBucketRateLimiterTest {
     }
 
     @Test
-    void tryAcquire_refillsAfterWindowElapsed() throws Exception {
+    void tryAcquire_refillsAfterWindowElapsed() {
         // windowSeconds 参数为 int 秒，用 1 秒窗口验证补充语义
         TokenBucketRateLimiter limiter = new TokenBucketRateLimiter(2, 1);
 
@@ -37,10 +39,10 @@ class TokenBucketRateLimiterTest {
         assertThat(limiter.tryAcquire("k")).isTrue();
         assertThat(limiter.tryAcquire("k")).isFalse();
 
-        Thread.sleep(1_050L);
+        // 等待窗口过期后令牌补满（替代固定 Thread.sleep，容忍抖动）
+        await().atMost(Duration.ofSeconds(3)).until(() -> limiter.tryAcquire("k"));
 
         assertThat(limiter.tryAcquire("k")).as("窗口过期后令牌应补满").isTrue();
-        assertThat(limiter.tryAcquire("k")).isTrue();
         assertThat(limiter.tryAcquire("k")).isFalse();
     }
 

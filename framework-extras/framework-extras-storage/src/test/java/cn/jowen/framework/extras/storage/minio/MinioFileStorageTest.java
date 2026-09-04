@@ -49,6 +49,13 @@ class MinioFileStorageTest {
     }
 
     @Test
+    void convenienceConstructor_buildsClient() {
+        MinioFileStorage storage = new MinioFileStorage(
+                "http://localhost:9000", "ak", "sk", "bucket");
+        assertThat(storage.type()).isEqualTo(StorageType.MINIO);
+    }
+
+    @Test
     void put_returnsKey() throws Exception {
         MinioFileStorage storage = newStorage();
         InputStream content = new ByteArrayInputStream("hello".getBytes());

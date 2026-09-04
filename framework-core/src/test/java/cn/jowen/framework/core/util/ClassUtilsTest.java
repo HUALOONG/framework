@@ -15,6 +15,18 @@ class ClassUtilsTest {
     }
 
     @Test
+    void getDefaultClassLoader_nullContextLoader_fallsBackToClassClassLoader() {
+        // 上下文类加载器为空时须回退到本类加载器，且必须恢复原值以免污染其它测试
+        ClassLoader original = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(null);
+            assertThat(ClassUtils.getDefaultClassLoader()).isSameAs(ClassUtils.class.getClassLoader());
+        } finally {
+            Thread.currentThread().setContextClassLoader(original);
+        }
+    }
+
+    @Test
     void forName_validClass() throws ClassNotFoundException {
         Class<?> clazz = ClassUtils.forName("java.lang.String");
         assertThat(clazz).isSameAs(String.class);

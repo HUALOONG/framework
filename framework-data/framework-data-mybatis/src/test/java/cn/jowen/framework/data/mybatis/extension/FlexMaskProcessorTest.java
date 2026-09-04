@@ -46,4 +46,11 @@ class FlexMaskProcessorTest {
         java.util.List<Object> result = processor.maskList(list);
         assertThat(result).hasSize(2);
     }
+
+    @Test
+    void maskList_emptyList_returnsSameInstance() {
+        // 空集合无需逐个脱敏，直接返回原引用，避免无谓的列表分配
+        java.util.List<Object> empty = java.util.List.of();
+        assertThat(processor.maskList(empty)).isSameAs(empty);
+    }
 }

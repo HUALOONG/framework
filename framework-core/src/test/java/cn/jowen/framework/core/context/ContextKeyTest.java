@@ -73,4 +73,19 @@ class ContextKeyTest {
         ContextKey<String> key = ContextKey.named("myKey", String.class);
         assertThat(key.toString()).isEqualTo("myKey");
     }
+
+    @Test
+    void equals_sameInstance_returnsTrue() {
+        // 同一实例走引用相等快路径，直接返回 true
+        ContextKey<String> key = ContextKey.named("k", String.class);
+        assertThat(key.equals(key)).isTrue();
+    }
+
+    @Test
+    void equals_otherTypeOrNull_returnsFalse() {
+        // 非 ContextKey 类型 / null 走 instanceof 快路径，不进入字段比较
+        ContextKey<String> key = ContextKey.named("k", String.class);
+        assertThat(key.equals("not-a-key")).isFalse();
+        assertThat(key.equals(null)).isFalse();
+    }
 }

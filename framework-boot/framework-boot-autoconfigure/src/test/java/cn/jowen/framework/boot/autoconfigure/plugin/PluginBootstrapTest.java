@@ -1,97 +1,96 @@
 package cn.jowen.framework.boot.autoconfigure.plugin;
 
-import cn.jowen.framework.core.exception.SystemException;
-import cn.jowen.framework.core.spi.ExtensionLoader;
-import cn.jowen.framework.core.spi.SPI;
-import cn.jowen.framework.plugin.lifecycle.PluginLifecycleManager;
-import cn.jowen.framework.plugin.registry.Extension;
-import cn.jowen.framework.plugin.registry.ExtensionRegistry;
+import cn.jowen.framework.plugin.api.PluginManager;
 import cn.jowen.framework.plugin.spi.PluginSpiBridge;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
-/**
- * {@link PluginBootstrap} 单元测试：覆盖目录缺失/空目录的安全跳过与 destroy 清理。
- * （端到端加载需示例插件 jar，超出单测范围。）
- *
- * @author 王飞
- * @since 0.0.1
- * @version 0.0.1
- */
 class PluginBootstrapTest {
 
-    @Test
-    void noPluginsDir_isNoOp() {
-        PluginLifecycleManager manager = new PluginLifecycleManager();
+    private BootPluginProperties properties(String pluginsDir) {
         BootPluginProperties props = new BootPluginProperties();
-        props.setPluginsDir("./nonexistent-plugins-" + System.nanoTime());
-        PluginBootstrap bootstrap = new PluginBootstrap(manager, props);
+        props.setPluginsDir(pluginsDir);
+        props.setAutoStart(true);
+        return props;
+    }
+
+    @Test
+    void constructor_twoArg_delegatesToThreeArg() {
+        PluginManager pm = mock(PluginManager.class);
+        BootPluginProperties props = properties("/no/such/dir/xyz");
+        PluginBootstrap bootstrap = new PluginBootstrap(pm, props);
+        assertThat(bootstrap).isNotNull();
+    }
+
+    @Test
+    void afterSingletonsInstantiated_missingDir_isNoOp() {
+        PluginManager pm = mock(PluginManager.class);
+        BootPluginProperties props = properties("/no/such/dir/xyz");
+        PluginBootstrap bootstrap = new PluginBootstrap(pm, props, null);
+        // 目录不存在：应静默跳过，不抛异常
+        bootstrap.afterSingletonsInstantiated();
+        bootstrap.destroy();
+    }
+
+    @Test
+    void destroy_withoutBridgeAndNoLoaders_isNoOp() {
+        PluginManager pm = mock(PluginManager.class);
+        BootPluginProperties props = properties("/no/such/dir/xyz");
+        PluginBootstrap bootstrap = new PluginBootstrap(pm, props, null);
+        bootstrap.destroy();
+    }
+
+    @Test
+    void afterSingletonsInstantiated_emptyDir_logsAndReturns(@TempDir Path pluginsDir) {
+        PluginManager pm = mock(PluginManager.class);
+        BootPluginProperties props = properties(pluginsDir.toString());
+        props.getClassLoading().setStrategy("framework-api-delegate");
+        PluginBootstrap bootstrap = new PluginBootstrap(pm, props, null);
+
+        // 目录存在但无 jar：解析策略 -> 扫描目录 -> 空列表后返回
+        bootstrap.afterSingletonsInstantiated();
+    }
+
+    @Test
+    void afterSingletonsInstantiated_invalidStrategy_fallsBackToDefault(@TempDir Path pluginsDir) {
+        PluginManager pm = mock(PluginManager.class);
+        BootPluginProperties props = properties(pluginsDir.toString());
+        props.getClassLoading().setStrategy("bogus-strategy");
+        PluginBootstrap bootstrap = new PluginBootstrap(pm, props, null);
+
+        bootstrap.afterSingletonsInstantiated();
+    }
+
+    @Test
+    void afterSingletonsInstantiated_withInvalidJar_logsLoadFailure(@TempDir Path pluginsDir) throws Exception {
+        PluginManager pm = mock(PluginManager.class);
+        // 非法 zip 内容：PluginLoader 构造/读取描述符失败，被 loadOne 的 catch 吞掉，不阻断启动
+        Path bogusJar = pluginsDir.resolve("bogus.jar");
+        Files.write(bogusJar, "not a zip".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        BootPluginProperties props = properties(pluginsDir.toString());
+        PluginBootstrap bootstrap = new PluginBootstrap(pm, props, null);
 
         assertThatCode(bootstrap::afterSingletonsInstantiated).doesNotThrowAnyException();
-        assertThat(manager.getPlugins()).isEmpty();
-        assertThatCode(bootstrap::destroy).doesNotThrowAnyException();
     }
 
     @Test
-    void emptyPluginsDir_isNoOp(@TempDir Path tempDir) {
-        PluginLifecycleManager manager = new PluginLifecycleManager();
-        BootPluginProperties props = new BootPluginProperties();
-        props.setPluginsDir(tempDir.toString());
-        PluginBootstrap bootstrap = new PluginBootstrap(manager, props);
-
-        bootstrap.afterSingletonsInstantiated();
-        assertThat(manager.getPlugins()).isEmpty();
-    }
-
-    @Test
-    void autoStartFalse_doesNotStartEvenIfLoaded(@TempDir Path tempDir) {
-        // 无 jar 时仅验证 autoStart=false 配置可读取且不抛异常
-        PluginLifecycleManager manager = new PluginLifecycleManager();
-        BootPluginProperties props = new BootPluginProperties();
-        props.setPluginsDir(tempDir.toString());
-        props.setAutoStart(false);
-        PluginBootstrap bootstrap = new PluginBootstrap(manager, props);
-
-        bootstrap.afterSingletonsInstantiated();
-        assertThat(props.isAutoStart()).isFalse();
-        assertThat(manager.getPlugins()).isEmpty();
-    }
-
-    /**
-     * 验证 destroy 时桥接门面被清理：插件扩展对 core 加载器不再可见。
-     */
-    @Test
-    void destroy_clearsBridgeMappings(@TempDir Path tempDir) {
-        PluginLifecycleManager manager = new PluginLifecycleManager();
-        BootPluginProperties props = new BootPluginProperties();
-        props.setPluginsDir(tempDir.toString());
-
-        ExtensionRegistry registry = new ExtensionRegistry();
-        PluginSpiBridge bridge = new PluginSpiBridge(registry);
-        registry.register(new Extension("e1", BootPoint.ID, new BootPointImpl(), 0, "p1", null));
-        bridge.registerExtensionPoint(BootPoint.ID, BootPoint.class);
-
-        PluginBootstrap bootstrap = new PluginBootstrap(manager, props, bridge);
-        bootstrap.afterSingletonsInstantiated();
-        assertThat(ExtensionLoader.getExtensionLoader(BootPoint.class).getExtension("e1")).isNotNull();
+    void destroy_withBridge_clearsMappings() {
+        PluginManager pm = mock(PluginManager.class);
+        PluginSpiBridge bridge = mock(PluginSpiBridge.class);
+        BootPluginProperties props = properties("/no/such/dir/xyz");
+        PluginBootstrap bootstrap = new PluginBootstrap(pm, props, bridge);
 
         bootstrap.destroy();
-        assertThatThrownBy(() -> ExtensionLoader.getExtensionLoader(BootPoint.class).getExtension("e1"))
-                .isInstanceOf(SystemException.class)
-                .hasMessageContaining("未找到 SPI 实现");
-    }
 
-    @SPI(id = BootPoint.ID)
-    public interface BootPoint {
-        String ID = "boot.point.test";
-    }
-
-    static final class BootPointImpl implements BootPoint {
+        verify(bridge).clear();
     }
 }

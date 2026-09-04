@@ -18,7 +18,7 @@ public final class LeakyBucketRateLimiter implements RateLimiter {
 
     /** capacity 不可变字段。 */
     private final int capacity;
-    /** leakPerMillis 不可变字段。 */
+    /** leakPerMillis 不可变字段；非正窗口时为 {@link Double#MAX_VALUE}，表示「不限流」。 */
     private final double leakPerMillis;
     /** buckets 不可变字段。 */
     private final ConcurrentHashMap<String, Bucket> buckets = new ConcurrentHashMap<>();
@@ -64,8 +64,17 @@ public final class LeakyBucketRateLimiter implements RateLimiter {
         }
 
         synchronized boolean tryAcquire(long now, int capacity, double leakPerMillis) {
-            water = Math.max(0, water - (now - lastLeak) * leakPerMillis);
-            lastLeak = now;
+            // 非正窗口（leakPerMillis 取无穷大）表示「不限流」，直接放行，等价于桶立即彻底漏空。
+            if (leakPerMillis == Double.MAX_VALUE) {
+                return true;
+            }
+            long elapsed = now - lastLeak;
+            // 防御：时钟回拨（elapsed<0）或同毫秒重复调用（elapsed==0）时不执行减法，
+            // 避免 0*Infinity=NaN 或负时间导致 water 被污染后永久拒流。
+            if (elapsed > 0) {
+                water = Math.max(0, water - elapsed * leakPerMillis);
+                lastLeak = now;
+            }
             if (water + 1 <= capacity) {
                 water += 1;
                 return true;

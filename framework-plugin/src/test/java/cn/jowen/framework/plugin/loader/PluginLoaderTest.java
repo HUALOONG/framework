@@ -2,6 +2,7 @@ package cn.jowen.framework.plugin.loader;
 
 import cn.jowen.framework.plugin.api.Plugin;
 import cn.jowen.framework.plugin.descriptor.PluginDescriptor;
+import com.example.demo.DemoPlugin;
 import org.junit.jupiter.api.Test;
 
 import java.net.URL;
@@ -62,5 +63,35 @@ class PluginLoaderTest {
         PluginDescriptor desc = PluginDescriptor.of("test", "1.0", "com.example.Test");
         PluginLoader loader = new PluginLoader(desc, new URL[0], getClass().getClassLoader());
         loader.close();
+    }
+
+    @Test
+    void descriptor_withChildFirstStrategy() {
+        PluginDescriptor desc = PluginDescriptor.of("test", "1.0", "com.example.Test");
+        PluginLoader loader = new PluginLoader(desc, new URL[0],
+                getClass().getClassLoader(), ClassLoadingStrategy.CHILD_FIRST);
+        assertThat(loader.descriptor()).isSameAs(desc);
+    }
+
+    @Test
+    void load_instantiatesPluginClass() {
+        PluginDescriptor desc = PluginDescriptor.of("demo", "1.0.0", "com.example.demo.DemoPlugin");
+        PluginLoader loader = new PluginLoader(desc, new URL[0], getClass().getClassLoader());
+        Plugin plugin = loader.load();
+        assertThat(plugin).isInstanceOf(DemoPlugin.class);
+    }
+
+    @Test
+    void getResource_forwardsToClassLoader() {
+        PluginDescriptor desc = PluginDescriptor.of("test", "1.0", "com.example.Test");
+        PluginLoader loader = new PluginLoader(desc, new URL[0], getClass().getClassLoader());
+        assertThat(loader.getResource("no-such-resource.txt")).isNull();
+    }
+
+    @Test
+    void getResources_forwardsToClassLoader() throws java.io.IOException {
+        PluginDescriptor desc = PluginDescriptor.of("test", "1.0", "com.example.Test");
+        PluginLoader loader = new PluginLoader(desc, new URL[0], getClass().getClassLoader());
+        assertThat(loader.getResources("no-such-resource.txt")).isNotNull();
     }
 }

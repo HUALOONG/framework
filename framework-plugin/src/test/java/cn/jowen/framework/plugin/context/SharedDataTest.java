@@ -82,4 +82,18 @@ class SharedDataTest {
         data.put("b", 2);
         assertThat(data.keySet()).containsExactlyInAnyOrder("a", "b");
     }
+
+    @Test
+    void values_returnsAllValues() {
+        data.put("a", 1);
+        data.put("b", 2);
+        assertThat(data.values()).containsExactlyInAnyOrder(1, 2);
+    }
+
+    @Test
+    void entrySet_returnsEntries() {
+        data.put("a", 1);
+        assertThat(data.entrySet()).hasSize(1);
+        assertThat(data.entrySet().iterator().next().getValue()).isEqualTo(1);
+    }
 }

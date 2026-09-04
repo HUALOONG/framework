@@ -3,6 +3,7 @@ package cn.jowen.framework.extras.common.util;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -13,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 
 /**
  * {@link Snowflake} 测试。
@@ -170,9 +172,14 @@ class SnowflakeTest {
         setField(snowflake, "lastTimestamp", System.currentTimeMillis() + 50L);
         assertThatThrownBy(snowflake::nextId).isInstanceOf(IllegalStateException.class);
 
-        // 时钟"追上"之后应能继续正常生成
-        Thread.sleep(80L);
-        long after = snowflake.nextId();
+        // 等待真实时钟追上被篡改的未来时间戳后恢复生成（替代固定 Thread.sleep，容忍抖动）
+        long after = await().atMost(Duration.ofSeconds(2)).until(() -> {
+            try {
+                return snowflake.nextId();
+            } catch (IllegalStateException ex) {
+                return null;
+            }
+        }, c -> c != null);
         assertThat(after).isGreaterThan(before);
     }
 

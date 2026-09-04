@@ -2,9 +2,11 @@ package cn.jowen.framework.extras.web.captcha;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * {@link Captcha} 记录类行为测试。
@@ -47,8 +49,8 @@ class CaptchaTest {
         Captcha captcha = withExpireAt(System.currentTimeMillis() + 30L);
 
         assertThat(captcha.expired()).isFalse();
-        Thread.sleep(60L);
-        assertThat(captcha.expired()).isTrue();
+        // 等待过期时刻翻转为已过期（替代固定 Thread.sleep，容忍抖动）
+        await().atMost(Duration.ofSeconds(2)).until(captcha::expired);
     }
 
     // ---------- expireAtInstant ----------

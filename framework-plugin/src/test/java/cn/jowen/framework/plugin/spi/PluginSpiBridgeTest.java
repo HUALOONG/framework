@@ -209,4 +209,39 @@ class PluginSpiBridgeTest {
         assertThat(bridge.unregisterExtensionPoint(PlainPoint.class.getName())).isFalse();
         assertThat(bridge.unregisterExtensionPoint(PlainPoint.class.getName())).isTrue();
     }
+
+    @Test
+    void registerExtensionPoint_descriptorNull_throws() {
+        assertThatThrownBy(() -> bridge.registerExtensionPoint((ExtensionPointDescriptor) null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("descriptor cannot be null");
+    }
+
+    @Test
+    void registerExtensionPoint_blankId_throws() {
+        assertThatThrownBy(() -> bridge.registerExtensionPoint("  ", Filter.class))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("扩展点 id 不能为空");
+    }
+
+    @Test
+    void registerPlugin_blankPluginId_throws() {
+        assertThatThrownBy(() -> bridge.registerPlugin("  ", List.of(new ExtensionPointDescriptor("x", "x", false))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("插件 id 不能为空");
+    }
+
+    @Test
+    void registerPlugin_nullPoints_throws() {
+        assertThatThrownBy(() -> bridge.registerPlugin("p", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("points cannot be null");
+    }
+
+    @Test
+    void unregisterPlugin_null_throws() {
+        assertThatThrownBy(() -> bridge.unregisterPlugin(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("插件 id 不能为 null");
+    }
 }

@@ -3,9 +3,11 @@ package cn.jowen.framework.extras.web.idempotent;
 import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * {@link LocalIdempotentStore} 防重指纹验证。
@@ -40,11 +42,11 @@ class LocalIdempotentStoreTest {
     }
 
     @Test
-    void expiredMarkCanBeMarkedAgain() throws Exception {
+    void expiredMarkCanBeMarkedAgain() {
         LocalIdempotentStore store = new LocalIdempotentStore();
         assertThat(store.tryMark("short", 1, TimeUnit.MILLISECONDS)).isTrue();
-        Thread.sleep(20L);
-        assertThat(store.tryMark("short", 1, TimeUnit.SECONDS)).isTrue();
+        // 等待 1ms TTL 过期后可再次标记（替代固定 Thread.sleep，容忍抖动）
+        await().atMost(Duration.ofSeconds(2)).until(() -> store.tryMark("short", 1, TimeUnit.SECONDS));
     }
 
     @Test

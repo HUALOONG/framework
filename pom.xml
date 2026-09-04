@@ -9,7 +9,7 @@
     <version>${revision}</version>
     <packaging>pom</packaging>
 
-    <description>基于 Spring Boot 4.x + Java 21 的微服务框架脚手架，提供模块化架构、零 Spring 依赖核心与按需装配能力</description>
+    <description>基于 Spring Boot 4.x + Java 21 的框架脚手架，提供模块化架构、零 Spring 依赖核心与按需装配能力。不内置微服务基础设施，下游可自由接入 Spring Cloud</description>
 
     <modules>
         <module>framework-bom</module>
@@ -21,6 +21,7 @@
         <module>framework-extras</module>
         <module>framework-plugin</module>
         <module>framework-boot</module>
+        <module>framework-coverage</module>
     </modules>
 
     <properties>
@@ -36,10 +37,10 @@
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
         <git-commit-id-maven-plugin.version>9.2.0</git-commit-id-maven-plugin.version>
         <maven-jar-plugin.version>3.5.1</maven-jar-plugin.version>
+        <jacoco.version>0.8.13</jacoco.version>
 
         <!-- ==================== 核心框架版本 ==================== -->
         <spring.boot.version>4.1.0</spring.boot.version>
-        <spring.cloud.version>2025.1.2</spring.cloud.version>
         <jspecify.version>1.0.0</jspecify.version>
         <mybatis-flex.version>1.11.8</mybatis-flex.version>
 
@@ -79,14 +80,6 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring.boot.version}</version>
-                <scope>import</scope>
-                <type>pom</type>
-            </dependency>
-
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring.cloud.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -383,6 +376,58 @@
                         <arg>-Xlint:unchecked</arg>
                     </compilerArgs>
                 </configuration>
+            </plugin>
+
+            <!-- ==================== test 阶段：JaCoCo 覆盖率插桩 ==================== -->
+            <!-- prepare-agent 在 initialize 阶段将探针参数写入 argLine 属性，maven-surefire-plugin 默认读取该属性，
+                 各子模块无需额外配置即可自动插桩；report 在 verify 阶段生成各模块独立覆盖率报告 -->
+            <!-- ==================== 覆盖率门禁（per-module 独立口径） ====================
+                 check 绑定 verify 阶段且声明在 report 之后，同阶段内按声明顺序执行：先出报告再判闸门。
+                 根 pom 的配置被所有子模块继承，因此每个模块在 verify 阶段都用「自己模块的 target/jacoco.exec」
+                 对自己「自己模块的 target/classes」做 BUNDLE 行覆盖校验 —— 即独立口径，跨模块测试带来的
+                 覆盖不计入。packaging=pom 且无 target/classes 的聚合模块（framework-data / framework-extras /
+                 framework-boot / framework-bom）会因缺失 classes 目录而静默跳过，恰好只卡有代码的叶子模块，
+                 无需额外 skip 配置。framework-coverage 的聚合口径 check 为同 id 覆盖声明，见该模块 pom 注释。 -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.95</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

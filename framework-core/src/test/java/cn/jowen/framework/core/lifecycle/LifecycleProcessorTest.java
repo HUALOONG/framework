@@ -1,11 +1,13 @@
 package cn.jowen.framework.core.lifecycle;
 
+import cn.jowen.framework.core.exception.SystemException;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * {@link LifecycleProcessor} 测试。
@@ -356,5 +358,27 @@ class LifecycleProcessorTest {
         List<Lifecycle> copy = proc.getLifecycles();
         copy.clear();
         assertThat(proc.size()).isEqualTo(1);
+    }
+
+    @Test
+    void stopAll_destroyThrows_wrappedAsSystemException() {
+        // 普通 Lifecycle 销毁失败须包装为 SystemException，且保留原始原因便于排查
+        LifecycleProcessor proc = new LifecycleProcessor();
+        IllegalStateException cause = new IllegalStateException("boom");
+
+        proc.addLifecycle(new Lifecycle() {
+            @Override
+            public void afterPropertiesSet() {
+            }
+
+            @Override
+            public void destroy() throws Exception {
+                throw cause;
+            }
+        });
+
+        SystemException ex = assertThrows(SystemException.class, proc::stopAll);
+        assertThat(ex.getMessage()).contains("组件销毁失败");
+        assertThat(ex.getCause()).isSameAs(cause);
     }
 }

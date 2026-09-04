@@ -3,133 +3,143 @@ package cn.jowen.framework.core.util;
 import cn.jowen.framework.core.exception.SystemException;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * {@link ReflectionUtils} 测试。
- */
 class ReflectionUtilsTest {
 
-    static class Parent {
-        private String parentField = "parent";
-
-        void parentMethod() {
-        }
+    static class Base {
+        private String privateBaseField = "base";
+        public int baseMethod(int x) { return x + 1; }
     }
 
-    static class Child extends Parent {
-        private String childField = "child";
-        private Integer num = 42;
-
-        void childMethod() {
-        }
-
-        String greet(String name) {
-            return "hello, " + name;
-        }
-
-        int add(int a, int b) {
-            return a + b;
-        }
+    static class Sub extends Base {
+        private String privateSubField = "sub";
+        public String subMethod(String s) { return s; }
+        private Sub() { }
     }
 
-    @Test
-    void getField_currentClassField() {
-        Field field = ReflectionUtils.getField(Child.class, "childField");
-        assertThat(field.getType()).isSameAs(String.class);
+    static class Holder {
+        public String publicField = "pub";
+        private String secret = "shh";
+        public int add(int a, int b) { return a + b; }
+        public String accept(Object o) { return o.toString(); }
+        public String primitives(short s, byte b, char c, boolean bool, float f) {
+            return s + ":" + b + ":" + c + ":" + bool + ":" + f;
+        }
+        public String numerics(long a, double b) { return a + ":" + b; }
+        public void doThrow() { throw new IllegalStateException("boom"); }
+        public Holder() { }
     }
 
-    @Test
-    void getField_parentClassField() {
-        Field field = ReflectionUtils.getField(Child.class, "parentField");
-        assertThat(field.getType()).isSameAs(String.class);
+    static class NoDefaultCtor {
+        public NoDefaultCtor(int x) { }
     }
 
     @Test
-    void getField_nonExistent_throws() {
-        assertThatThrownBy(() -> ReflectionUtils.getField(Child.class, "nope"))
+    void getField_findsDeclaredAndInherited() {
+        assertThat(ReflectionUtils.getField(Sub.class, "privateSubField").getName()).isEqualTo("privateSubField");
+        assertThat(ReflectionUtils.getField(Sub.class, "privateBaseField").getName()).isEqualTo("privateBaseField");
+    }
+
+    @Test
+    void getField_missing_throws() {
+        assertThatThrownBy(() -> ReflectionUtils.getField(Sub.class, "nope"))
                 .isInstanceOf(SystemException.class)
                 .hasMessageContaining("字段不存在");
     }
 
     @Test
-    void getAllFields_includesParent() {
-        List<Field> fields = ReflectionUtils.getAllFields(Child.class);
-        List<String> names = fields.stream().map(Field::getName).toList();
-        assertThat(names).contains("childField", "parentField", "num");
+    void getAllFields_includesSuperclassFields() {
+        List<?> fields = ReflectionUtils.getAllFields(Sub.class);
+        assertThat(fields).hasSize(2);
     }
 
     @Test
-    void getFieldValue_instance() {
-        Child child = new Child();
-        assertThat(ReflectionUtils.getFieldValue(child, "childField")).isEqualTo("child");
+    void getFieldValue_and_setFieldValue() {
+        Holder h = new Holder();
+        assertThat(ReflectionUtils.getFieldValue(h, "publicField")).isEqualTo("pub");
+        ReflectionUtils.setFieldValue(h, "publicField", "changed");
+        assertThat(ReflectionUtils.getFieldValue(h, "publicField")).isEqualTo("changed");
     }
 
     @Test
-    void setFieldValue_instance() {
-        Child child = new Child();
-        ReflectionUtils.setFieldValue(child, "childField", "modified");
-        assertThat(ReflectionUtils.getFieldValue(child, "childField")).isEqualTo("modified");
+    void getFieldValue_staticTarget_throws() {
+        assertThatThrownBy(() -> ReflectionUtils.getFieldValue(null, "x"))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("无法解析目标类型");
     }
 
     @Test
-    void getMethod_currentClass() {
-        assertThat(ReflectionUtils.getMethod(Child.class, "childMethod")).isNotNull();
+    void getMethod_findsAndInvokes() {
+        Sub sub = new Sub();
+        assertThat(ReflectionUtils.getMethod(Sub.class, "baseMethod", int.class).getName()).isEqualTo("baseMethod");
+        assertThat(ReflectionUtils.invokeMethod(sub, "baseMethod", 4)).isEqualTo(5);
     }
 
     @Test
-    void getMethod_parentClass() {
-        assertThat(ReflectionUtils.getMethod(Child.class, "parentMethod")).isNotNull();
-    }
-
-    @Test
-    void invokeMethod_byName() {
-        Child child = new Child();
-        Object result = ReflectionUtils.invokeMethod(child, "greet", "world");
-        assertThat(result).isEqualTo("hello, world");
-    }
-
-    @Test
-    void invokeMethod_intAutoboxing() {
-        Child child = new Child();
-        Object result = ReflectionUtils.invokeMethod(child, "add", 3, 7);
-        assertThat(result).isEqualTo(10);
-    }
-
-    @Test
-    void invokeMethod_noSuchMethod_throws() {
-        Child child = new Child();
-        assertThatThrownBy(() -> ReflectionUtils.invokeMethod(child, "nope"))
+    void getMethod_missing_throws() {
+        assertThatThrownBy(() -> ReflectionUtils.getMethod(Sub.class, "nope"))
                 .isInstanceOf(SystemException.class)
                 .hasMessageContaining("方法不存在");
     }
 
     @Test
-    void invokeMethod_paramMismatch_throws() {
-        Child child = new Child();
-        assertThatThrownBy(() -> ReflectionUtils.invokeMethod(child, "add", 3, "x"))
+    void invokeMethod_boxingAndAssignableMatching() {
+        Holder h = new Holder();
+        assertThat(ReflectionUtils.invokeMethod(h, "add", 1, 2)).isEqualTo(3);
+        assertThat(ReflectionUtils.invokeMethod(h, "accept", "str")).isEqualTo("str");
+        assertThat(ReflectionUtils.invokeMethod(h, "accept", Integer.valueOf(5))).isEqualTo("5");
+        assertThat(ReflectionUtils.invokeMethod(h, "primitives",
+                Short.valueOf((short) 1), Byte.valueOf((byte) 2), 'c', Boolean.TRUE, Float.valueOf(1.5f)))
+                .isEqualTo("1:2:c:true:1.5");
+        assertThat(ReflectionUtils.invokeMethod(h, "numerics", 3L, 2.5))
+                .isEqualTo("3:2.5");
+    }
+
+    @Test
+    void invokeMethod_noMatchingParams_throws() {
+        Holder h = new Holder();
+        assertThatThrownBy(() -> ReflectionUtils.invokeMethod(h, "add", "not", "numbers"))
                 .isInstanceOf(SystemException.class)
                 .hasMessageContaining("方法参数不匹配");
     }
 
     @Test
-    void newInstance_publicNoArg() {
-        Child child = ReflectionUtils.newInstance(Child.class);
-        assertThat(child).isNotNull();
+    void invokeMethod_staticTarget_throws() {
+        assertThatThrownBy(() -> ReflectionUtils.invokeMethod(null, "x"))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("无法解析目标类型");
     }
 
     @Test
-    void newInstance_noNoArgConstructor_throws() {
-        assertThatThrownBy(() -> ReflectionUtils.newInstance(ChildWithArg.class))
+    void invokeMethod_propagatesCause() {
+        Holder h = new Holder();
+        assertThatThrownBy(() -> ReflectionUtils.invokeMethod(h, "doThrow"))
                 .isInstanceOf(SystemException.class)
-                .hasMessageContaining("实例化失败");
+                .hasMessageContaining("boom");
     }
 
-    static class ChildWithArg {
-        ChildWithArg(String s) {
-        }
+    @Test
+    void invokeMethod_nullArgToPrimitiveParam_throws() {
+        Holder h = new Holder();
+        assertThatThrownBy(() -> ReflectionUtils.invokeMethod(h, "add", (Object) null, 2))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("方法参数不匹配");
+    }
+
+    @Test
+    void newInstance_privateConstructor() {
+        Sub sub = ReflectionUtils.newInstance(Sub.class);
+        assertThat(sub).isNotNull();
+    }
+
+    @Test
+    void newInstance_noDefaultConstructor_throws() {
+        assertThatThrownBy(() -> ReflectionUtils.newInstance(NoDefaultCtor.class))
+                .isInstanceOf(SystemException.class)
+                .hasMessageContaining("实例化失败");
     }
 }

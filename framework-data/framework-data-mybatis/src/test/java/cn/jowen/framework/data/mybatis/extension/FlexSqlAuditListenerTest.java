@@ -39,4 +39,14 @@ class FlexSqlAuditListenerTest {
         listener.setSlowThresholdMs(1000);
         assertThat(listener.getSlowThresholdMs()).isEqualTo(1000);
     }
+
+    @Test
+    void getSetFullSqlEnabled_roundTripsAndOverridesConstructorDefault() {
+        // 构造时未开启全量 SQL 输出，setter 打开后须能被读到
+        FlexSqlAuditListener listener = new FlexSqlAuditListener(500, false);
+        assertThat(listener.isFullSqlEnabled()).isFalse();
+
+        listener.setFullSqlEnabled(true);
+        assertThat(listener.isFullSqlEnabled()).isTrue();
+    }
 }

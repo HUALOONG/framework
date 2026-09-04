@@ -134,4 +134,16 @@ class LocaleUtilsTest {
         Locale result = LocaleUtils.match(null, supported);
         assertThat(result).isNotNull();
     }
+
+    @Test
+    void parseAcceptLanguage_invalidQuality_excluded() {
+        // q 解析失败回退为 0，片段被排除
+        List<Locale> result = LocaleUtils.parseAcceptLanguage("en;q=abc");
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void parseTag_blankLanguage_returnsNull() {
+        assertThat(LocaleUtils.parseTag("-CN")).isNull();
+    }
 }

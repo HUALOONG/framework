@@ -5,10 +5,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * {@link ArithmeticCaptchaGenerator} 测试。
@@ -91,11 +93,10 @@ class ArithmeticCaptchaGeneratorTest {
     }
 
     @Test
-    void generate_withZeroExpireIsImmediatelyExpired() throws Exception {
+    void generate_withZeroExpireIsImmediatelyExpired() {
         Captcha captcha = new ArithmeticCaptchaGenerator(4).generate(0);
-        Thread.sleep(5L);
-
-        assertThat(captcha.expired()).isTrue();
+        // 零过期时间生成后应立即过期（替代固定 Thread.sleep，容忍抖动）
+        await().atMost(Duration.ofSeconds(2)).until(captcha::expired);
     }
 
     @Test

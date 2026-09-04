@@ -1,15 +1,18 @@
 package cn.jowen.framework.plugin.context;
 
 import cn.jowen.framework.plugin.api.PluginContext;
+import cn.jowen.framework.plugin.api.PluginManager;
 import cn.jowen.framework.plugin.api.PluginState;
 import cn.jowen.framework.plugin.descriptor.PluginDescriptor;
 import cn.jowen.framework.plugin.event.PluginEvent;
+import cn.jowen.framework.plugin.event.PluginEventListener;
 import cn.jowen.framework.plugin.event.PluginStartedEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 
 class DefaultPluginContextTest {
 
@@ -57,6 +60,24 @@ class DefaultPluginContextTest {
     @Test
     void getSpringContext_null() {
         assertThat(ctx.getSpringContext()).isNull();
+    }
+
+    @Test
+    void getPluginManager_returnsConfiguredManager() {
+        PluginManager manager = mock(PluginManager.class);
+        DefaultPluginContext withManager = new DefaultPluginContext(
+                "test", descriptor, config, sharedData, manager, loader, loader, null);
+        assertThat(withManager.getPluginManager()).isSameAs(manager);
+    }
+
+    @Test
+    void publishEvent_listenerExceptionIsCaught() {
+        PluginEventListener bad = e -> {
+            throw new RuntimeException("boom");
+        };
+        ctx.addListener(bad);
+        // 监听器异常不应向上传播
+        ctx.publishEvent(new PluginStartedEvent("test"));
     }
 
     @Test
@@ -122,6 +143,17 @@ class DefaultPluginContextTest {
         public void close() {
             closed = true;
         }
+    }
+
+    @Test
+    void close_fromStopping_setsStopped() {
+        // 合法路径 CREATED -> STARTING -> STARTED -> STOPPING，
+        // 使 close() 内的 setState(STOPPED) 转换成功（而非被非法转换吞掉）
+        ctx.setState(PluginState.STARTING);
+        ctx.setState(PluginState.STARTED);
+        ctx.setState(PluginState.STOPPING);
+        ctx.close();
+        assertThat(ctx.getState()).isEqualTo(PluginState.STOPPED);
     }
 
     static class SimpleConfiguration implements PluginConfiguration {

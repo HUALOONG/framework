@@ -59,10 +59,11 @@ public final class MultilevelCache<K, V> implements Cache<K, V> {
     @SuppressWarnings("unchecked")
     public @Nullable V get(K key) {
         V localVal = localCache.get(key);
-        if (localVal != null) {
+        // 命中真实值（非占位对象）直接返回
+        if (localVal != null && !isNullValue(localVal)) {
             return localVal;
         }
-        // 穿透防护：已知空值直接返回
+        // 穿透防护：本地已知为 NullValue 占位，直接返回 null，不对外泄漏占位对象
         if (nullValueCache && isNullValue(localVal)) {
             return null;
         }
@@ -73,7 +74,7 @@ public final class MultilevelCache<K, V> implements Cache<K, V> {
                 try {
                     // double-check
                     V fresh = localCache.get(key);
-                    if (fresh != null) {
+                    if (fresh != null && !isNullValue(fresh)) {
                         return fresh;
                     }
                     if (nullValueCache && isNullValue(fresh)) {
@@ -84,12 +85,9 @@ public final class MultilevelCache<K, V> implements Cache<K, V> {
                         localCache.put(key, remoteVal);
                         return remoteVal;
                     }
-                    // 空值缓存
+                    // 空值缓存：写入占位对象，并按配置 TTL 管理
                     if (nullValueCache) {
-                        localCache.put(key, (V) NullValue.INSTANCE);
-                        if (nullTtl.compareTo(Duration.ZERO) > 0) {
-                            // 本地缓存 TTL 由底层实现管理
-                        }
+                        cacheNullPlaceholder(key);
                     }
                     return null;
                 } finally {
@@ -104,9 +102,23 @@ public final class MultilevelCache<K, V> implements Cache<K, V> {
             return remoteVal;
         }
         if (nullValueCache) {
-            localCache.put(key, (V) NullValue.INSTANCE);
+            cacheNullPlaceholder(key);
         }
         return null;
+    }
+
+    /**
+     * 将空值占位对象写入本地缓存。当 {@link #nullTtl} 大于零时携带 TTL，否则使用默认 TTL。
+     *
+     * @param key 键，不可为 {@code null}
+     */
+    @SuppressWarnings("unchecked")
+    private void cacheNullPlaceholder(K key) {
+        if (nullTtl != null && nullTtl.compareTo(Duration.ZERO) > 0) {
+            localCache.put(key, (V) NullValue.INSTANCE, nullTtl);
+        } else {
+            localCache.put(key, (V) NullValue.INSTANCE);
+        }
     }
 
     @Override
@@ -162,9 +174,11 @@ public final class MultilevelCache<K, V> implements Cache<K, V> {
      */
     public @Nullable V handleCacheMiss(K key, Function<K, @Nullable V> loader) {
         V localVal = localCache.get(key);
-        if (localVal != null) {
+        // 命中真实值（非占位对象）直接返回
+        if (localVal != null && !isNullValue(localVal)) {
             return localVal;
         }
+        // 本地已知为 NullValue 占位，直接返回 null，不触发 loader
         if (nullValueCache && isNullValue(localVal)) {
             return null;
         }
@@ -172,7 +186,7 @@ public final class MultilevelCache<K, V> implements Cache<K, V> {
         if (loaded != null) {
             put(key, loaded);
         } else if (nullValueCache) {
-            localCache.put(key, (V) NullValue.INSTANCE);
+            cacheNullPlaceholder(key);
         }
         return loaded;
     }

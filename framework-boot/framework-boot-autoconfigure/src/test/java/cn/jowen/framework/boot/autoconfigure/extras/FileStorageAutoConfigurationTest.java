@@ -2,14 +2,19 @@ package cn.jowen.framework.boot.autoconfigure.extras;
 
 import cn.jowen.framework.extras.properties.StorageProperties;
 import cn.jowen.framework.extras.properties.StorageType;
+import cn.jowen.framework.extras.storage.FileStorage;
 import cn.jowen.framework.extras.storage.FileStorageManager;
 import cn.jowen.framework.extras.storage.local.LocalFileStorage;
 import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link FileStorageAutoConfiguration} 装配验证：确认 {@code framework.extras.storage.*}
@@ -69,5 +74,49 @@ class FileStorageAutoConfigurationTest {
 
         runner.withPropertyValues("framework.extras.storage.type=S3")
                 .run(context -> assertThat(context).doesNotHaveBean("s3FileStorage"));
+    }
+
+    @Test
+    void managerBucketsAllStorageTypes_viaBucketNameOfSwitch() {
+        // 注册 OSS/S3/MINIO 类型的自定义 FileStorage Bean（mock，无需云 SDK），
+        // 触发 FileStorageAutoConfiguration.bucketNameOf 的 OSS/S3/MINIO 分支，使 switch 全覆盖
+        runner.withUserConfiguration(MultiStorageConfig.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    FileStorageManager manager = context.getBean(FileStorageManager.class);
+                    assertThat(manager).isNotNull();
+                    // 云后端按桶名纳入统一管理器
+                    assertThat(manager.getStorage("oss")).isNotNull();
+                    assertThat(manager.getStorage("s3")).isNotNull();
+                    assertThat(manager.getStorage("minio")).isNotNull();
+                    // 默认桶始终为本地存储兜底
+                    assertThat(manager.getStorage("default")).isInstanceOf(LocalFileStorage.class);
+                });
+    }
+
+    /** 提供 OSS/S3/MINIO 类型的自定义存储 Bean，用于覆盖 bucketNameOf 的云分支（无需真实 SDK）。 */
+    @Configuration(proxyBeanMethods = false)
+    static class MultiStorageConfig {
+
+        @Bean
+        FileStorage ossStorage() {
+            FileStorage s = mock(FileStorage.class);
+            when(s.type()).thenReturn(StorageType.OSS);
+            return s;
+        }
+
+        @Bean
+        FileStorage s3Storage() {
+            FileStorage s = mock(FileStorage.class);
+            when(s.type()).thenReturn(StorageType.S3);
+            return s;
+        }
+
+        @Bean
+        FileStorage minioStorage() {
+            FileStorage s = mock(FileStorage.class);
+            when(s.type()).thenReturn(StorageType.MINIO);
+            return s;
+        }
     }
 }
