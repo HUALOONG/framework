@@ -39,7 +39,7 @@
 framework-extras-message
 └─ src/main/java/cn/jowen/framework/extras/message/
    ├─ core/                 # 抽象：Message / MessageType / MessageSender / MessageChannel
-   ├─ provider/             # 渠道骨架：Sms / Email / Site / Push 四个抽象发送器
+   ├─ provider/             # 渠道骨架：Email / DingTalk / Push / Site / Sms / Webhook / WeCom 七个抽象发送器
    └─ template/             # 模板引擎：Template / TemplateEngine / SimpleTemplateEngine
 ```
 
@@ -62,10 +62,13 @@ cn.jowen.framework.extras.message.core
 
 ```text
 cn.jowen.framework.extras.message.provider
-├─ SmsMessageSender         # 短信发送器（骨架，doSend(phone, content) 由子类实现）
 ├─ EmailMessageSender       # 邮件发送器（骨架，doSend(to, subject, body)）
+├─ DingTalkMessageSender    # 钉钉发送器（骨架，doSend(...) 由子类实现）
+├─ PushMessageSender        # 推送发送器（骨架，doSend(receiver, title, content)）
 ├─ SiteMessageSender        # 站内信发送器（骨架，doSend(receiver, title, content)）
-└─ PushMessageSender        # 推送发送器（骨架，doSend(receiver, title, content)）
+├─ SmsMessageSender         # 短信发送器（骨架，doSend(phone, content) 由子类实现）
+├─ WebhookMessageSender     # Webhook 发送器（骨架，doSend(url, payload) 由子类实现）
+└─ WeComMessageSender       # 企业微信发送器（骨架，doSend(...) 由子类实现）
 ```
 
 ### 4.3 template/ — 模板引擎
