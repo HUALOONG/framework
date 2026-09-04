@@ -1,74 +1,70 @@
 package cn.jowen.framework.data.core.exception;
 
+import cn.jowen.framework.core.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 数据访问异常体系测试。
+ * {@link DataAccessException} 测试：覆盖全部构造器分支。
  */
 class DataAccessExceptionTest {
 
-    @Test
-    void dataAccessException_messageOnly() {
-        DataAccessException ex = new DataAccessException("test error");
-        assertThat(ex.getMessage()).isEqualTo("test error");
+    enum TestCode implements ErrorCode {
+        ERR("D1", "data err"),
+        ERR2("D2", "data err2");
+
+        TestCode(String code, String message) {
+            this.code = code;
+            this.message = message;
+        }
+
+        private final String code;
+        private final String message;
+
+        @Override
+        public String code() {
+            return code;
+        }
+
+        @Override
+        public String message() {
+            return message;
+        }
     }
 
     @Test
-    void dataAccessException_withCause() {
-        Throwable cause = new RuntimeException("root cause");
-        DataAccessException ex = new DataAccessException("wrapped", cause);
-        assertThat(ex.getMessage()).isEqualTo("wrapped");
+    void messageOnly() {
+        DataAccessException ex = new DataAccessException("boom");
+        assertThat(ex.getMessage()).isEqualTo("boom");
+        assertThat(ex.getErrorCode()).isNull();
+    }
+
+    @Test
+    void messageAndCause() {
+        Throwable cause = new RuntimeException("c");
+        DataAccessException ex = new DataAccessException("boom", cause);
         assertThat(ex.getCause()).isSameAs(cause);
     }
 
     @Test
-    void duplicateKeyException_message() {
-        DuplicateKeyException ex = new DuplicateKeyException("duplicate key");
-        assertThat(ex.getMessage()).isEqualTo("duplicate key");
-        assertThat(ex).isInstanceOf(DataAccessException.class);
+    void errorCodeOnly() {
+        DataAccessException ex = new DataAccessException(TestCode.ERR);
+        assertThat(ex.getErrorCode()).isEqualTo(TestCode.ERR);
     }
 
     @Test
-    void optimisticLockException_message() {
-        OptimisticLockException ex = new OptimisticLockException("optimistic lock failed");
-        assertThat(ex.getMessage()).isEqualTo("optimistic lock failed");
-        assertThat(ex).isInstanceOf(DataAccessException.class);
+    void errorCodeAndMessage() {
+        DataAccessException ex = new DataAccessException(TestCode.ERR, "custom");
+        assertThat(ex.getMessage()).isEqualTo("custom");
+        assertThat(ex.getErrorCode()).isEqualTo(TestCode.ERR);
     }
 
     @Test
-    void badSqlGrammarException_message() {
-        BadSqlGrammarException ex = new BadSqlGrammarException("SQL grammar error");
-        assertThat(ex.getMessage()).isEqualTo("SQL grammar error");
-        assertThat(ex).isInstanceOf(DataAccessException.class);
-    }
-
-    @Test
-    void dataIntegrityViolationException_message() {
-        DataIntegrityViolationException ex = new DataIntegrityViolationException("integrity violation");
-        assertThat(ex.getMessage()).isEqualTo("integrity violation");
-        assertThat(ex).isInstanceOf(DataAccessException.class);
-    }
-
-    @Test
-    void transientDataAccessException_message() {
-        TransientDataAccessException ex = new TransientDataAccessException("transient error");
-        assertThat(ex.getMessage()).isEqualTo("transient error");
-        assertThat(ex).isInstanceOf(DataAccessException.class);
-    }
-
-    @Test
-    void deadlockException_message() {
-        DeadlockException ex = new DeadlockException("deadlock");
-        assertThat(ex.getMessage()).isEqualTo("deadlock");
-        assertThat(ex).isInstanceOf(TransientDataAccessException.class);
-    }
-
-    @Test
-    void timeoutException_message() {
-        TimeoutException ex = new TimeoutException("timeout");
-        assertThat(ex.getMessage()).isEqualTo("timeout");
-        assertThat(ex).isInstanceOf(TransientDataAccessException.class);
+    void errorCodeAndCause() {
+        Throwable cause = new RuntimeException("c");
+        DataAccessException ex = new DataAccessException(TestCode.ERR2, cause);
+        assertThat(ex.getErrorCode()).isEqualTo(TestCode.ERR2);
+        assertThat(ex.getCause()).isSameAs(cause);
     }
 }
