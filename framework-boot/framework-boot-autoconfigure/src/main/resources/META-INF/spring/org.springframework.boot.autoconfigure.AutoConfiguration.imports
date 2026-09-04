@@ -6,6 +6,9 @@ cn.jowen.framework.boot.autoconfigure.logger.LoggerAutoConfiguration
 cn.jowen.framework.boot.autoconfigure.cache.CacheAutoConfiguration
 cn.jowen.framework.boot.autoconfigure.i18n.I18nAutoConfiguration
 cn.jowen.framework.boot.autoconfigure.extras.ExtrasAutoConfiguration
+cn.jowen.framework.boot.autoconfigure.extras.FileStorageAutoConfiguration
+cn.jowen.framework.boot.autoconfigure.extras.MessageAutoConfiguration
+cn.jowen.framework.boot.autoconfigure.extras.WebExtrasAutoConfiguration
 cn.jowen.framework.boot.autoconfigure.health.HealthAutoConfiguration
 cn.jowen.framework.boot.autoconfigure.observability.ObservabilityAutoConfiguration
 cn.jowen.framework.boot.autoconfigure.plugin.PluginAutoConfiguration
