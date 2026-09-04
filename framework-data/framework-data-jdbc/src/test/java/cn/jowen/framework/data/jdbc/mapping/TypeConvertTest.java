@@ -197,4 +197,55 @@ class TypeConvertTest {
         LocalTime lt = LocalTime.of(3, 4, 5);
         assertThat(BeanPropertyRowMapper.convert(lt, java.sql.Time.class)).isEqualTo(java.sql.Time.valueOf("03:04:05"));
     }
+
+    // ===================== 私有 fromXxx 同类型返回分支（反射覆盖） =====================
+    // convert() 对「已是目标类型」的值会在入口处直接返回（line 160），因此 fromXxx 的
+    // 「targetType 与入参同类型」返回分支只能通过直接调用私有方法覆盖。
+
+    @Test
+    void fromString_sameTypeTarget_returnsString() throws Exception {
+        assertThat(invoke("fromString", "x", String.class, String.class)).isEqualTo("x");
+    }
+
+    @Test
+    void fromTimestamp_sameTypeTargets() throws Exception {
+        java.sql.Timestamp ts = java.sql.Timestamp.valueOf("2026-01-02 03:04:05");
+        assertThat(invoke("fromTimestamp", ts, java.sql.Timestamp.class, java.sql.Timestamp.class)).isSameAs(ts);
+        Object asDate = invoke("fromTimestamp", ts, java.sql.Timestamp.class, Date.class);
+        assertThat(asDate).isInstanceOf(Date.class);
+    }
+
+    @Test
+    void fromSqlDate_sameTypeTargets() throws Exception {
+        java.sql.Date d = java.sql.Date.valueOf("2026-01-02");
+        assertThat(invoke("fromSqlDate", d, java.sql.Date.class, java.sql.Date.class)).isSameAs(d);
+        Object asDate = invoke("fromSqlDate", d, java.sql.Date.class, Date.class);
+        assertThat(asDate).isInstanceOf(Date.class);
+    }
+
+    @Test
+    void fromSqlTime_sameTypeTargets() throws Exception {
+        java.sql.Time t = java.sql.Time.valueOf("03:04:05");
+        assertThat(invoke("fromSqlTime", t, java.sql.Time.class, java.sql.Time.class)).isSameAs(t);
+        Object asDate = invoke("fromSqlTime", t, java.sql.Time.class, Date.class);
+        assertThat(asDate).isInstanceOf(Date.class);
+    }
+
+    // ===================== 不可转换（最终抛异常分支） =====================
+
+    @Test
+    void convert_trulyInconvertible_throws() {
+        // 既不是 Number/String/时间类型，也不匹配任何派生分支 -> 最终抛异常
+        assertThatThrownBy(() -> BeanPropertyRowMapper.convert(new Object(), Integer.class))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("无法转换类型");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object invoke(String method, Object arg, Class<?> argType, Class<?> targetType) throws Exception {
+        java.lang.reflect.Method m = BeanPropertyRowMapper.TypeConvert.class
+                .getDeclaredMethod(method, argType, Class.class);
+        m.setAccessible(true);
+        return m.invoke(null, arg, targetType);
+    }
 }

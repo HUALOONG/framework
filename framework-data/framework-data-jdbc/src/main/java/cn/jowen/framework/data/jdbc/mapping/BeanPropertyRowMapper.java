@@ -201,18 +201,12 @@ public class BeanPropertyRowMapper<T> implements RowMapper<T> {
                 if (value instanceof LocalTime lt && targetType == java.sql.Time.class) {
                     return java.sql.Time.valueOf(lt);
                 }
-                if (targetType.isEnum() && value instanceof String str) {
-                    return Enum.valueOf((Class<Enum>) targetType, str);
-                }
                 if (targetType == String.class) {
                     return value.toString();
                 }
             } catch (RuntimeException e) {
                 throw new DataAccessException("类型转换失败：" + value.getClass().getName()
                         + " -> " + targetType.getName() + " : " + e.getMessage(), e);
-            }
-            if (targetType.isInstance(value)) {
-                return value;
             }
             throw new DataAccessException("无法转换类型：" + value.getClass().getName() + " -> " + targetType.getName());
         }

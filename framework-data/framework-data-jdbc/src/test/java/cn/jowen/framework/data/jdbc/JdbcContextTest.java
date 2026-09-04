@@ -11,9 +11,7 @@ import cn.jowen.framework.data.jdbc.core.JdbcTemplate;
 import cn.jowen.framework.data.jdbc.core.NamedParameterTemplate;
 import cn.jowen.framework.data.jdbc.core.BatchTemplate;
 import cn.jowen.framework.data.jdbc.interceptor.TenantContext;
-import cn.jowen.framework.data.core.repository.Repository;
 
-import cn.jowen.framework.data.jdbc.transaction.JdbcTransactionManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,7 +77,6 @@ class JdbcContextTest {
         assertThat(ctx.getJdbcTemplate()).isNotNull();
         assertThat(ctx.getNamedParameterTemplate()).isNotNull();
         assertThat(ctx.getBatchTemplate()).isNotNull();
-        assertThat(ctx.getTransactionManager()).isNotNull();
         assertThat(ctx.getConnectionProvider()).isNotNull();
         assertThat(ctx.getDialectRegistry()).isNotNull();
     }
@@ -110,22 +107,6 @@ class JdbcContextTest {
         assertThat(results).hasSize(2);
         assertThat(results[0]).isEqualTo(1);
         assertThat(results[1]).isEqualTo(1);
-    }
-
-    @Test
-    void repositoryWorks() {
-        Repository<User, Object> repo = ctx.getRepository(User.class);
-        User saved = new User("alice", 1, null);
-        repo.save(saved);
-        assertThat(saved.getId()).isNotNull();
-        Long count = ctx.getJdbcTemplate().queryForObject("SELECT COUNT(*) FROM app_user", Long.class);
-        assertThat(count).isEqualTo(1L);
-    }
-
-    @Test
-    void transactionManagerWorks() {
-        JdbcTransactionManager tm = ctx.getTransactionManager();
-        assertThat(tm).isNotNull();
     }
 
     @Test
@@ -183,19 +164,4 @@ class JdbcContextTest {
         tenantCtx.close();
     }
 
-    // -------------------------------------------------------------------------
-    // 命名参数 + 仓储组合使用
-    // -------------------------------------------------------------------------
-
-    @Test
-    void namedAndRepositoryCoexist() {
-        Repository<User, Object> repo = ctx.getRepository(User.class);
-        User u1 = new User("alice", 1, null);
-        repo.save(u1);
-        ctx.getJdbcTemplate().update("UPDATE app_user SET name = ? WHERE id = ?", "alice_v2", u1.getId());
-        List<Map<String, Object>> found = ctx.getJdbcTemplate().queryForMaps(
-                "SELECT * FROM app_user WHERE id = ?", u1.getId());
-        assertThat(found).hasSize(1);
-        assertThat(found.get(0).get("name")).isEqualTo("alice_v2");
-    }
 }

@@ -10,7 +10,8 @@ import java.util.List;
 /**
  * 事务同步管理器：基于 {@link ThreadLocal} 在事务线程内绑定连接、记录同步回调并驱动其生命周期。
  *
- * <p>本类不依赖任何外部容器，配合 {@link JdbcTransactionManager} 实现本地事务的资源绑定与传播。
+ * <p>本类不依赖任何外部容器，用于在线程内绑定连接、注册同步回调并驱动其生命周期。
+ * 业务层通常配合 Spring 声明式事务使用，也可由外部事务管理器直接驱动。
  * 同步回调（{@link TransactionSynchronization}）在提交/完成后被触发，用于资源清理或后置通知。
  *
  * @author 王飞

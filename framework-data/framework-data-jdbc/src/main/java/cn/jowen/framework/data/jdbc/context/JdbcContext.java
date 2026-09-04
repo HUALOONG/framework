@@ -15,7 +15,6 @@ import cn.jowen.framework.data.jdbc.core.NamedParameterTemplate;
 import cn.jowen.framework.data.jdbc.core.SqlRunner;
 import cn.jowen.framework.data.jdbc.dialect.DialectRegistry;
 import cn.jowen.framework.data.jdbc.exception.SQLExceptionTranslator;
-import cn.jowen.framework.data.core.repository.Repository;
 import cn.jowen.framework.data.jdbc.interceptor.InterceptorChain;
 import cn.jowen.framework.data.jdbc.interceptor.LoggingInterceptor;
 import cn.jowen.framework.data.jdbc.interceptor.PerformanceInterceptor;
@@ -24,10 +23,6 @@ import cn.jowen.framework.data.jdbc.interceptor.TenantInterceptor;
 import cn.jowen.framework.data.jdbc.mapping.CamelCaseNamingStrategy;
 import cn.jowen.framework.data.jdbc.mapping.DefaultEntityMetadataResolver;
 import cn.jowen.framework.data.jdbc.mapping.DefaultTypeHandlers;
-import cn.jowen.framework.data.jdbc.repository.DefaultIdGenerator;
-import cn.jowen.framework.data.jdbc.repository.IdGenerator;
-import cn.jowen.framework.data.jdbc.repository.JdbcRepositoryFactory;
-import cn.jowen.framework.data.jdbc.transaction.JdbcTransactionManager;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -39,8 +34,12 @@ import java.util.List;
  * 轻量 IoC 上下文（可独立运行 + 依赖注入）。
  *
  * <p>以纯 Java 方式装配本模块全部核心组件：连接提供者、方言注册中心、类型处理器、
- * 实体元信息解析器、异常翻译器、拦截器责任链、JDBC 模板、命名参数模板、批量模板、事务管理器与仓储工厂，
+ * 实体元信息解析器、异常翻译器、拦截器责任链、JDBC 模板、命名参数模板与批量模板，
  * 不依赖任何外部 DI 容器，使模块可在脱离 Spring 的环境中直接使用。
+ *
+ * <p>本上下文只提供模板方法（{@code JdbcTemplate} / {@code NamedParameterTemplate} /
+ * {@code BatchTemplate} / {@code SqlRunner}），不提供 Repository 抽象；
+ * 事务交由 Spring 声明式事务或外部事务管理器处理。
  *
  * <p>典型用法：
  * <pre>{@code
@@ -49,7 +48,8 @@ import java.util.List;
  *         .jdbc(jdbcProperties)
  *         .poolType(PoolType.HIKARI)
  *         .build();
- * User user = ctx.getRepository(User.class).findById(1L).orElse(null);
+ * List<Map<String, Object>> rows = ctx.getJdbcTemplate()
+ *         .queryForList("select * from t_user where id = ?", 1L);
  * }</pre>
  *
  * @author 王飞
@@ -69,8 +69,6 @@ public final class JdbcContext {
     private final NamedParameterTemplate namedParameterTemplate;
     private final BatchTemplate batchTemplate;
     private final SqlRunner sqlRunner;
-    private final JdbcTransactionManager transactionManager;
-    private final JdbcRepositoryFactory repositoryFactory;
 
     JdbcContext(Builder builder) {
         this.jdbcProperties = builder.jdbcProperties;
@@ -96,10 +94,6 @@ public final class JdbcContext {
         this.namedParameterTemplate = new NamedParameterTemplate(jdbcTemplate);
         this.batchTemplate = new BatchTemplate(jdbcTemplate);
         this.sqlRunner = new SqlRunner(jdbcTemplate);
-        this.transactionManager = new JdbcTransactionManager(connectionProvider);
-        IdGenerator idGenerator = builder.idGenerator != null ? builder.idGenerator : new DefaultIdGenerator();
-        this.repositoryFactory = new JdbcRepositoryFactory(jdbcTemplate, entityMetadataResolver,
-                dialectRegistry, idGenerator);
     }
 
     public JdbcTemplate getJdbcTemplate() {
@@ -118,10 +112,6 @@ public final class JdbcContext {
         return sqlRunner;
     }
 
-    public JdbcTransactionManager getTransactionManager() {
-        return transactionManager;
-    }
-
     public ConnectionProvider getConnectionProvider() {
         return connectionProvider;
     }
@@ -136,18 +126,6 @@ public final class JdbcContext {
 
     public JdbcProperties getJdbcProperties() {
         return jdbcProperties;
-    }
-
-    /**
-     * 获取指定实体类型的仓储。
-     *
-     * @param entityClass 实体类，不可为 {@code null}
-     * @param <T>         实体类型
-     * @param <ID>        主键类型
-     * @return 仓储实例，不可为 {@code null}
-     */
-    public <T, ID> Repository<T, ID> getRepository(Class<T> entityClass) {
-        return repositoryFactory.getRepository(entityClass);
     }
 
     /**
@@ -176,7 +154,6 @@ public final class JdbcContext {
         private PoolType poolType;
         private NamingStrategy namingStrategy = new CamelCaseNamingStrategy();
         private DialectRegistry dialectRegistry = new DialectRegistry();
-        private IdGenerator idGenerator;
         private @Nullable MeterRegistry meterRegistry;
         private LoggingInterceptor loggingInterceptor;
         private PerformanceInterceptor performanceInterceptor;
@@ -205,11 +182,6 @@ public final class JdbcContext {
 
         public Builder dialectRegistry(DialectRegistry registry) {
             this.dialectRegistry = registry;
-            return this;
-        }
-
-        public Builder idGenerator(IdGenerator generator) {
-            this.idGenerator = generator;
             return this;
         }
 

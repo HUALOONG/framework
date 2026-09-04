@@ -11,8 +11,6 @@ import cn.jowen.framework.data.jdbc.connection.HikariConnectionProvider;
 import cn.jowen.framework.data.jdbc.connection.SimpleConnectionProvider;
 import cn.jowen.framework.data.jdbc.dialect.DialectRegistry;
 import cn.jowen.framework.data.jdbc.interceptor.SqlInterceptor;
-import cn.jowen.framework.data.jdbc.repository.DefaultIdGenerator;
-import cn.jowen.framework.data.jdbc.repository.IdGenerator;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
@@ -94,7 +92,6 @@ class JdbcContextBuilderTest {
     void builder_setters_areFluent() {
         NamingStrategy naming = mock(NamingStrategy.class);
         DialectRegistry registry = new DialectRegistry();
-        IdGenerator idGenerator = new DefaultIdGenerator();
         SqlInterceptor interceptor = mock(SqlInterceptor.class);
 
         JdbcContext.Builder builder = JdbcContext.builder()
@@ -103,7 +100,6 @@ class JdbcContextBuilderTest {
                 .poolType(PoolType.SIMPLE)
                 .namingStrategy(naming)
                 .dialectRegistry(registry)
-                .idGenerator(idGenerator)
                 .addInterceptor(interceptor)
                 .enableSqlLog(true)
                 .slowSqlThreshold(200)
@@ -135,7 +131,6 @@ class JdbcContextBuilderTest {
         assertThat(context.getNamedParameterTemplate()).isNotNull();
         assertThat(context.getBatchTemplate()).isNotNull();
         assertThat(context.getSqlRunner()).isNotNull();
-        assertThat(context.getTransactionManager()).isNotNull();
         assertThat(context.getConnectionProvider()).isNotNull();
         assertThat(context.getDialectRegistry()).isNotNull();
         assertThat(context.getEntityMetadataResolver()).isNotNull();

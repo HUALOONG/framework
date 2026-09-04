@@ -4,14 +4,9 @@ import cn.jowen.framework.data.core.datasource.DataSourceProperties;
 import cn.jowen.framework.data.core.datasource.PoolType;
 import cn.jowen.framework.data.core.dialect.DatabaseType;
 import cn.jowen.framework.data.core.mapping.EntityMetadataResolver;
-import cn.jowen.framework.data.core.repository.Repository;
 import cn.jowen.framework.data.jdbc.config.JdbcProperties;
 import cn.jowen.framework.data.jdbc.mapping.CamelCaseNamingStrategy;
-import cn.jowen.framework.data.jdbc.repository.DefaultIdGenerator;
-import cn.jowen.framework.data.jdbc.repository.IdGenerator;
 import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,7 +45,6 @@ class JdbcContextTest {
             assertThat(context.getNamedParameterTemplate()).isNotNull();
             assertThat(context.getBatchTemplate()).isNotNull();
             assertThat(context.getSqlRunner()).isNotNull();
-            assertThat(context.getTransactionManager()).isNotNull();
             assertThat(context.getConnectionProvider()).isNotNull();
             assertThat(context.getDialectRegistry()).isNotNull();
             assertThat(context.getJdbcProperties()).isNotNull();
@@ -63,8 +57,6 @@ class JdbcContextTest {
 
     @Test
     void builder_customSettings_propagate() {
-        AtomicLong seq = new AtomicLong(100);
-        IdGenerator custom = (meta, entity) -> seq.incrementAndGet();
         JdbcProperties props = new JdbcProperties();
         props.setTenantColumn("org_id");
         JdbcContext context = JdbcContext.builder()
@@ -78,7 +70,6 @@ class JdbcContextTest {
                 .jdbc(props)
                 .namingStrategy(new CamelCaseNamingStrategy())
                 .dialectRegistry(new cn.jowen.framework.data.jdbc.dialect.DialectRegistry())
-                .idGenerator(custom)
                 .enableSqlLog(true)
                 .slowSqlThreshold(500L)
                 .enableTenant(true)
@@ -108,42 +99,6 @@ class JdbcContextTest {
         try {
             assertThat(context.getDialectRegistry().get(DatabaseType.H2)).isNotNull();
             assertThat(context.getDialectRegistry().get(DatabaseType.MYSQL)).isNotNull();
-        } finally {
-            context.close();
-        }
-    }
-
-    @Test
-    void getRepository_returnsRepository() {
-        JdbcContext context = buildContext();
-        try {
-            Repository<AppUser, Long> repo = context.getRepository(AppUser.class);
-            assertThat(repo).isNotNull();
-            // 仓储可执行基础查询
-            assertThat(repo.count()).isEqualTo(0L);
-        } finally {
-            context.close();
-        }
-    }
-
-    @Test
-    void getRepository_withCustomIdGenerator() {
-        AtomicLong seq = new AtomicLong(1);
-        JdbcContext context = JdbcContext.builder()
-                .properties(new DataSourceProperties() {{
-                    setUrl("jdbc:h2:mem:ctx4;DB_CLOSE_DELAY=-1");
-                    setUsername("sa");
-                    setPassword("");
-                    setDriverClassName("org.h2.Driver");
-                }})
-                .poolType(PoolType.SIMPLE)
-                .idGenerator((meta, entity) -> seq.getAndIncrement())
-                .build();
-        context.getJdbcTemplate().execute(DDL);
-        try {
-            Repository<AppUser, Long> repo = context.getRepository(AppUser.class);
-            AppUser saved = repo.save(new AppUser(null, "custom-id", 1));
-            assertThat(saved.getId()).isEqualTo(1L);
         } finally {
             context.close();
         }
@@ -198,43 +153,5 @@ class JdbcContextTest {
         } finally {
             context.close();
         }
-    }
-
-    @Test
-    void defaultIdGenerator_strategy_defaultsToAuto() {
-        // 默认 IdGenerator 使用自动生成策略
-        JdbcContext context = buildContext();
-        try {
-            Repository<AppUser, Long> repo = context.getRepository(AppUser.class);
-            AppUser saved = repo.save(new AppUser(null, "auto", 2));
-            assertThat(saved.getId()).isNotNull();
-        } finally {
-            context.close();
-        }
-    }
-
-    @cn.jowen.framework.data.core.meta.Table("app_user")
-    public static class AppUser {
-        @cn.jowen.framework.data.core.meta.Id
-        @cn.jowen.framework.data.core.meta.GeneratedValue
-        private Long id;
-        private String name;
-        private Integer age;
-
-        public AppUser() {
-        }
-
-        public AppUser(Long id, String name, Integer age) {
-            this.id = id;
-            this.name = name;
-            this.age = age;
-        }
-
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public Integer getAge() { return age; }
-        public void setAge(Integer age) { this.age = age; }
     }
 }

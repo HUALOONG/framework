@@ -286,4 +286,34 @@ class JdbcTemplateTest {
         assertThat(accounts).hasSize(1);
         assertThat(accounts.get(0).getBalance()).isEqualByComparingTo(new BigDecimal("100.50"));
     }
+
+    // -------------------------------------------------------------------------
+    // batchUpdate
+    // -------------------------------------------------------------------------
+
+    @Test
+    void batchUpdate_multipleStatements() {
+        int[] r = template.batchUpdate(
+                "INSERT INTO app_user (name) VALUES ('b1')",
+                "INSERT INTO app_user (name) VALUES ('b2')");
+        assertThat(r).hasSize(2);
+        Long count = template.queryForObject("SELECT COUNT(*) FROM app_user", Long.class);
+        assertThat(count).isGreaterThanOrEqualTo(2L);
+    }
+
+    @Test
+    void batchUpdate_withBatchArgs() {
+        int[] r = template.batchUpdate(
+                "INSERT INTO app_user (name) VALUES (?)",
+                List.of(new Object[]{"c1"}, new Object[]{"c2"}));
+        assertThat(r).hasSize(2);
+        Long count = template.queryForObject("SELECT COUNT(*) FROM app_user", Long.class);
+        assertThat(count).isGreaterThanOrEqualTo(2L);
+    }
+
+    @Test
+    void query_invalidTable_throwsDataAccessException() {
+        assertThatThrownBy(() -> template.queryForMaps("SELECT * FROM no_such_table_xyz", 1L))
+                .isInstanceOf(cn.jowen.framework.data.core.exception.DataAccessException.class);
+    }
 }

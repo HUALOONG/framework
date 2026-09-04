@@ -224,6 +224,56 @@ class BeanPropertyRowMapperTest {
         assertThat(BeanPropertyRowMapper.convert(3, Double.class)).isEqualTo(3.0d);
     }
 
+    @Test
+    void convert_stringToString_returnsSame() {
+        // 命中 convert 顶层 targetType.isInstance 早返回分支
+        assertThat(BeanPropertyRowMapper.convert("hello", String.class)).isEqualTo("hello");
+    }
+
+    @Test
+    void convert_timestampToAllTargets() {
+        java.sql.Timestamp ts = java.sql.Timestamp.valueOf("2024-01-02 03:04:05");
+        assertThat(BeanPropertyRowMapper.convert(ts, java.time.LocalDateTime.class))
+                .isEqualTo(java.time.LocalDateTime.parse("2024-01-02T03:04:05"));
+        assertThat(BeanPropertyRowMapper.convert(ts, java.time.LocalDate.class))
+                .isEqualTo(java.time.LocalDate.parse("2024-01-02"));
+        assertThat(BeanPropertyRowMapper.convert(ts, java.time.LocalTime.class))
+                .isEqualTo(java.time.LocalTime.parse("03:04:05"));
+        assertThat(BeanPropertyRowMapper.convert(ts, java.sql.Date.class))
+                .isEqualTo(java.sql.Date.valueOf("2024-01-02"));
+        assertThat(BeanPropertyRowMapper.convert(ts, java.sql.Time.class))
+                .isEqualTo(java.sql.Time.valueOf("03:04:05"));
+        assertThat(BeanPropertyRowMapper.convert(ts, java.sql.Timestamp.class)).isSameAs(ts);
+        // Timestamp 是 java.util.Date 子类，命中 convert 顶层 targetType.isInstance 早返回分支
+        java.util.Date asDate = (java.util.Date) BeanPropertyRowMapper.convert(ts, java.util.Date.class);
+        assertThat(asDate.getTime()).isEqualTo(ts.getTime());
+        assertThat(BeanPropertyRowMapper.convert(ts, String.class)).isEqualTo(ts.toString());
+    }
+
+    @Test
+    void convert_sqlDateToAllTargets() {
+        java.sql.Date d = java.sql.Date.valueOf("2024-05-06");
+        assertThat(BeanPropertyRowMapper.convert(d, java.time.LocalDate.class))
+                .isEqualTo(java.time.LocalDate.parse("2024-05-06"));
+        assertThat(BeanPropertyRowMapper.convert(d, java.time.LocalDateTime.class))
+                .isEqualTo(java.time.LocalDateTime.parse("2024-05-06T00:00"));
+        assertThat(BeanPropertyRowMapper.convert(d, java.sql.Date.class)).isSameAs(d);
+        assertThat(BeanPropertyRowMapper.convert(d, java.util.Date.class))
+                .isEqualTo(new java.util.Date(d.getTime()));
+        assertThat(BeanPropertyRowMapper.convert(d, String.class)).isEqualTo(d.toString());
+    }
+
+    @Test
+    void convert_sqlTimeToAllTargets() {
+        java.sql.Time t = java.sql.Time.valueOf("07:08:09");
+        assertThat(BeanPropertyRowMapper.convert(t, java.time.LocalTime.class))
+                .isEqualTo(java.time.LocalTime.parse("07:08:09"));
+        assertThat(BeanPropertyRowMapper.convert(t, java.sql.Time.class)).isSameAs(t);
+        assertThat(BeanPropertyRowMapper.convert(t, java.util.Date.class))
+                .isEqualTo(new java.util.Date(t.getTime()));
+        assertThat(BeanPropertyRowMapper.convert(t, String.class)).isEqualTo(t.toString());
+    }
+
     private EntityMetadata metaForUser() {
         return new DefaultEntityMetadata(
                 User.class, "user",
