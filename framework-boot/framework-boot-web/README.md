@@ -1,395 +1,357 @@
-# framework-extras-web 模块架构设计
+# framework-boot-web 模块设计
 
-> 文档元信息
-> - **模块**：framework-extras-web
-> - **关键词**：分布式锁、接口限流、幂等控制、验证码、数据权限、操作日志
-> - **描述**：框架 Web 层工具集，提供锁/限流/幂等/验证码/数据权限/操作日志等 6 项高频能力，复用 framework-cache 作为存储底座
-> - **基线**：Spring Boot 4.x + Java 21（虚拟线程适配、Micrometer 2.0）
+> **文档元信息**
+> - **模块**：framework-boot-web
+> - **关键词**：分布式锁、接口限流、幂等控制、验证码、数据权限、操作日志、字段加解密、请求签名、字段脱敏、Excel
+> - **描述**：框架 Web 层工具集，提供锁/限流/幂等/验证码/数据权限/操作日志/加解密/签名/脱敏/Excel 等 10 项声明式能力
+> - **基线**：Spring Boot 4.x + Java 21（虚拟线程适配）
+
+> ⚠️ **本文档以 `src/main/java` 当前代码为准重写**。此前版本存在多处失真（模块名误写为 framework-extras-web、声称以 framework-cache 为存储底座——本模块 pom 中并无该依赖、声称锁/验证码/数据权限/操作日志为后续规划——实际均已实现），已于 2026-09-05 按实际代码逐处修正。
 
 ---
 
 ## 一、模块定位
 
-`framework-extras-web` 是框架的 **Web 层工具集模块**，提供 6 项高频能力：分布式锁、接口限流、幂等控制、验证码、数据权限、操作日志。全部能力基于
-`framework-cache` 作为存储底座，通过 AOP 实现声明式使用。
+`framework-boot-web` 是框架的 **Web 层能力模块**，为 Web 请求链路提供 10 项声明式能力：
 
-**核心价值**：
+| 能力 | 包 | 声明方式 | 默认状态 |
+|:-----|:---|:---------|:---------|
+| 分布式锁 | lock | `@Lockable` | 开 |
+| 接口限流 | ratelimit | `@RateLimit` | 开 |
+| 幂等控制 | idempotent | `@Idempotent` | 开 |
+| 请求签名 | sign | `@Sign` + 拦截器 | 开 |
+| 请求体加解密 | crypto | `@Encrypt` + Advice | 开 |
+| 字段脱敏 | desensitize | `@Desensitized` | 关 |
+| 验证码 | captcha | 编程式 `CaptchaService` | 关 |
+| 数据权限 | datapermission | `@DataPermission` | 关 |
+| 操作日志 | operatelog | `@OperateLog` | 关 |
+| Excel 导入导出 | excel | `@ExcelExport` / `@ExcelImport` | 关 |
 
-| 场景     | 没有本模块              | 有本模块                               |
-|:---------|:------------------------|:---------------------------------------|
-| 分布式锁 | 各业务自行封装 Redis 锁 | @Lockable 声明式，Watchdog 自动续期    |
-| 接口限流 | 自行实现限流算法        | 4 种算法可选，集群维度基于 Redis       |
-| 幂等控制 | 重复提交导致数据异常    | @Idempotent 自动校验，Token/Key 双模式 |
-| 验证码   | 自行实现图形/滑块验证码 | 4 种类型，自动存储校验                 |
-| 数据权限 | 手写 SQL WHERE 条件     | @DataPermission 自动改写 SQL           |
-| 操作日志 | 手动记录操作日志        | @OperateLog 自动异步记录               |
+**核心价值**：全部能力以注解 + AOP 暴露，业务方零样板代码接入；存储/Redis 客户端通过 SPI 抽象注入，本模块不硬依赖任何具体实现。
 
 ---
 
-## 二、功能清单与依赖矩阵
+## 二、关键设计决策
 
-| 功能       | 子包       | 核心依赖       | 可选依赖         |
-|:-----------|:-----------|:---------------|:-----------------|
-| 接口限流   | ratelimit  | framework-core | Bucket4j（可选） |
-| 幂等控制   | idempotent | framework-core | Redis（后续）    |
-| 字段加解密 | crypto     | framework-core | —                |
-| 请求签名   | sign       | framework-core | —                |
+### 2.1 不依赖 framework-cache
 
-> 说明：本模块当前实现限流、幂等、加解密、签名四类能力的抽象与单机兜底；分布式锁、验证码、数据权限、操作日志等为后续规划，不在本次实现范围。
+本模块 **pom 中不含 framework-cache 依赖**，也不依赖任何 Redis 客户端（Jedis / Lettuce / Redisson）。这与"以 framework-cache 为存储底座"的旧表述不符，是有意为之的架构选择：
+
+- **保持 L0 轻依赖**：boot-web 只依赖 `framework-extras-common` + `framework-core` + Spring Web + AspectJ，可被不引入缓存体系的应用单独使用。
+- **Redis 能力走 SPI 注入**：`lock.RedisCommandExecutor` 屏蔽客户端差异（见 §4.1），由业务方或自动装配层注入具体实现。
+
+### 2.2 单机兜底 + 可替换存储
+
+幂等、限流、验证码三项能力均有**本地内存默认实现**，开箱即用；需要跨实例生效时替换为 Redis 实现即可，接口不变：
+
+| 能力 | 本地默认实现 | 接口 | Redis 实现状态 |
+|:-----|:------------|:-----|:--------------|
+| 幂等 | `LocalIdempotentStore` | `IdempotentStore` | ⚠️ 待补（见文末「未完成项」） |
+| 限流 | `RateLimiterManager`（4 种算法均进程内） | `RateLimiter` | ⚠️ 待补（见文末「未完成项」） |
+| 验证码 | `CaptchaStore.InMemory` | `CaptchaStore` | ⚠️ 待补（见文末「未完成项」） |
+| 分布式锁 | `LocalLock` | `Lock` | ✅ 已具备（注入 `RedisCommandExecutor` 即生效） |
+
+### 2.3 配置前缀为 `framework.extras.web`
+
+配置采用**双层绑定**（全框架统一模式，避免实现层反向依赖 Spring）：
+
+```text
+ExtrasWebProperties      (本模块 properties/，纯 POJO 基类，无 Spring 注解)
+        ▲
+        │ extends
+        │
+BootWebExtrasProperties  (framework-boot-autoconfigure，带 @ConfigurationProperties)
+```
+
+`BootWebExtrasProperties` 声明 `@ConfigurationProperties(prefix = "framework.extras.web")`，由
+`WebExtrasAutoConfiguration` 的 `@EnableConfigurationProperties` 注册。
+
+> ⚠️ **勘误**：`ExtrasWebProperties` 类内 Javadoc 曾写「对应前缀 `jowen.web`」，属错误表述；
+> `CaptchaService` 等类只借用其嵌套的 `Captcha.CaptchaType` 枚举，与 Spring 绑定无关。
+> 真实前缀以 `BootWebExtrasProperties` 为准，即 `framework.extras.web`。
 
 ---
 
 ## 三、整体包结构
 
 ```text
-framework-extras-web
+framework-boot-web
 └─ src/main/java/cn/jowen/framework/extras/web/
-   ├─ ratelimit/             # 接口限流：@RateLimit / RateLimiter / TokenBucketRateLimiter
-   ├─ idempotent/            # 幂等控制：@Idempotent / IdempotentStore / LocalIdempotentStore
-   ├─ crypto/                # 字段加解密：@Encrypt / CryptoProcessor / AesGcmCryptoProcessor
-   ├─ sign/                  # 请求签名：@Sign / SignVerifier / HmacSha256SignVerifier
-   ├─ properties/            # ExtrasWebProperties 配置属性
-   └─ exception/             # WebException
+   ├─ lock/               # 分布式锁（9 类）
+   ├─ ratelimit/          # 接口限流（7 类）
+   ├─ idempotent/         # 幂等控制（4 类）
+   ├─ captcha/            # 验证码（9 类）
+   ├─ crypto/             # 请求体加解密（4 类）
+   ├─ sign/               # 请求签名（4 类）
+   ├─ datapermission/     # 数据权限（5 类）
+   ├─ operatelog/         # 操作日志（5 类）
+   ├─ desensitize/        # 字段脱敏（4 类 + package-info）
+   ├─ excel/              # Excel 导入导出（3 类 + package-info）
+   ├─ properties/         # ExtrasWebProperties 配置属性
+   ├─ exception/          # WebException
+   └─ util/               # SpelUtils
 ```
+
+> 注：包路径仍为 `cn.jowen.framework.extras.web`（历史沿用），模块名已是 `framework-boot-web`，两者不一致属历史遗留。
+
+---
 
 ## 四、各子包详细设计
 
 ### 4.1 lock/ — 分布式锁
 
 ```text
-cn.jowen.framework.extras.web.lock
-├─ Lock                           # 接口：tryLock / unlock / isLocked
-├─ DistributedLock                # 分布式锁接口
-├─ DistributedLockManager         # 管理器：getLock / getFairLock / getReadLock / getWriteLock
-├─ RedisDistributedLock           # Redis 实现：Lettuce + Lua，可重入/公平/读写
-├─ LocalDistributedLock           # 本地实现（单机兜底）
-├─ LocalLock                      # 进程内锁
-├─ @Lockable                      # 声明式注解：key / waitTime / leaseTime / lockType
-├─ LockInterceptor                # AOP 拦截器
-├─ LockType                       # 枚举：REENTRANT / FAIR / READ / WRITE / MULTI / RED
-└─ LockException                  # 异常
+├─ Lock                    # 接口：tryLock / unlock / isLocked / refresh
+├─ LocalLock               # 进程内实现（兜底）
+├─ LockType                # 枚举：REENTRANT / FAIR / READ / WRITE / MULTI / RED
+├─ DistributedLock         # 分布式锁接口
+├─ RedisDistributedLock    # Redis 实现（委托 RedisCommandExecutor）
+├─ RedisCommandExecutor    # SPI：屏蔽 Jedis/Lettuce/StringRedisTemplate 差异
+├─ @Lockable               # 声明式注解：key / waitTime / leaseTime / lockType
+├─ LockAspect              # AOP 拦截器
+└─ LockAcquireException    # 获取锁失败异常
 ```
 
 **使用示例**：
 
 ```java
-
 @Lockable(key = "'order:' + #orderId", waitTime = 5000, leaseTime = 30000)
-public void processOrder(Long orderId) { ...}
+public void processOrder(Long orderId) { /* ... */ }
 ```
+
+**Redis 接入**：`RedisDistributedLock` 不引用任何 Redis 客户端，仅依赖 `RedisCommandExecutor`（`setIfAbsent` / `get` / `delete` / `deleteIfMatch`）。业务方注入的适配实现决定底层客户端，框架零强制依赖。
 
 ### 4.2 ratelimit/ — 接口限流
 
 ```text
-cn.jowen.framework.extras.web.ratelimit
-├─ RateLimiter                    # 接口：tryAcquire / getAvailablePermits
-├─ RateLimiterManager             # 管理器：getLimiter(key, config)
-├─ algorithm/
-│  ├─ FixedWindowRateLimiter      # 固定窗口：Redis INCR + EXPIRE
-│  ├─ SlidingWindowRateLimiter    # 滑动窗口：Redis ZSET
-│  ├─ LeakyBucketRateLimiter      # 漏桶：Redis Lua
-│  └─ TokenBucketRateLimiter      # 令牌桶：Redis Lua
-├─ @RateLimit                     # 注解：key / permits / period / algorithm / scope
-├─ RateLimitInterceptor           # AOP 拦截器
-├─ RateLimitAlgorithm             # 枚举：FIXED_WINDOW / SLIDING_WINDOW / LEAKY_BUCKET / TOKEN_BUCKET
-├─ RateLimitScope                 # 枚举：GLOBAL / USER / IP / CUSTOM
-└─ RateLimitException             # 异常
+├─ RateLimiter             # 接口：tryAcquire / getAvailablePermits
+├─ RateLimiterManager      # 管理器：按 key 获取/创建限流器
+├─ FixedWindowRateLimiter  # 固定窗口
+├─ SlidingWindowRateLimiter# 滑动窗口
+├─ LeakyBucketRateLimiter  # 漏桶
+├─ TokenBucketRateLimiter  # 令牌桶（可选委托 Bucket4j）
+└─ @RateLimit              # 注解：key / permits / period / algorithm
+   └─ RateLimitAspect      # AOP 拦截器
 ```
 
-**使用示例**：
-
-```java
-
-@RateLimit(key = "'api:user:list'", permits = 100, period = 60000, scope = USER)
-public List<User> listUsers() { ...}
-```
+- 4 种算法均为**进程内计数**，未依赖 Redis。集群维度限流见文末「未完成项」。
+- `bucket4j-core:8.10.1` 为可选依赖，供令牌桶复用成熟算法实现。
 
 ### 4.3 idempotent/ — 幂等控制
 
 ```text
-cn.jowen.framework.extras.web.idempotent
-├─ IdempotentValidator            # 接口：validate / mark / remove
-├─ RedisIdempotentValidator       # Redis 实现：SETNX + EXPIRE
-├─ LocalIdempotentValidator       # 本地实现（ConcurrentHashMap）
-├─ @Idempotent                    # 注解：key / ttl / mode(TOKEN/KEY)
-├─ IdempotentInterceptor          # AOP 拦截器
-├─ IdempotentTokenGenerator       # Token 生成器：UUID / Snowflake
-└─ IdempotencyException           # 异常
+├─ @Idempotent             # 注解：key / ttl
+├─ IdempotentAspect        # AOP 拦截器
+├─ IdempotentStore         # 接口：tryMark(key, expire, unit) / remove(key)
+└─ LocalIdempotentStore    # 本地实现（ConcurrentHashMap）
 ```
 
 **使用示例**：
 
 ```java
-
-@Idempotent(mode = IdempotentMode.TOKEN, ttl = 120000)
+@Idempotent(key = "#orderNo", ttl = 120)
 @PostMapping("/order")
-public Order createOrder(@RequestBody OrderRequest request) { ...}
+public Order createOrder(@RequestBody OrderRequest request) { /* ... */ }
 ```
+
+`IdempotentStore.tryMark` 语义即「不存在则写入」，与 `RedisCommandExecutor.setIfAbsent` 一一对应，迁移 Redis 实现成本极低。
 
 ### 4.4 captcha/ — 验证码
 
 ```text
-cn.jowen.framework.extras.web.captcha
-├─ CaptchaService                 # 服务：generate / verify
-├─ CaptchaResult                  # 结果：captchaId / image(Base64) / expiresIn
-├─ CaptchaType                    # 枚举：IMAGE / ARITHMETIC / SLIDER / SMS
-├─ generator/
-│  ├─ CaptchaGenerator            # SPI 接口
-│  ├─ ImageCaptchaGenerator       # 图形验证码
-│  ├─ ArithmeticCaptchaGenerator  # 算术验证码
-│  └─ SliderCaptchaGenerator      # 滑块验证码
-├─ store/
-│  ├─ CaptchaStore                # SPI 接口
-│  ├─ CacheCaptchaStore           # framework-cache 实现
-│  └─ LocalCaptchaStore           # 本地实现
-└─ CaptchaException               # 异常
+├─ Captcha                 # 验证码载体（record）
+├─ CaptchaService          # 服务：generate / verify
+├─ CaptchaGenerator        # 生成器接口
+├─ GraphicCaptchaGenerator # 图形验证码
+├─ ArithmeticCaptchaGenerator # 算术验证码
+├─ SliderCaptchaGenerator  # 滑块验证码
+├─ SmsCaptchaGenerator     # 短信验证码
+├─ SmsCaptchaSender        # 短信发送 SPI
+└─ CaptchaStore            # 存储接口 + InMemory 内存实现
 ```
 
-**使用示例**：
-
-```java
-// 生成
-CaptchaResult result = captchaService.generate(CaptchaType.IMAGE);
-
-// 校验
-boolean valid = captchaService.verify(result.getCaptchaId(), "ABCD");
-```
-
-### 4.5 datapermission/ — 数据权限
+### 4.5 crypto/ — 请求体加解密
 
 ```text
-cn.jowen.framework.extras.web.datapermission
-├─ DataPermission                 # 注解：enabled / deptColumn / userColumn / ignoreTables
-├─ DataPermissionRule             # SPI 接口：getExpression(TableInfo, msId)
-├─ rule/
-│  ├─ DeptDataPermissionRule     # 部门规则：ALL / DEPT_AND_CHILD / DEPT / SELF
-│  ├─ UserDataPermissionRule     # 本人规则
-│  └─ CustomDataPermissionRule   # 自定义规则
-├─ DataPermissionInterceptor      # MyBatis 拦截器
-├─ DataPermissionContext          # 上下文：setCurrentUser / getCurrentUser
-├─ UserInfo                       # 用户信息：userId / deptId / deptIds / dataScope
-├─ DataScope                      # 枚举：ALL / DEPT_AND_CHILD / DEPT / SELF / CUSTOM
-└─ DataPermissionException        # 异常
+├─ @Encrypt                # 标注需加解密的控制器方法
+├─ CryptoProcessor         # 接口
+├─ AesGcmCryptoProcessor   # AES-256-GCM 实现
+└─ CryptoAdvice            # 环绕控制器方法体执行加解密
 ```
 
-**使用示例**：
+密钥由配置注入：`jowen.web.crypto.keys`（别名 → base64 key 映射），`defaultKeyAlias` 指定默认密钥。
 
-```java
-
-@DataPermission(deptColumn = "dept_id", userColumn = "create_by")
-public interface OrderMapper extends BaseMapper<Order> {
-}
-```
-
-### 4.6 operatelog/ — 操作日志
+### 4.6 sign/ — 请求签名
 
 ```text
-cn.jowen.framework.extras.web.datapermission
-cn.jowen.framework.extras.web.operatelog
-├─ OperateLog                     # 注解：module / action / description / content / condition / async
-├─ OperateLogRecord               # 记录：traceId / module / action / operator / requestParams / responseData / costTime
-├─ OperateLogHandler              # SPI 接口：handle(OperateLogRecord)
-├─ handler/
-│  ├─ LoggingOperateLogHandler   # 默认：日志输出
-│  ├─ DatabaseOperateLogHandler  # 数据库写入
-│  └─ MqOperateLogHandler        # MQ 发送（预留）
-├─ OperateLogInterceptor          # AOP 拦截器
-├─ OperateLogContext              # 上下文：setOperator / getOperator
-├─ OperateStatus                  # 枚举：SUCCESS / FAIL
-└─ OperateLogDispatcher           # 异步分发器
+├─ @Sign                   # 标注需验签的方法
+├─ SignInterceptor         # HandlerInterceptor：验签入口
+├─ SignVerifier            # 接口：verify(params, signature)
+└─ HmacSha256SignVerifier  # HMAC-SHA256 实现
 ```
 
-**使用示例**：
+App 密钥由 `jowen.web.sign.app-secrets`（appId → secret 映射）配置。
 
-```java
+### 4.7 datapermission/ — 数据权限
 
-@OperateLog(module = "用户管理", action = "CREATE", description = "'新增用户: ' + #user.username")
-public void createUser(User user) { ...}
+```text
+├─ @DataPermission         # 注解：enabled / deptColumn / userColumn / ignoreTables
+├─ DataPermissionAspect    # AOP：绑定当前用户上下文
+├─ DataPermissionContext   # 线程上下文：setCurrentUser / getCurrentUser
+├─ DataPermissionRule      # 规则接口：getExpression(...)
+└─ DataPermissionUserProvider # 当前用户获取 SPI
 ```
+
+> 注：当前实现为「注解 + 上下文 + 规则接口」形态，SQL 改写由业务方实现的 `DataPermissionRule` 完成；**框架未内置 MyBatis 拦截器**（与旧文档描述不同）。
+
+### 4.8 operatelog/ — 操作日志
+
+```text
+├─ @OperateLog             # 注解：module / action / description / content / condition
+├─ OperateLogAspect        # AOP：采集请求上下文并派发事件
+├─ OperateLogEvent         # 日志事件载体
+├─ OperateLogHandler       # 处理器接口：handle(event)
+└─ OperatorProvider        # 操作人获取 SPI
+```
+
+日志落地方式由业务方实现 `OperateLogHandler` 决定（日志输出 / 数据库 / MQ 均可），框架不内置具体落地实现。
+
+### 4.9 desensitize/ — 字段脱敏
+
+```text
+├─ @Desensitized           # 标注需脱敏的字段或返回值
+├─ DesensitizeAspect       # AOP 切面
+└─ DesensitizeSupport      # 委托 core 的 Desensitizer 内核执行
+```
+
+脱敏规则模型与执行器由 `framework-core` 的 `Desensitizer` 统一提供，本包只做 Web 层适配，不重复实现规则。
+
+### 4.10 excel/ — Excel 导入导出
+
+```text
+├─ @ExcelExport            # 导出注解
+├─ @ExcelImport            # 导入注解
+├─ ExcelExporter           # 导出器
+├─ ExcelImporter           # 导入器
+└─ ExcelException          # 异常
+```
+
+基于 `easyexcel`（optional 依赖）。`jowen.web.excel.max-rows` 限制单次行数，默认 100000，超限直接拒绝以防大结果集打爆内存。
 
 ---
 
-## 五、核心类关系图
+## 五、配置属性
 
-```text
-┌────────────────────────────────────────────┐
-│          framework-extras-web              │
-│                                            │
-│  ┌──────────┐  ┌──────────┐  ┌───────────┐ │
-│  │  lock    │  │ratelimit │  │idempotent │ │
-│  │ @Lockable│  │@RateLimit│  │@Idempotent│ │
-│  └────┬─────┘  └────┬─────┘  └────┬──────┘ │
-│       │             │             │        │
-│       └┬────────────┴─────────────┘        │
-│        │                                   │
-│    framework-cache                         │
-│    (Lock/Idempotent/Captcha)               │
-│                                            │
-│  ┌──────────────────────────────────┐      │
-│  │         captcha                  │      │
-│  │  CaptchaService / Generator      │      │
-│  └──────────────────────────────────┘      │
-│                                            │
-│  ┌──────────────────────────────────┐      │
-│  │      datapermission              │      │
-│  │  @DataPermission / Interceptor   │      │
-│  │  (MyBatis 拦截器)                │      │
-│  └──────────────────────────────────┘      │
-│                                            │
-│  ┌──────────────────────────────────┐      │
-│  │         operatelog               │      │
-│  │  @OperateLog / Interceptor       │      │
-│  │  (AOP + 异步写入)                │      │
-│  └──────────────────────────────────┘      │
-│                                            │
-│  依赖：framework-extras-common             │
-│  依赖：framework-cache (可选)              │
-│  依赖：framework-core                      │
-└────────────────────────────────────────────┘
-```
-
----
-
-## 六、分层依赖规则
-
-```text
-L0 (零内部依赖)    framework-extras-web
-                     依赖：framework-extras-common + framework-core
-                     可选：framework-cache（lock/idempotent/captcha 需要）
-```
-
----
-
-## 七、外部依赖
-
-```xml
-
-<dependencies>
-    <dependency>
-        <groupId>cn.jowen.framework</groupId>
-        <artifactId>framework-extras-common</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>cn.jowen.framework</groupId>
-        <artifactId>framework-core</artifactId>
-    </dependency>
-
-    <!-- 缓存底座（可选：lock/idempotent/captcha 需要） -->
-    <dependency>
-        <groupId>cn.jowen.framework</groupId>
-        <artifactId>framework-cache</artifactId>
-        <optional>true</optional>
-    </dependency>
-
-    <!-- AOP（可选） -->
-    <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-aop</artifactId>
-        <optional>true</optional>
-    </dependency>
-    <dependency>
-        <groupId>org.aspectj</groupId>
-        <artifactId>aspectjweaver</artifactId>
-        <optional>true</optional>
-    </dependency>
-
-    <!-- SpEL（可选） -->
-    <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-expression</artifactId>
-        <optional>true</optional>
-    </dependency>
-
-    <!-- Spring Boot 装配（可选） -->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-autoconfigure</artifactId>
-        <optional>true</optional>
-    </dependency>
-
-    <!-- 测试 -->
-    <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter</artifactId>
-        <scope>test</scope>
-    </dependency>
-</dependencies>
-```
-
----
-
-## 八、配置属性
+配置前缀 **`framework.extras.web`**，绑定类 `BootWebExtrasProperties`（extends `ExtrasWebProperties`），共 13 个配置块：
 
 ```yaml
 framework:
   extras:
-    lock:
-      enabled: true
-      type: redis                    # local / redis
-      key-prefix: "lock:"
-      default-lease-time: 30s
-      default-wait-time: 10s
-      watchdog-enabled: true
-    ratelimit:
-      enabled: true
-      default-algorithm: sliding-window
-      key-prefix: "ratelimit:"
-      fallback-message: "请求过于频繁"
-    idempotent:
-      enabled: true
-      default-ttl: 60s
-      key-prefix: "idempotent:"
-      token-header: X-Idempotent-Token
-    captcha:
-      enabled: true
-      type: arithmetic
-      length: 4
-      ttl: 5m
-    datapermission:
-      enabled: true
-      default-dept-column: dept_id
-      default-user-column: create_by
-      ignore-tables: [ sys_config ]
-    operatelog:
-      enabled: true
-      async: true
-      handler: database
-      max-param-length: 2000
+    web:
+      enabled: true                    # 总开关
+  
+      sign:                            # 请求签名（默认开）
+        enabled: true
+        app-secrets: { app-001: "secret-001" }
+  
+      crypto:                          # 请求体加解密（默认开）
+        enabled: true
+        default-key-alias: default
+        keys: { default: "<base64 32 bytes>" }
+  
+      rate-limit: { enabled: true }    # 限流（默认开）
+      idempotent: { enabled: true }    # 幂等（默认开）
+  
+      lock:                            # 分布式锁（默认开）
+        enabled: true
+        default-lease-millis: 30000
+  
+      captcha:                         # 验证码（默认关）
+        enabled: false
+        type: ARITHMETIC               # GRAPHIC / ARITHMETIC / SLIDER / SMS
+        expire-seconds: 120
+        length: 4
+        width: 120
+        height: 40
+  
+      data-permission:                 # 数据权限（默认关）
+        enabled: false
+        dept-column: dept_id
+        user-column: create_by
+  
+      operate-log:                     # 操作日志（默认关）
+        enabled: false
+        async: true
+        handler: log
+  
+      notification: { enabled: false } # ⚠️ 仅配置存在，无对应实现包
+      desensitize: { enabled: false }  # 字段脱敏（默认关）
+      excel:                           # Excel（默认关）
+        enabled: false
+        max-rows: 100000
+      ip-2-region: { enabled: false }  # IP 归属地，能力在 core 的 util/IpRegion
 ```
+
+> 自动装配由 `framework-boot-autoconfigure` 的 `WebExtrasAutoConfiguration` 承载，不在本模块内。
 
 ---
 
-## 九、使用方式
+## 六、外部依赖
 
-```java
-// 锁 + 限流 + 幂等 + 操作日志 组合使用
-@RateLimit(key = "'api:order:create'", permits = 10, period = 60000, scope = USER)
-@Idempotent(mode = IdempotentMode.TOKEN, ttl = 120000)
-@OperateLog(module = "订单", action = "CREATE", description = "'下单: ' + #request.orderNo")
-@Lockable(key = "'order:' + #request.orderNo", waitTime = 5000)
-public Order createOrder(OrderCreateRequest request) { ...}
+```xml
+<dependencies>
+    <!-- 内部模块 -->
+    <dependency><groupId>cn.jowen.framework</groupId><artifactId>framework-extras-common</artifactId></dependency>
+    <dependency><groupId>cn.jowen.framework</groupId><artifactId>framework-core</artifactId></dependency>
+
+    <!-- Spring Web -->
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-web</artifactId></dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-webmvc</artifactId></dependency>
+
+    <!-- AOP -->
+    <dependency><groupId>org.aspectj</groupId><artifactId>aspectjweaver</artifactId></dependency>
+
+    <!-- 基础 -->
+    <dependency><groupId>org.jspecify</groupId><artifactId>jspecify</artifactId></dependency>
+    <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId></dependency>
+    <dependency><groupId>jakarta.servlet</groupId><artifactId>jakarta.servlet-api</artifactId><scope>provided</scope></dependency>
+
+    <!-- 可选 -->
+    <dependency><groupId>com.alibaba</groupId><artifactId>easyexcel</artifactId><optional>true</optional></dependency>
+    <dependency><groupId>com.bucket4j</groupId><artifactId>bucket4j-core</artifactId><version>8.10.1</version></dependency>
+</dependencies>
 ```
 
-## 十、SPI 扩展点汇总
-
-| 扩展点接口            | 所在包            | 用途                 |
-|:----------------------|:------------------|:---------------------|
-| `DistributedLock`     | lock              | 自定义锁实现         |
-| `RateLimiter`         | ratelimit         | 自定义限流算法       |
-| `IdempotentValidator` | idempotent        | 自定义幂等校验       |
-| `CaptchaGenerator`    | captcha/generator | 自定义验证码生成器   |
-| `CaptchaStore`        | captcha/store     | 自定义验证码存储     |
-| `DataPermissionRule`  | datapermission    | 自定义数据权限规则   |
-| `OperateLogHandler`   | operatelog        | 自定义操作日志处理器 |
+**无 framework-cache 依赖，无 Redis 客户端依赖**——这是本模块的设计约束，勿随意添加。
 
 ---
 
-## 十一、与整体框架的关系
+## 七、SPI 扩展点汇总
 
-```text
-framework-extras-web
-├─ 依赖：framework-extras-common（Properties + Exception）
-├─ 依赖：framework-core（SPI / Event / ContextCarrier）
-├─ 可选：framework-cache（lock / idempotent / captcha 存储底座）
-└─ 可选：spring-aop / aspectj（AOP 拦截器）
-```
+| 扩展点接口 | 所在包 | 用途 |
+|:-----------|:-------|:-----|
+| `Lock` / `DistributedLock` | lock | 自定义锁实现 |
+| `RedisCommandExecutor` | lock | 接入 Redis 客户端（Jedis/Lettuce/StringRedisTemplate） |
+| `RateLimiter` | ratelimit | 自定义限流算法 |
+| `IdempotentStore` | idempotent | 自定义幂等存储 |
+| `CaptchaGenerator` | captcha | 自定义验证码生成器 |
+| `CaptchaStore` | captcha | 自定义验证码存储 |
+| `SmsCaptchaSender` | captcha | 自定义短信发送通道 |
+| `DataPermissionRule` | datapermission | 自定义数据权限规则 |
+| `DataPermissionUserProvider` | datapermission | 获取当前用户 |
+| `CryptoProcessor` | crypto | 自定义加解密算法 |
+| `SignVerifier` | sign | 自定义签名校验算法 |
+| `OperateLogHandler` | operatelog | 自定义操作日志落地 |
+| `OperatorProvider` | operatelog | 获取操作人 |
+
+---
+
+## 八、未完成项
+
+| 项 | 状态 | 说明 |
+|:---|:-----|:-----|
+| 幂等 Redis 实现 | ⚠️ 待补 | 当前仅 `LocalIdempotentStore`，多实例部署不跨节点生效。`tryMark` 语义与 `RedisCommandExecutor.setIfAbsent` 等价，实现成本极低 |
+| 限流集群化 | ⚠️ 待补 | 4 种算法均为进程内计数；集群限流需重写滑动窗口（Redis ZSET）等语义，属较大改动 |
+| 验证码 Redis 实现 | ⚠️ 待补 | 当前仅 `CaptchaStore.InMemory` |
+| `Notification` 配置块 | ⚠️ 配置空转 | `ExtrasWebProperties.Notification` 有配置，但无对应实现包与装配 |
+| MyBatis 数据权限拦截器 | ⚠️ 未内置 | 仅提供规则接口与上下文，SQL 改写需业务方实现 |

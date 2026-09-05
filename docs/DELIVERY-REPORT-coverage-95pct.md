@@ -39,12 +39,15 @@
 | framework-boot-autoconfigure | 670/699 | **95.85%** | 29 | ✅ |
 | framework-data-mybatis | 524/548 | **95.62%** | 24 | ✅ |
 | framework-i18n | 825/864 | **95.49%** | 39 | ✅ |
-| framework-core | 663/697 | **95.12%** | 34 | ✅ |
-| framework-plugin | 1618/1701 | **95.12%** | 83 | ✅ |
+| framework-core | 677/697 | **97.13%** | 20 | ✅ |
+| framework-plugin | 1638/1701 | **96.30%** | 63 | ✅ |
 | **聚合口径（总盘）** | **8259/8526** | **96.87%** | **267** | ✅ |
 
-> 余量最紧的模块：`framework-plugin` +0.12pt、`framework-core` +0.12pt、
-> `framework-i18n` +0.49pt。三者合计 missed=156，是下一轮补测的优先目标。
+> **2026-09-05 余量加固**：`framework-core` 与 `framework-plugin` 原仅 +0.12pt 余量（最脆弱），
+> 补测试后回升至安全区（core 97.13% / +2.13pt、plugin 96.30% / +1.30pt），抗上游重构能力恢复。
+> 明细见 commit `test(coverage): 加固 framework-core / framework-plugin 独立口径余量至安全区`。
+> 现余量最紧：`framework-i18n` +0.49pt（FileWatchResourceWatcher / RedisMessageSource 共 14 行
+> 需真实文件系统事件与 Redis 连接，性价比低，本轮不动）。
 
 ---
 

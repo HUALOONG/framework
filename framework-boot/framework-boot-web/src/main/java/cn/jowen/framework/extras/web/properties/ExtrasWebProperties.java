@@ -7,7 +7,17 @@ import cn.jowen.framework.extras.properties.ExtrasProperties;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Web 扩展配置（对应前缀 {@code jowen.web}）。
+ * Web 扩展配置属性模型。
+ *
+ * <p><b>本类是纯 POJO，不携带 {@code @ConfigurationProperties}。</b>
+ * 真实的前缀绑定在
+ * {@code framework-boot-autoconfigure} 的 {@code BootWebExtrasProperties}
+ * （{@code prefix = "framework.extras.web"}）上，后者继承本类。
+ * 这样拆分是为了让 Web 实现层保持零 Spring 依赖，与
+ * {@code BootLoggerProperties} / {@code BootI18nProperties} 等采用同一模式。
+ *
+ * <p>本模块内仅借用其嵌套的 {@code Captcha.CaptchaType} 枚举作为验证码类型判别，
+ * 与 Spring 属性绑定无关。</p>
  *
  * <p>该配置仅装配 Web 相关能力（签名、幂等、限流、数据权限等），
  * 与通用能力配置 {@link ExtrasProperties} 相互独立。</p>
