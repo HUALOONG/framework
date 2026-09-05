@@ -2,11 +2,17 @@ package cn.jowen.framework.boot.autoconfigure.extras;
 
 import cn.jowen.framework.extras.properties.DataScope;
 import cn.jowen.framework.extras.web.captcha.CaptchaService;
+import cn.jowen.framework.extras.web.captcha.CaptchaStore;
+import cn.jowen.framework.extras.web.captcha.RedisCaptchaStore;
 import cn.jowen.framework.extras.web.captcha.SmsCaptchaGenerator;
 import cn.jowen.framework.extras.web.captcha.SmsCaptchaSender;
 import cn.jowen.framework.extras.web.datapermission.DataPermissionRule;
 import cn.jowen.framework.extras.web.datapermission.DataPermissionUserProvider;
+import cn.jowen.framework.extras.web.idempotent.IdempotentStore;
+import cn.jowen.framework.extras.web.idempotent.LocalIdempotentStore;
+import cn.jowen.framework.extras.web.idempotent.RedisIdempotentStore;
 import cn.jowen.framework.extras.web.lock.DistributedLock;
+import cn.jowen.framework.extras.web.lock.RedisCommandExecutor;
 import cn.jowen.framework.extras.web.lock.RedisDistributedLock;
 import cn.jowen.framework.extras.web.properties.ExtrasWebProperties;
 import org.jspecify.annotations.NullMarked;
@@ -257,6 +263,68 @@ class WebExtrasAutoConfigurationTest {
                 });
     }
 
+    /** 容器内无 Redis 执行器时，幂等存储回落本地内存实现（单机兜底）。 */
+    @Test
+    void idempotentStoreFallsBackToLocalWithoutRedisExecutor() {
+        runner.run(context -> {
+            assertThat(context).hasNotFailed();
+            assertThat(context.getBean(IdempotentStore.class))
+                    .isInstanceOf(LocalIdempotentStore.class);
+        });
+    }
+
+    /** 提供 Redis 执行器时自动切换为 Redis 实现，使幂等键在多实例间共享。 */
+    @Test
+    void idempotentStoreUsesRedisWhenExecutorPresent() {
+        runner.withUserConfiguration(RedisExecutorConfig.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBean(IdempotentStore.class))
+                            .isInstanceOf(RedisIdempotentStore.class);
+                });
+    }
+
+    /** 业务方自定义幂等存储应优先于框架默认装配，保持可替换性。 */
+    @Test
+    void customIdempotentStoreTakesPrecedence() {
+        runner.withUserConfiguration(RedisExecutorConfig.class, CustomIdempotentStoreConfig.class)
+                .run(context -> {
+                    assertThat(context).hasSingleBean(IdempotentStore.class);
+                    assertThat(context.getBean(IdempotentStore.class))
+                            .isNotInstanceOf(RedisIdempotentStore.class);
+                });
+    }
+
+    /** 无 Redis 执行器时验证码存储回落内存实现。 */
+    @Test
+    void captchaStoreFallsBackToLocalWithoutRedisExecutor() {
+        runner.withPropertyValues("framework.extras.web.captcha.enabled=true")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBean(CaptchaStore.class))
+                            .isInstanceOf(CaptchaStore.InMemory.class);
+                });
+    }
+
+    /** 提供 Redis 执行器时验证码存储切换为 Redis 实现，支持跨节点生成/校验。 */
+    @Test
+    void captchaStoreUsesRedisWhenExecutorPresent() {
+        runner.withUserConfiguration(RedisExecutorConfig.class)
+                .withPropertyValues("framework.extras.web.captcha.enabled=true")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBean(CaptchaStore.class))
+                            .isInstanceOf(RedisCaptchaStore.class);
+                });
+    }
+
+    /** 未启用验证码时不注册存储 Bean，避免产生无用途对象。 */
+    @Test
+    void captchaStoreAbsentWhenCaptchaDisabled() {
+        runner.withUserConfiguration(RedisExecutorConfig.class)
+                .run(context -> assertThat(context).doesNotHaveBean(CaptchaStore.class));
+    }
+
     /** 提供用户上下文，模拟业务方接入安全框架后的状态。 */
     @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
     static class UserProviderConfig {
@@ -320,6 +388,26 @@ class WebExtrasAutoConfigurationTest {
         @org.springframework.context.annotation.Bean
         DistributedLock distributedLock() {
             return (key, waitMillis, leaseMillis) -> new cn.jowen.framework.extras.web.lock.LocalLock(key, waitMillis);
+        }
+    }
+
+    /** 提供 mock 的 Redis 命令执行器，模拟业务方接入 Redis 客户端适配后的容器状态。 */
+    @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
+    static class RedisExecutorConfig {
+
+        @org.springframework.context.annotation.Bean
+        RedisCommandExecutor redisCommandExecutor() {
+            return org.mockito.Mockito.mock(RedisCommandExecutor.class);
+        }
+    }
+
+    /** 业务方自定义幂等存储，用于验证 {@code @ConditionalOnMissingBean} 让位语义。 */
+    @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
+    static class CustomIdempotentStoreConfig {
+
+        @org.springframework.context.annotation.Bean
+        IdempotentStore idempotentStore() {
+            return new LocalIdempotentStore();
         }
     }
 }

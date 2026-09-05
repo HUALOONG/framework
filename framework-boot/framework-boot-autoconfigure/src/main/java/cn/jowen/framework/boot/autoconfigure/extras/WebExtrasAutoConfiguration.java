@@ -6,6 +6,7 @@ import cn.jowen.framework.extras.web.captcha.CaptchaGenerator;
 import cn.jowen.framework.extras.web.captcha.CaptchaService;
 import cn.jowen.framework.extras.web.captcha.CaptchaStore;
 import cn.jowen.framework.extras.web.captcha.GraphicCaptchaGenerator;
+import cn.jowen.framework.extras.web.captcha.RedisCaptchaStore;
 import cn.jowen.framework.extras.web.crypto.AesGcmCryptoProcessor;
 import cn.jowen.framework.extras.web.crypto.CryptoAdvice;
 import cn.jowen.framework.extras.web.crypto.CryptoProcessor;
@@ -20,8 +21,10 @@ import cn.jowen.framework.extras.web.datapermission.DataPermissionUserProvider;
 import cn.jowen.framework.extras.web.idempotent.IdempotentAspect;
 import cn.jowen.framework.extras.web.idempotent.IdempotentStore;
 import cn.jowen.framework.extras.web.idempotent.LocalIdempotentStore;
+import cn.jowen.framework.extras.web.idempotent.RedisIdempotentStore;
 import cn.jowen.framework.extras.web.lock.DistributedLock;
 import cn.jowen.framework.extras.web.lock.LockAspect;
+import cn.jowen.framework.extras.web.lock.RedisCommandExecutor;
 import cn.jowen.framework.extras.web.lock.RedisDistributedLock;
 import cn.jowen.framework.extras.web.operatelog.OperateLogAspect;
 import cn.jowen.framework.extras.web.operatelog.OperateLogHandler;
@@ -34,6 +37,7 @@ import cn.jowen.framework.extras.web.sign.SignVerifier;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -112,11 +116,20 @@ public class WebExtrasAutoConfiguration {
         return new RateLimitAspect(manager);
     }
 
-    /** IdempotentStore 字段。 */
+    /**
+     * IdempotentStore 字段。
+     *
+     * <p>存在 {@code RedisCommandExecutor} 时自动切换为 Redis 实现（多实例共享），
+     * 否则回退本地内存实现（单机兜底）。用 {@code ObjectProvider} 惰性解析而非
+     * {@code @ConditionalOnBean}，是为了规避自动配置中 bean 注册顺序导致的
+     * 条件判断失效问题。
+     */
     @Bean
+    @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "framework.extras.web.idempotent", name = "enabled", matchIfMissing = true)
-    public IdempotentStore idempotentStore() {
-        return new LocalIdempotentStore();
+    public IdempotentStore idempotentStore(ObjectProvider<RedisCommandExecutor> redisExecutor) {
+        RedisCommandExecutor executor = redisExecutor.getIfAvailable();
+        return executor != null ? new RedisIdempotentStore(executor) : new LocalIdempotentStore();
     }
 
     /** IdempotentAspect 字段。 */
@@ -165,11 +178,18 @@ public class WebExtrasAutoConfiguration {
         return new SignInterceptor(verifier);
     }
 
-    /** CaptchaStore 字段。 */
+    /**
+     * CaptchaStore 字段。
+     *
+     * <p>存在 {@code RedisCommandExecutor} 时自动切换为 Redis 实现，
+     * 使「A 节点生成、B 节点校验」的多实例场景直接可用；否则回退内存实现。
+     */
     @Bean
+    @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "framework.extras.web.captcha", name = "enabled", havingValue = "true")
-    public CaptchaStore captchaStore() {
-        return new CaptchaStore.InMemory();
+    public CaptchaStore captchaStore(ObjectProvider<RedisCommandExecutor> redisExecutor) {
+        RedisCommandExecutor executor = redisExecutor.getIfAvailable();
+        return executor != null ? new RedisCaptchaStore(executor) : new CaptchaStore.InMemory();
     }
 
     /** CaptchaGenerator 字段。 */
