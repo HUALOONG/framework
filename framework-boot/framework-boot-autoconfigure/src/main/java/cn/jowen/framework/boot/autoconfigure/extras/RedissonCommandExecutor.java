@@ -1,5 +1,6 @@
 package cn.jowen.framework.boot.autoconfigure.extras;
 
+import cn.jowen.framework.core.assertion.Assert;
 import cn.jowen.framework.extras.web.lock.RedisCommandExecutor;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -23,9 +24,13 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>释放锁使用 Lua 脚本保证「校验值 + 删除」的原子性，避免误释放其他线程持有的锁。
  *
+ * <p><b>脚本能力</b>：本类重写 {@link #supportsScript()} 返回 {@code true}，
+ * 并把 {@link #eval(String, List, List)} 委托给 Redisson 的 {@link RScript}，
+ * 使集群限流等需要原子「读-改-写」的场景可以直接复用本适配器。
+ *
  * @author 王飞
  * @since 0.0.1
- * @version 0.0.1
+ * @version 0.0.2
  */
 @NullMarked
 public class RedissonCommandExecutor implements RedisCommandExecutor {
@@ -99,5 +104,48 @@ public class RedissonCommandExecutor implements RedisCommandExecutor {
                 List.of(key),
                 value);
         return affected != null && affected > 0L;
+    }
+
+    /**
+     * 是否支持执行 Lua 脚本。
+     *
+     * <p>Redisson 原生支持脚本，恒定返回 {@code true}。
+     *
+     * @return 恒为 {@code true}
+     */
+    @Override
+    public boolean supportsScript() {
+        return true;
+    }
+
+    /**
+     * 原子执行一段 Lua 脚本。
+     *
+     * <p>委托 Redisson 的 {@link RScript}：使用 {@link RScript.Mode#READ_WRITE}（脚本可写，
+     * 从而在主从/集群环境下被正确路由到主节点），返回类型用 {@link RScript.ReturnType#VALUE}
+     * 以原样透传脚本返回值（{@code Long} / {@code String} / {@code List<?>} / {@code null}），
+     * 由调用方配合 {@code RedisScriptReplies} 做类型收敛。
+     *
+     * <p>Redis 在无返回值时脚本结果为 {@code null}，本方法直接透传，<b>不做任何解引用</b>，
+     * 因此不会因 {@code null} 触发 NPE。
+     *
+     * @param script Lua 脚本源码，不可为 {@code null} 或空白
+     * @param keys   KEYS 数组，可为 {@link java.util.List#of()}（无 key 脚本）
+     * @param args   ARGV 数组，可为 {@link java.util.List#of()}
+     * @return 脚本返回值；Redis 无返回值时为 {@code null}
+     * @throws cn.jowen.framework.core.exception.BusinessException script 为 {@code null} 或空白，
+     *                                                            或 keys / args 为 {@code null}
+     */
+    @Override
+    public @Nullable Object eval(String script, List<String> keys, List<String> args) {
+        Assert.notEmpty(script, null, "script must not be blank");
+        Assert.notNull(keys, null, "keys must not be null");
+        Assert.notNull(args, null, "args must not be null");
+        return client.getScript().eval(
+                RScript.Mode.READ_WRITE,
+                script,
+                RScript.ReturnType.VALUE,
+                List.<Object>copyOf(keys),
+                args.toArray());
     }
 }
