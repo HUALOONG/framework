@@ -90,7 +90,6 @@
 
 | 模块 | 覆盖行 | 总行 | 行覆盖率 | 未覆盖 | 门禁 |
 |---|---:|---:|---:|---:|:--:|
-| `framework-data-mybatis` | 525 | 550 | 95.45% | 25 | ✅ |
 | `framework-i18n` | 826 | 865 | 95.49% | 39 | ✅ |
 | `framework-extras-message` | 234 | 244 | 95.90% | 10 | ✅ |
 | `framework-boot-autoconfigure` | 685 | 714 | 95.94% | 29 | ✅ |
@@ -102,12 +101,42 @@
 | `framework-logger` | 192 | 196 | 97.96% | 4 | ✅ |
 | `framework-data-jdbc` | 1279 | 1300 | 98.38% | 21 | ✅ |
 | `framework-extras-storage` | 251 | 255 | 98.43% | 4 | ✅ |
+| `framework-data-mybatis` | **548** | **550** | **99.64%** | **2** | ✅ |
 | `framework-data-core` | 325 | 325 | **100.00%** | 0 | ✅ |
-| **聚合** | **8493** | **8764** | **96.91%** | **271** | **✅ 13/13** |
+| **聚合** | **8516** | **8764** | **97.17%** | **248** | **✅ 13/13** |
 
-**余量分布**：仅 3 个模块余量 < 1pt（`data-mybatis` +0.45pt、`i18n` +0.49pt、`extras-message` +0.90pt）。相比 09-05 的余量图（`i18n` +0.49pt 单点最紧），本轮新增 `data-mybatis` 为新的最脆弱点，但仍未跌破门禁。
+**余量分布**：现仅 **2 个模块**余量 < 1pt（`i18n` +0.49pt、`extras-message` +0.90pt）。原最脆弱点 `data-mybatis`（95.45% / +0.45pt）已于本表后追加的 `b39e832` 加固至 **99.64% / +4.64pt**。
 
-**新增代码的覆盖情况**：`extras-message` 分母 +9 行（`HttpWebhookMessageSender`），覆盖 +9 行（95.90% 仍 PASS）；`boot-web` 分母 +153 行（契约基类），因契约基类是 `src/test` 代码**不计入分母**，实际生产分母净增仅来自 `ExtrasWebProperties` Javadoc 改动（0 行）—— 本轮 4 项中 3 项是纯测试/文档/注解改动，对分母几乎无影响，是唯一让聚合覆盖率**上升**的轮次。
+**新增代码的覆盖情况**：`extras-message` 分母 +9 行（`HttpWebhookMessageSender`），覆盖 +9 行（95.90% 仍 PASS）；`boot-web` 分母 +153 行（契约基类），因契约基类是 `src/test` 代码**不计入分母**，实际生产分母净增仅来自 `ExtrasWebProperties` Javadoc 改动（0 行）；`data-mybatis` 补测 69 行全在 `src/test`，分母不变。**本轮 5 项中 4 项是纯测试/文档/注解改动，对生产分母零影响 —— 聚合覆盖率 96.87% → 97.17%，两次上升均来自补测。**
+
+---
+
+## 三·补 — `data-mybatis` 覆盖率加固（提交 `b39e832`）
+
+**背景**：上一节表格收口时 `data-mybatis` 以 95.45%（+0.45pt）成为全工程最脆弱模块。25 行未覆盖集中在 5 个类，主理人从 `jacoco.xml` 逐行独立复算后按可覆盖性分流。
+
+| 类 | 缺口行 | 行数 | 判定 |
+|---|---|---:|---|
+| `config/MybatisFlexProperties` | 54,55,59,61,62,63,67,69,71,73,75 | 11 | ✅ 纯访问器未调用 |
+| `adapter/FlexDataSourceAdapter` | 49–54 | 6 | ✅ 空注册表时匿名默认 `DataSource` 方法体 |
+| `adapter/FlexDataSourceAdapter` | 88,89 | 2 | ✅ `determineCurrentLookupKey` 反射成功路径（原 ci=0，从未命中） |
+| `extension/FlexTenantHandler` | 75,76 | 2 | ✅ `injectTenant` 反射失败 catch |
+| `adapter/FlexDataSourceAdapter` | 92 | 1 | ⭕ 预判不可覆盖（catch 尾探针伪影）→ **实际已被覆盖** |
+| `extension/FlexOptimisticLockHandler` | 66,67 | 2 | ❌ 不可覆盖（防御性死代码） |
+
+**补测（3 文件 / +69 行 / 全在 `src/test`，`Edit` 增量追加）**
+- `MybatisFlexPropertiesTest` +1 用例：9 个未调用 setter 往返断言 → 该类 **0 missed / 41 covered**
+- `FlexDataSourceAdapterTest` +2 用例 + `RecordingLookupKey` 夹具：空注册表默认实例 5 方法断言 / 反射成功路径（断言 `invoked==true` + `DataSourceContext` 作用域内设置与清除）→ 该类 **0 missed / 30 covered**
+- `FlexTenantHandlerTest` +1 用例：`runWithTenant("acme", …)` 内用 `new Object()` 触发 `NoSuchMethodException` → 断言 `doesNotThrowAnyException()` → 该类 **0 missed / 25 covered**
+
+**残留 2 行（by-design，不可覆盖）**
+`FlexOptimisticLockHandler.hasVersionField` 的 catch 块（66/67）：`findMethod` 内部已捕获 `NoSuchMethodException` 并返回 null，**永不外抛**，catch 是纯防御性死代码。唯一触发路径是 `SecurityException` / `InaccessibleObjectException`，需 JVM 级 `SecurityManager`（Java 21 需 `-Djava.security.manager=allow`，要改 pom，红线禁止）。
+
+**收口验证（主理人独立复算，未采用自报数字）**
+- `mvn -o clean verify` → **BUILD SUCCESS**，8 分 51 秒，**0 处 `Rule violated`**
+- **2866 用例全绿**（13 模块，0F/0E/0S），较上一收口 +4
+- 聚合 **8516/8764 = 97.17%**（上一收口 96.91%）
+- `git status` 确认仅 3 个测试文件改动，**`src/main` 零改动**
 
 ---
 
@@ -115,8 +144,9 @@
 
 ### P1 — 建议本轮之后立即处理
 
-1. **`data-mybatis` +0.45pt 余量加固**（1 小时内可完成）
-   25 行未覆盖，建议先跑 `missed.py` 定位是否为「单独成行的裸调用 / `continue`」不可覆盖行。若含不可覆盖行，实际余量可能已 > 1pt，无需补测；若可覆盖，补 2 个用例即可推至 +1.5pt。
+1. ~~**`data-mybatis` +0.45pt 余量加固**~~ → **✅ 已完成（`b39e832`）**
+   实测 25 行未覆盖中 **21 行可覆盖、4 行结构性不可覆盖**（含 1 行被预判但实际已覆盖）。补 4 用例后 **95.45% → 99.64%（+4.64pt）**。
+   实际不可覆盖行仅 `FlexOptimisticLockHandler:66-67`（防御性死代码 catch），非「裸调用 / `continue`」形态。
 
 2. **`<revision>` 是否 bump 至 `0.0.2`（决策项，需主理人拍板）**
    本轮新增 `HttpWebhookMessageSender` 已标注 `@since 0.0.2`，但根 pom `<revision>` 仍为 `0.0.1`。**建议 T05 收口后统一 bump**，否则 `@since` 标签与实际发布版本不一致，Maven Javadoc 会警告。
