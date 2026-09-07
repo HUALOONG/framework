@@ -1,8 +1,13 @@
 package cn.jowen.framework.extras.web.ratelimit;
 
 import cn.jowen.framework.extras.properties.RateLimitAlgorithm;
+import cn.jowen.framework.extras.web.lock.FakeRedisCommandExecutor;
+import cn.jowen.framework.extras.web.lock.RedisCommandExecutor;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -74,5 +79,87 @@ class RateLimiterManagerTest {
         assertThat(a.tryAcquire("x")).isTrue();
         assertThat(a.tryAcquire("x")).isFalse();
         assertThat(b.tryAcquire("x")).isTrue();
+    }
+
+    @Test
+    void managerUsesRedisFixedWindowWhenExecutorSupportsScript() {
+        FakeRedisCommandExecutor exec = new FakeRedisCommandExecutor();
+        RateLimiterManager manager =
+                new RateLimiterManager(RateLimitAlgorithm.FIXED_WINDOW, exec, new RateLimitKeys());
+
+        assertThat(manager.get("api", 2, 60, RateLimitAlgorithm.FIXED_WINDOW))
+                .isInstanceOf(RedisFixedWindowRateLimiter.class);
+    }
+
+    @Test
+    void managerUsesRedisTokenBucketWhenExecutorSupportsScript() {
+        FakeRedisCommandExecutor exec = new FakeRedisCommandExecutor();
+        RateLimiterManager manager =
+                new RateLimiterManager(RateLimitAlgorithm.TOKEN_BUCKET, exec, new RateLimitKeys());
+
+        assertThat(manager.get("api", 2, 60, RateLimitAlgorithm.TOKEN_BUCKET))
+                .isInstanceOf(RedisTokenBucketRateLimiter.class);
+    }
+
+    @Test
+    void managerFallsBackToLocalWhenNoExecutor() {
+        RateLimiterManager manager = new RateLimiterManager();
+
+        assertThat(manager.get("api", 2, 60, RateLimitAlgorithm.FIXED_WINDOW))
+                .isInstanceOf(FixedWindowRateLimiter.class);
+    }
+
+    @Test
+    void managerFallsBackToLocalWhenExecutorLacksScript() {
+        NoScriptExecutor exec = new NoScriptExecutor();
+        RateLimiterManager manager =
+                new RateLimiterManager(RateLimitAlgorithm.FIXED_WINDOW, exec, new RateLimitKeys());
+
+        assertThat(manager.get("api", 2, 60, RateLimitAlgorithm.FIXED_WINDOW))
+                .isInstanceOf(FixedWindowRateLimiter.class);
+    }
+
+    @Test
+    void managerFallsBackToLocalForUnsupportedAlgorithmEvenWithExecutor() {
+        FakeRedisCommandExecutor exec = new FakeRedisCommandExecutor();
+        RateLimiterManager manager =
+                new RateLimiterManager(RateLimitAlgorithm.SLIDING_WINDOW, exec, new RateLimitKeys());
+
+        assertThat(manager.get("api", 2, 60, RateLimitAlgorithm.SLIDING_WINDOW))
+                .isInstanceOf(SlidingWindowRateLimiter.class);
+    }
+
+    @Test
+    void redisFixedWindowLimiterIsWiredThroughManagerAndEnforced() {
+        FakeRedisCommandExecutor exec = new FakeRedisCommandExecutor();
+        RateLimiterManager manager =
+                new RateLimiterManager(RateLimitAlgorithm.FIXED_WINDOW, exec, new RateLimitKeys());
+        RateLimiter limiter = manager.get("k", 1, 60, RateLimitAlgorithm.FIXED_WINDOW);
+
+        assertThat(limiter.tryAcquire("k")).isTrue();
+        assertThat(limiter.tryAcquire("k")).isFalse();
+    }
+
+    /** 不支持脚本的执行器（使用 default 方法），用于本地回落验证。 */
+    @NullMarked
+    static final class NoScriptExecutor implements RedisCommandExecutor {
+        @Override
+        public boolean setIfAbsent(String key, String value, long expireMillis) {
+            return true;
+        }
+
+        @Override
+        public @Nullable String get(String key) {
+            return null;
+        }
+
+        @Override
+        public void delete(String key) {
+        }
+
+        @Override
+        public boolean deleteIfMatch(String key, String value) {
+            return false;
+        }
     }
 }

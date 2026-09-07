@@ -30,6 +30,7 @@ import cn.jowen.framework.extras.web.operatelog.OperateLogAspect;
 import cn.jowen.framework.extras.web.operatelog.OperateLogHandler;
 import cn.jowen.framework.extras.web.operatelog.OperatorProvider;
 import cn.jowen.framework.extras.web.ratelimit.RateLimitAspect;
+import cn.jowen.framework.extras.web.ratelimit.RateLimitKeys;
 import cn.jowen.framework.extras.web.ratelimit.RateLimiterManager;
 import cn.jowen.framework.extras.web.sign.HmacSha256SignVerifier;
 import cn.jowen.framework.extras.web.sign.SignInterceptor;
@@ -102,11 +103,24 @@ public class WebExtrasAutoConfiguration {
         this.props = props;
     }
 
-    /** RateLimiterManager 字段。 */
+    /**
+     * 限流器管理器：存在支持脚本的 {@code RedisCommandExecutor} 时，对 {@code FIXED_WINDOW} /
+     * {@code TOKEN_BUCKET} 自动切换为 Redis 集群限流（多实例共享计数），否则回落本地内存限流。
+     *
+     * <p>与 {@link #idempotentStore} / {@link #captchaStore} 采用同一范式：
+     * {@code ObjectProvider} 惰性解析而非 {@code @ConditionalOnBean}，规避自动配置中
+     * bean 注册顺序导致的条件判断失效。
+     */
     @Bean
+    @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "framework.extras.web.ratelimit", name = "enabled", matchIfMissing = true)
-    public RateLimiterManager rateLimiterManager() {
-        return new RateLimiterManager();
+    public RateLimiterManager rateLimiterManager(ObjectProvider<RedisCommandExecutor> redisExecutor) {
+        RedisCommandExecutor executor = redisExecutor.getIfAvailable();
+        return new RateLimiterManager(
+                props.getRateLimit().getAlgorithm(),
+                executor,
+                new RateLimitKeys(props.getRateLimit().getKeyPrefix()),
+                props.getRateLimit().isFailOpen());
     }
 
     /** RateLimitAspect 字段。 */

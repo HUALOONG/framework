@@ -284,7 +284,10 @@ public class FakeRedisCommandExecutor implements RedisCommandExecutor {
     }
 
     /**
-     * 令牌桶：KEYS[1]=桶键，ARGV[1]=capacity，ARGV[2]=补充周期毫秒，ARGV[3]=每周期补充数（默认 1）。
+     * 令牌桶：KEYS[1]=桶键，ARGV[1]=capacity，ARGV[2]=windowMillis，ARGV[3]=nowMillis，ARGV[4]=ttlMillis。
+     *
+     * <p>语义对齐 {@code RateLimitScripts.TOKEN_BUCKET}：窗口到期一次性重置为满桶（而非连续补充），
+     * 使离线 Fake 与真实 Redis Lua 行为一致，便于测试断言。
      *
      * @param keys KEYS 数组
      * @param args ARGV 数组
@@ -293,31 +296,30 @@ public class FakeRedisCommandExecutor implements RedisCommandExecutor {
     private Object tokenBucket(List<String> keys, List<String> args) {
         String key = keys.get(0);
         long capacity = Long.parseLong(args.get(0));
-        long periodMillis = Long.parseLong(args.get(1));
-        long refillTokens = args.size() > 2 ? Long.parseLong(args.get(2)) : 1L;
+        long windowMillis = Long.parseLong(args.get(1));
+        long now = args.size() > 2 ? Long.parseLong(args.get(2)) : currentMillis();
 
-        long now = currentMillis();
         long tokens = capacity;
-        long lastRefillMillis = now;
+        long ts = now;
         String current = liveValue(key);
         if (current != null) {
             String[] parts = current.split("\\|", 2);
             tokens = Long.parseLong(parts[0]);
-            lastRefillMillis = Long.parseLong(parts[1]);
-            if (periodMillis > 0) {
-                long periods = (now - lastRefillMillis) / periodMillis;
-                if (periods > 0) {
-                    tokens = Math.min(capacity, tokens + periods * refillTokens);
-                    lastRefillMillis = lastRefillMillis + periods * periodMillis;
-                }
+            ts = Long.parseLong(parts[1]);
+            if (now - ts >= windowMillis) {
+                tokens = capacity;
+                ts = now;
             }
         }
 
-        if (tokens <= 0L) {
-            put(key, tokens + "|" + lastRefillMillis, 0L);
-            return 0L;
+        long allowed;
+        if (tokens >= 1L) {
+            tokens = tokens - 1L;
+            allowed = 1L;
+        } else {
+            allowed = 0L;
         }
-        put(key, (tokens - 1L) + "|" + lastRefillMillis, 0L);
-        return 1L;
+        put(key, tokens + "|" + ts, 0L);
+        return allowed;
     }
 }

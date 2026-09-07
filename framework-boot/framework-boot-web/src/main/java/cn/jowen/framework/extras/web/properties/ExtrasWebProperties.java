@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import cn.jowen.framework.extras.properties.ExtrasProperties;
+import cn.jowen.framework.extras.properties.RateLimitAlgorithm;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -232,12 +233,45 @@ public class ExtrasWebProperties {
     public static class RateLimit {
         private boolean enabled = true;
 
+        /** Redis 异常时是否放行（默认 true）。false=拒绝并抛 {@link cn.jowen.framework.extras.common.exception.ExtrasException}。 */
+        private boolean failOpen = true;
+
+        /** Redis key 前缀（默认 "ratelimit:"），必须以分隔符结尾。 */
+        private String keyPrefix = "ratelimit:";
+
+        /** 默认限流算法（默认 TOKEN_BUCKET）。 */
+        private RateLimitAlgorithm algorithm = RateLimitAlgorithm.TOKEN_BUCKET;
+
         public boolean isEnabled() {
             return enabled;
         }
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public boolean isFailOpen() {
+            return failOpen;
+        }
+
+        public void setFailOpen(boolean failOpen) {
+            this.failOpen = failOpen;
+        }
+
+        public String getKeyPrefix() {
+            return keyPrefix;
+        }
+
+        public void setKeyPrefix(String keyPrefix) {
+            this.keyPrefix = keyPrefix;
+        }
+
+        public RateLimitAlgorithm getAlgorithm() {
+            return algorithm;
+        }
+
+        public void setAlgorithm(RateLimitAlgorithm algorithm) {
+            this.algorithm = algorithm;
         }
     }
 

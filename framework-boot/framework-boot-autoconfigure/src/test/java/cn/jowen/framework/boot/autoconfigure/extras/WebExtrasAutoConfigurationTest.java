@@ -1,6 +1,8 @@
 package cn.jowen.framework.boot.autoconfigure.extras;
 
+import cn.jowen.framework.extras.common.exception.ExtrasException;
 import cn.jowen.framework.extras.properties.DataScope;
+import cn.jowen.framework.extras.properties.RateLimitAlgorithm;
 import cn.jowen.framework.extras.web.captcha.CaptchaService;
 import cn.jowen.framework.extras.web.captcha.CaptchaStore;
 import cn.jowen.framework.extras.web.captcha.RedisCaptchaStore;
@@ -15,12 +17,18 @@ import cn.jowen.framework.extras.web.lock.DistributedLock;
 import cn.jowen.framework.extras.web.lock.RedisCommandExecutor;
 import cn.jowen.framework.extras.web.lock.RedisDistributedLock;
 import cn.jowen.framework.extras.web.properties.ExtrasWebProperties;
+import cn.jowen.framework.extras.web.ratelimit.RateLimiter;
+import cn.jowen.framework.extras.web.ratelimit.RateLimiterManager;
+import cn.jowen.framework.extras.web.ratelimit.RedisFixedWindowRateLimiter;
+import cn.jowen.framework.extras.web.ratelimit.RedisTokenBucketRateLimiter;
 import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * {@link WebExtrasAutoConfiguration} 装配验证：重点确认 {@code framework.extras.web.*}
@@ -91,6 +99,48 @@ class WebExtrasAutoConfigurationTest {
             assertThat(context).hasBean("cryptoProcessor");
             assertThat(context).hasBean("signVerifier");
         });
+    }
+
+    /** 提供支持脚本的 Redis 执行器时，固定窗口与令牌桶自动切换为 Redis 集群限流实现。 */
+    @Test
+    void rateLimiterManagerUsesRedisWhenExecutorSupportsScript() {
+        runner.withUserConfiguration(ScriptRedisExecutorConfig.class)
+                .withPropertyValues("framework.extras.web.ratelimit.algorithm=FIXED_WINDOW")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    RateLimiterManager manager = context.getBean(RateLimiterManager.class);
+                    assertThat(manager.get("api", 2, 60, RateLimitAlgorithm.FIXED_WINDOW))
+                            .isInstanceOf(RedisFixedWindowRateLimiter.class);
+                    assertThat(manager.get("api", 2, 60, RateLimitAlgorithm.TOKEN_BUCKET))
+                            .isInstanceOf(RedisTokenBucketRateLimiter.class);
+                });
+    }
+
+    /** Redis 异常且 fail-open=true（默认）时放行，避免 Redis 抖动导致全站 503。 */
+    @Test
+    void rateLimitFailOpenAllowsWhenRedisThrows() {
+        runner.withUserConfiguration(FailingRedisExecutorConfig.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    RateLimiterManager manager = context.getBean(RateLimiterManager.class);
+                    RateLimiter limiter = manager.get("api", 1, 60, RateLimitAlgorithm.FIXED_WINDOW);
+                    assertThat(limiter.tryAcquire("k")).isTrue();
+                });
+    }
+
+    /** Redis 异常且 fail-open=false 时拒绝并抛 ExtrasException（硬配额场景）。 */
+    @Test
+    void rateLimitFailClosedRejectsWhenRedisThrows() {
+        runner.withUserConfiguration(FailingRedisExecutorConfig.class)
+                .withPropertyValues("framework.extras.web.ratelimit.fail-open=false")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    RateLimiterManager manager = context.getBean(RateLimiterManager.class);
+                    RateLimiter limiter = manager.get("api", 1, 60, RateLimitAlgorithm.FIXED_WINDOW);
+                    assertThatThrownBy(() -> limiter.tryAcquire("k"))
+                            .isInstanceOf(ExtrasException.class)
+                            .hasMessageContaining("backend unavailable");
+                });
     }
 
     @Test
@@ -398,6 +448,32 @@ class WebExtrasAutoConfigurationTest {
         @org.springframework.context.annotation.Bean
         RedisCommandExecutor redisCommandExecutor() {
             return org.mockito.Mockito.mock(RedisCommandExecutor.class);
+        }
+    }
+
+    /** 提供支持脚本的 mock Redis 执行器（显式 stub default 方法，规避 Mockito 对 default 方法的 stub 陷阱）。 */
+    @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
+    static class ScriptRedisExecutorConfig {
+
+        @org.springframework.context.annotation.Bean
+        RedisCommandExecutor redisCommandExecutor() {
+            RedisCommandExecutor exec = org.mockito.Mockito.mock(RedisCommandExecutor.class);
+            Mockito.when(exec.supportsScript()).thenReturn(true);
+            return exec;
+        }
+    }
+
+    /** 提供支持脚本、但 eval 始终抛异常的 mock Redis 执行器，用于 fail-open / fail-closed 验证。 */
+    @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
+    static class FailingRedisExecutorConfig {
+
+        @org.springframework.context.annotation.Bean
+        RedisCommandExecutor redisCommandExecutor() {
+            RedisCommandExecutor exec = org.mockito.Mockito.mock(RedisCommandExecutor.class);
+            Mockito.when(exec.supportsScript()).thenReturn(true);
+            Mockito.when(exec.eval(Mockito.any(), Mockito.any(), Mockito.any()))
+                    .thenThrow(new RuntimeException("boom"));
+            return exec;
         }
     }
 

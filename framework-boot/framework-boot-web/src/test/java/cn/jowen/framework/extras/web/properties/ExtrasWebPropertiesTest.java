@@ -1,5 +1,6 @@
 package cn.jowen.framework.extras.web.properties;
 
+import cn.jowen.framework.extras.properties.RateLimitAlgorithm;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
@@ -46,8 +47,17 @@ class ExtrasWebPropertiesTest {
 
         ExtrasWebProperties.RateLimit rl = new ExtrasWebProperties.RateLimit();
         assertThat(rl.isEnabled()).isTrue();
+        assertThat(rl.isFailOpen()).isTrue();
+        assertThat(rl.getKeyPrefix()).isEqualTo("ratelimit:");
+        assertThat(rl.getAlgorithm()).isEqualTo(RateLimitAlgorithm.TOKEN_BUCKET);
         rl.setEnabled(false);
+        rl.setFailOpen(false);
+        rl.setKeyPrefix("rt:");
+        rl.setAlgorithm(RateLimitAlgorithm.FIXED_WINDOW);
         assertThat(rl.isEnabled()).isFalse();
+        assertThat(rl.isFailOpen()).isFalse();
+        assertThat(rl.getKeyPrefix()).isEqualTo("rt:");
+        assertThat(rl.getAlgorithm()).isEqualTo(RateLimitAlgorithm.FIXED_WINDOW);
         p.setRateLimit(rl);
         assertThat(p.getRateLimit()).isSameAs(rl);
 
