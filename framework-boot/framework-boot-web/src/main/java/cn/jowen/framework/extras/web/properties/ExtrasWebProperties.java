@@ -476,7 +476,17 @@ public class ExtrasWebProperties {
         }
     }
 
-    /** 通知配置（默认关闭）。 */
+    /**
+     * 通知配置（默认关闭）。
+     *
+     * <p><b>已废弃（N-003）。</b>与
+     * {@link cn.jowen.framework.extras.properties.NotificationProperties} 同属占位保留结构，框架通知能力未落地。
+     * 生产代码实际通过 {@code MessageServiceSmsCaptchaSender} 桥接短信网关，引用协议级
+     * {@code ErrorCodeEnum.NOTIFICATION_SEND_FAILED("E2004")}，不依赖本嵌套配置。请勿在新代码中新增依赖。</p>
+     *
+     * @deprecated 消息通知能力未落地，仅作占位保留；新代码请勿依赖本配置块。
+     */
+    @Deprecated
     @NullMarked
     public static class Notification {
         /** 是否启用 */

@@ -2,6 +2,12 @@
 
 > 基于全部 8 个模块、约 455 个 Java 文件的逐行精读。每条结论均附精确文件路径与行号引用。
 
+> ⚠️ **历史快照（截至 2026-09-05）。** 本文是早期单轮逐行剖析的存档，**已过时、仅供参考**：
+> 当前工程已演进为 **13 个模块**的 Maven reactor（新增 `framework-boot`、`framework-boot-web`、
+> `framework-boot-autoconfigure`、`framework-i18n`、`framework-data` 等），Java 文件规模与包结构均发生显著变化，
+> 文中行号、类引用、装配关系**不再保证与现状一致**。需要当前事实请以代码库 + `docs/design-*.md` 为准。
+> 请勿基于本文逐行更新现状文档；如需刷新剖析请新建文档。
+
 ---
 
 # 一、framework-core：双轨 SPI 与基础机制
