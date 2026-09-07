@@ -11,7 +11,9 @@ import org.jspecify.annotations.NullMarked;
 /**
  * 通用 Webhook 消息发送器（骨架）。
  *
- * <p>接入任意 HTTP 回调时，实现 {@link #doSend(String, String, String)} 即可。
+ * <p>接入任意 HTTP 回调时，实现 {@link #doSend(String, String, String)} 即可。若仅需标准
+ * {@code HTTP POST}（JSON 信封或裸文本），可直接使用即用实现 {@link HttpWebhookMessageSender}，
+ * 其基于 JDK 内置 {@link java.net.http.HttpClient}、无需额外依赖。
  *
  * @author 王飞
  * @since 0.0.1
