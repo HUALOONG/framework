@@ -48,4 +48,30 @@ class MybatisFlexPropertiesTest {
             customizer.customize(new Object());
         }).doesNotThrowAnyException();
     }
+
+    @Test
+    void allSettersAreIdempotent() {
+        // 补齐 setter 覆盖：driverClassName / connectionTimeout / mapperLocations /
+        // typeAliasesPackage / encryptEnabled / tenantEnabled / sqlAuditEnabled /
+        // logicDeleteEnabled / optimisticLockEnabled
+        MybatisFlexProperties props = new MybatisFlexProperties();
+        props.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        props.setConnectionTimeout(1234L);
+        props.setMapperLocations("classpath:/foo/Mapper.xml");
+        props.setTypeAliasesPackage("cn.jowen.app.model");
+        props.setEncryptEnabled(true);
+        props.setTenantEnabled(true);
+        props.setSqlAuditEnabled(true);
+        props.setLogicDeleteEnabled(true);
+        props.setOptimisticLockEnabled(true);
+        assertThat(props.getDriverClassName()).isEqualTo("com.mysql.cj.jdbc.Driver");
+        assertThat(props.getConnectionTimeout()).isEqualTo(1234L);
+        assertThat(props.getMapperLocations()).isEqualTo("classpath:/foo/Mapper.xml");
+        assertThat(props.getTypeAliasesPackage()).isEqualTo("cn.jowen.app.model");
+        assertThat(props.isEncryptEnabled()).isTrue();
+        assertThat(props.isTenantEnabled()).isTrue();
+        assertThat(props.isSqlAuditEnabled()).isTrue();
+        assertThat(props.isLogicDeleteEnabled()).isTrue();
+        assertThat(props.isOptimisticLockEnabled()).isTrue();
+    }
 }

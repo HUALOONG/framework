@@ -3,6 +3,7 @@ package cn.jowen.framework.data.mybatis.extension;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 class FlexTenantHandlerTest {
 
@@ -60,5 +61,16 @@ class FlexTenantHandlerTest {
         e.tenantId = "orig";
         handler.injectTenant(e, "tenantId");
         assertThat(e.tenantId).isEqualTo("orig");
+    }
+
+    @Test
+    void injectTenant_swallowsWhenSetterMissing() {
+        // 租户 ID 已设置但实体无对应 setter → getMethod 抛 NoSuchMethodException → catch 分支
+        FlexTenantHandler handler = new FlexTenantHandler();
+        Object notAnEntity = new Object();
+        FlexTenantHandler.runWithTenant("acme", () -> {
+            assertThatCode(() -> handler.injectTenant(notAnEntity, "tenantId"))
+                    .doesNotThrowAnyException();
+        });
     }
 }

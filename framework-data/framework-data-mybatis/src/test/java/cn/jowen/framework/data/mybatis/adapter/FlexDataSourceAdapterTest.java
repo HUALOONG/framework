@@ -74,4 +74,35 @@ class FlexDataSourceAdapterTest {
             assertThat(DataSourceContext.getDataSourceKey()).isNull();
         });
     }
+
+    @Test
+    void getDataSource_noRegistered_returnsDefaultInstance() {
+        // 未注册任何数据源 → 返回匿名默认 DataSource；覆盖 5 个方法体
+        FlexDataSourceAdapter adapter = new FlexDataSourceAdapter(new Object());
+        DataSource def = adapter.getDataSource();
+        assertThat(def.getName()).isEqualTo("default");
+        assertThat(def.getUrl()).isEmpty();
+        assertThat(def.getUsername()).isEmpty();
+        assertThat(def.getPassword()).isNull();
+        assertThat(def.getPoolType()).isEqualTo(PoolType.SIMPLE);
+    }
+
+    @Test
+    void setCurrentDataSource_reflectiveHook_succeedsWhenMethodPresent() {
+        // dynamicDataSource 暴露公开无参 determineCurrentLookupKey() → 反射调用成功路径
+        RecordingLookupKey ds = new RecordingLookupKey();
+        FlexDataSourceAdapter adapter = new FlexDataSourceAdapter(ds);
+        DataSourceContext.runWith("master", () -> {
+            adapter.setCurrentDataSource("master");
+            assertThat(DataSourceContext.getDataSourceKey()).isEqualTo("master");
+            adapter.clearCurrentDataSource();
+            assertThat(DataSourceContext.getDataSourceKey()).isNull();
+        });
+        assertThat(ds.invoked).isTrue();
+    }
+
+    static class RecordingLookupKey {
+        boolean invoked = false;
+        public void determineCurrentLookupKey() { this.invoked = true; }
+    }
 }
