@@ -203,6 +203,20 @@ public class UserService {
 }
 ```
 
+**条件表达式语义**
+
+`condition` 与 `unless` 均为 SpEL 表达式，语义与 Spring Framework 一致：
+
+| 属性 | 为空/空白时 | 表达式为 `false` 时 | 表达式为 `true` 时 |
+|---|---|---|---|
+| `condition`（`@Cacheable` / `@CachePut`） | 视为**恒成立**，正常走缓存读写 | 跳过本次缓存操作，**方法体仍执行** | 正常走缓存读写 |
+| `unless`（`@Cacheable` / `@CachePut`） | 视为**恒不成立**，正常走缓存读写 | 正常走缓存读写 | **跳过**本次缓存读写 |
+
+- 两个属性同时存在时，`condition` 与 `unless` 需同时满足（`unless` 内部取反）才执行缓存操作。
+- `@CacheEvict` **没有** `condition` 属性，与 Spring 一致，始终清除。
+- 表达式可用的变量：`#target` 目标对象、`#a0` / `#p0` … 按索引的参数、以及按编译期参数名（需 `-parameters`）的变量，如 `#userId`。
+- 扩展：`ConditionEvaluator` 是 SPI 接口，框架默认提供基于 Spring SpEL 的 `SpelConditionEvaluator`（位于 `framework-boot-autoconfigure` 模块，由 `conditionEvaluator` Bean 装配）；业务方可替换为 Aviator、QLExpress 等引擎，只需继承并实现 `doEvaluate`。
+
 ---
 
 #### 4.3 cache/caffeine/ — Caffeine 本地缓存
@@ -409,15 +423,23 @@ cn.jowen.framework.cache.support
 ├─ DefaultCacheKeyGenerator        # 默认键生成器
 │  ├─ 基于方法参数名 + 参数值生成键
 │  └─ 支持 SpEL 表达式求值
-├─ ConditionEvaluator              # 条件表达式解析器
+├─ ConditionEvaluator              # 条件表达式解析器抽象（零 Spring 依赖，仅定义契约）
 │  ├─ boolean evaluate(String condition, CacheOperationContext context)
-│  └─ 基于 SpEL 表达式求值
+│  ├─ boolean evaluateUnless(String unless, CacheOperationContext context)
+│  └─ protected abstract boolean doEvaluate(String expression, CacheOperationContext context)
+│     框架默认实现位于 framework-boot-autoconfigure：`SpelConditionEvaluator`
 └─ CacheOperationContext           # 缓存操作上下文
-   ├─ methodName: String
-   ├─ method: Method
-   ├─ args: Object[]
-   ├─ target: Object
-   └─ beanName: String
+   ├─ beanName(): String
+   ├─ method(): Method
+   ├─ args(): Object[]
+   ├─ target(): Object
+   ├─ cacheName(): String
+   ├─ key(): String
+   ├─ condition(): String
+   ├─ unless(): String
+   ├─ isSync(): boolean
+   ├─ keyGenerator(): String
+   └─ listener(): String
 ```
 
 **使用示例**：
@@ -556,8 +578,14 @@ cn.jowen.framework.cache.config
 │  └───────────────┘  └───────────────┘  └─────────────────┘         │
 │                                                                    │
 │  ┌──────────────────────────────────────────────────────────────┐  │
+│  │                     condition (契约层)                       │  │
+│  │  ConditionEvaluator（SpEL 实现在 boot-autoconfigure）          │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│          ▲                                                        │
+│          │ 由 AOP 切面注入                                        │
+│  ┌──────────────────────────────────────────────────────────────┐  │
 │  │                     support (工具层)                         │  │
-│  │  CacheKeyGenerator / ConditionEvaluator / CacheSerializer    │  │
+│  │  CacheKeyGenerator / CacheOperationContext / CacheSerializer │  │
 │  │  EvictionPolicy / CacheLock                                  │  │
 │  └──────────────────────────────────────────────────────────────┘  │
 │                                                                    │
@@ -764,7 +792,7 @@ public class CacheConfig {
 | `Cache`              | api        | 缓存实例扩展，自定义缓存操作行为                |
 | `CacheSerializer`    | serializer | 序列化扩展，支持自定义序列化方案（如 Protobuf） |
 | `CacheKeyGenerator`  | support    | 缓存键生成策略扩展                              |
-| `ConditionEvaluator` | support    | 条件表达式解析器扩展                            |
+| `ConditionEvaluator` | condition  | 条件表达式解析器扩展（默认 SpEL 实现位于 framework-boot-autoconfigure） |
 | `CacheEventListener` | event      | 缓存事件监听扩展                                |
 | `EvictionPolicy`     | eviction   | 淘汰策略扩展                                    |
 | `CacheLock`          | lock       | 缓存锁扩展，支持自定义分布式锁实现              |

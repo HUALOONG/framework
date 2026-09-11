@@ -5,6 +5,7 @@ import cn.jowen.framework.cache.annotation.CachePut;
 import cn.jowen.framework.cache.annotation.Cacheable;
 import cn.jowen.framework.cache.api.Cache;
 import cn.jowen.framework.cache.api.CacheManager;
+import cn.jowen.framework.cache.condition.ConditionEvaluator;
 import cn.jowen.framework.cache.event.CacheEvent;
 import cn.jowen.framework.cache.event.CacheEventListener;
 import cn.jowen.framework.cache.event.CacheEvictEvent;
@@ -130,6 +131,16 @@ class SpringCacheAnnotationProcessorTest {
         return c;
     }
 
+    private Cacheable withCondition(Cacheable c, String condition) {
+        when(c.condition()).thenReturn(condition);
+        return c;
+    }
+
+    private Cacheable withUnless(Cacheable c, String unless) {
+        when(c.unless()).thenReturn(unless);
+        return c;
+    }
+
     private CachePut cachePut(String name) {
         CachePut c = mock(CachePut.class);
         when(c.value()).thenReturn(name);
@@ -138,6 +149,11 @@ class SpringCacheAnnotationProcessorTest {
         when(c.unless()).thenReturn("");
         when(c.keyGenerator()).thenReturn("");
         when(c.listener()).thenReturn("");
+        return c;
+    }
+
+    private CachePut withCondition(CachePut c, String condition) {
+        when(c.condition()).thenReturn(condition);
         return c;
     }
 
@@ -151,6 +167,7 @@ class SpringCacheAnnotationProcessorTest {
         return c;
     }
 
+    
     @Test
     void aroundCacheable_hit_returnsCachedValueAndPublishesHit() throws Throwable {
         when(cache.get(anyString())).thenReturn("cachedVal");
@@ -444,5 +461,143 @@ class SpringCacheAnnotationProcessorTest {
         Object result = processor.aroundCacheable(joinPoint, cacheable("user"));
 
         assertThat(result).isEqualTo("pong");
+    }
+
+    // ------------------------------------------------------------------
+    // condition / unless 条件评估
+    // ------------------------------------------------------------------
+
+    /**
+     * 注入一个按字面值求值的条件解析器，用于隔离 SpEL 引擎测试切面逻辑。
+     */
+    private void injectLiteralEvaluator() {
+        processor.setConditionEvaluator(new LiteralConditionEvaluator());
+    }
+
+    @Test
+    void noConditionEvaluator_isNoOpConditionAlwaysPass() throws Throwable {
+        // 无 ConditionEvaluator Bean 时行为回退到改动前：无条件通过
+        when(cache.get(anyString())).thenReturn("cached");
+        Cacheable c = withCondition(cacheable("user"), "#id == 'x'");
+
+        Object result = processor.aroundCacheable(
+                jp(new Target(), "getUser", new Class[]{String.class}, new Object[]{"42"}), c);
+
+        assertThat(result).isEqualTo("cached");
+        verify(cache).get("arg0=42");
+    }
+
+    @Test
+    void blankCondition_passes() throws Throwable {
+        when(cache.get(anyString())).thenReturn("cached");
+        Cacheable c = withCondition(cacheable("user"), "   ");
+
+        Object result = processor.aroundCacheable(
+                jp(new Target(), "getUser", new Class[]{String.class}, new Object[]{"42"}), c);
+
+        assertThat(result).isEqualTo("cached");
+    }
+
+    @Test
+    void conditionFalse_skipsCacheReadAndPutButExecutesMethod() throws Throwable {
+        // condition 为假：不查缓存、不回写，但方法体仍执行（与 Spring 语义一致）
+        injectLiteralEvaluator();
+        lenient().when(cache.get(anyString())).thenReturn(null);
+        Cacheable c = withCondition(cacheable("user"), "false");
+
+        Object result = processor.aroundCacheable(
+                jp(new Target(), "getUser", new Class[]{String.class}, new Object[]{"42"}), c);
+
+        assertThat(result).isEqualTo("user-42");
+        verify(cache, never()).get(anyString());
+        verify(cache, never()).put(anyString(), any());
+    }
+
+    @Test
+    void conditionTrue_cachesAsUsual() throws Throwable {
+        injectLiteralEvaluator();
+        when(cache.get(anyString())).thenReturn(null);
+        Cacheable c = withCondition(cacheable("user"), "true");
+
+        Object result = processor.aroundCacheable(
+                jp(new Target(), "getUser", new Class[]{String.class}, new Object[]{"42"}), c);
+
+        assertThat(result).isEqualTo("user-42");
+        verify(cache).get("arg0=42");
+        verify(cache).put("arg0=42", "user-42");
+    }
+
+    @Test
+    void unlessTrue_skipsCacheReadAndPut() throws Throwable {
+        // unless 为真：不缓存，故跳过缓存读取与回写（方法体仍执行）
+        injectLiteralEvaluator();
+        Cacheable c = withUnless(withCondition(cacheable("user"), "true"), "true");
+
+        Object result = processor.aroundCacheable(
+                jp(new Target(), "getUser", new Class[]{String.class}, new Object[]{"42"}), c);
+
+        assertThat(result).isEqualTo("user-42");
+        verify(cache, never()).get(anyString());
+        verify(cache, never()).put(anyString(), any());
+    }
+
+    @Test
+    void unlessFalse_cachesAsUsual() throws Throwable {
+        injectLiteralEvaluator();
+        when(cache.get(anyString())).thenReturn(null);
+        Cacheable c = withUnless(withCondition(cacheable("user"), "true"), "false");
+
+        Object result = processor.aroundCacheable(
+                jp(new Target(), "getUser", new Class[]{String.class}, new Object[]{"42"}), c);
+
+        assertThat(result).isEqualTo("user-42");
+        verify(cache).get("arg0=42");
+        verify(cache).put("arg0=42", "user-42");
+    }
+
+    @Test
+    void conditionOnCachePut_respectsExpression() throws Throwable {
+        injectLiteralEvaluator();
+        CachePut c = withCondition(cachePut("user"), "false");
+
+        Object result = processor.aroundCachePut(
+                jp(new Target(), "putUser", new Class[]{String.class}, new Object[]{"42"}), c);
+
+        assertThat(result).isEqualTo("put-42");
+        verify(cache, never()).put(anyString(), any());
+    }
+
+    @Test
+    void cacheEvict_hasNoConditionAttribute_evictsAlways() throws Throwable {
+        // 与 Spring 一致：@CacheEvict 没有 condition 属性，故 always 清除
+        injectLiteralEvaluator();
+        CacheEvict c = cacheEvict("user", false);
+
+        Object result = processor.aroundCacheEvict(
+                jp(new Target(), "evictUser", new Class[]{String.class}, new Object[]{"42"}, "ok"), c);
+
+        assertThat(result).isEqualTo("ok");
+        verify(cache).evict("arg0=42");
+    }
+
+    @Test
+    void cacheEvict_beforeInvocation_evictsThenProceeds() throws Throwable {
+        injectLiteralEvaluator();
+        CacheEvict c = cacheEvict("user", true);
+
+        Object result = processor.aroundCacheEvict(
+                jp(new Target(), "evictUser", new Class[]{String.class}, new Object[]{"42"}, "ok"), c);
+
+        assertThat(result).isEqualTo("ok");
+        verify(cache).evict("arg0=42");
+    }
+
+    /** 按字面值求值的条件解析器：表达式为 "true" 则真，其余假。 */
+    private static final class LiteralConditionEvaluator extends ConditionEvaluator {
+
+        @Override
+        protected boolean doEvaluate(String expression, CacheOperationContext context) {
+            return "true".equalsIgnoreCase(expression.trim());
+        }
     }
 }

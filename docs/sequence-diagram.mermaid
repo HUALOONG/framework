@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant Test as Test Class
+    participant Base as IntegrationTest
+    participant Redis as Upstash Redis
+    participant Executor as RedissonCommandExecutor
+
+    Test->>Base: @BeforeEach setUp()
+    Base->>Redis: connect(redisUrl)
+    Redis-->>Base: connection established
+    Base->>Base: cleanIntegrationKeys()
+    Note over Base: EVAL Lua script to clean jowen:test:integration:*
+
+    Test->>Base: testMethod()
+    Base->>Executor: setIfAbsent(key, value, ttl)
+    Executor->>Redis: SET key value EX ttl NX
+    Redis-->>Executor: true
+    Executor-->>Base: true
+    Base->>Executor: get(key)
+    Executor->>Redis: GET key
+    Redis-->>Executor: "value"
+    Executor-->>Base: "value"
+    Base->>Base: assertThat(value).isEqualTo("value")
+
+    Test->>Base: @AfterEach tearDown()
+    Base->>Redis: quit/close
+    Redis-->>Base: disconnected

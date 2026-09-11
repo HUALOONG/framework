@@ -85,4 +85,13 @@ public final class CacheOperationContext {
     public String listener() {
         return listener;
     }
+
+    /**
+     * 方法参数个数。
+     *
+     * @since 0.0.2
+     */
+    public int parameterCount() {
+        return args == null ? 0 : args.length;
+    }
 }

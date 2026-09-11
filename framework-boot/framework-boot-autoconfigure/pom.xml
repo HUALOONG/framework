@@ -99,6 +99,13 @@
             <artifactId>spring-tx</artifactId>
         </dependency>
 
+        <!-- 条件表达式解析器：SpEL 求值 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-expression</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- 可观测性：缓存命中率指标绑定（可选，运行时由 actuator 提供） -->
         <dependency>
             <groupId>io.micrometer</groupId>

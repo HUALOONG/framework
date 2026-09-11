@@ -6,6 +6,7 @@ import cn.jowen.framework.cache.annotation.Cacheable;
 import cn.jowen.framework.cache.annotation.CachePut;
 import cn.jowen.framework.cache.api.Cache;
 import cn.jowen.framework.cache.api.CacheManager;
+import cn.jowen.framework.cache.condition.ConditionEvaluator;
 import cn.jowen.framework.cache.event.CacheEventListener;
 import cn.jowen.framework.cache.event.*;
 import cn.jowen.framework.cache.support.CacheKeyGenerator;
@@ -19,11 +20,9 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.DefaultParameterNameDiscoverer;
-import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.core.annotation.Order;
+import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
@@ -56,7 +55,6 @@ public class SpringCacheAnnotationProcessor extends CacheAnnotationProcessor {
     private final List<CacheEventListener> eventListeners = new java.util.ArrayList<>();
 
     private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();
-    private static final ParameterNameDiscoverer PARAMETER_NAMES = new DefaultParameterNameDiscoverer();
 
     /**
      * 从 Spring 容器注入所有 CacheKeyGenerator Bean。
@@ -79,10 +77,25 @@ public class SpringCacheAnnotationProcessor extends CacheAnnotationProcessor {
     }
 
     /**
+     * 从 Spring 容器注入条件表达式解析器。
+     */
+    @Autowired(required = false)
+    public void setConditionEvaluator(ConditionEvaluator evaluator) {
+        this.conditionEvaluator = evaluator;
+    }
+
+    /**
      * SPI：从缓存管理器获取命名缓存。
      */
     @Autowired
     private CacheManager cacheManager;
+
+    /**
+     * 条件表达式解析器，用于求值 {@code condition} / {@code unless}。
+     * 由 {@link CacheAopConfiguration#conditionEvaluator()} 提供，可被业务方替换。
+     */
+    @Autowired(required = false)
+    private ConditionEvaluator conditionEvaluator;
 
     /**
      * 处理 @Cacheable：命中缓存直接返回，未命中执行方法并缓存结果。
@@ -92,6 +105,9 @@ public class SpringCacheAnnotationProcessor extends CacheAnnotationProcessor {
         CacheOperationContext ctx = buildContext(joinPoint, cacheable.value(), cacheable.key(),
                 cacheable.condition(), cacheable.unless(), cacheable.sync(),
                 cacheable.keyGenerator(), cacheable.listener());
+        if (!passesCondition(ctx)) {
+            return executeMethod(ctx);
+        }
         return processRead(ctx);
     }
 
@@ -103,6 +119,9 @@ public class SpringCacheAnnotationProcessor extends CacheAnnotationProcessor {
         CacheOperationContext ctx = buildContext(joinPoint, cachePut.value(), cachePut.key(),
                 cachePut.condition(), cachePut.unless(), false,
                 cachePut.keyGenerator(), cachePut.listener());
+        if (!passesCondition(ctx)) {
+            return executeMethod(ctx);
+        }
         return processWrite(ctx);
     }
 
@@ -115,13 +134,31 @@ public class SpringCacheAnnotationProcessor extends CacheAnnotationProcessor {
                 "", "", false,
                 cacheEvict.keyGenerator(), cacheEvict.listener());
         if (cacheEvict.beforeInvocation()) {
-            evict(ctx);
+            if (passesCondition(ctx)) {
+                evict(ctx);
+            }
         }
         Object result = joinPoint.proceed();
         if (!cacheEvict.beforeInvocation()) {
-            evict(ctx);
+            if (passesCondition(ctx)) {
+                evict(ctx);
+            }
         }
         return result;
+    }
+
+    /**
+     * 判断 {@code condition} 与 {@code unless} 是否同时满足。
+     *
+     * <p>任一条件不满足则返回 {@code false}，跳过本次缓存操作（但仍然执行方法体）。
+     * 无 {@link ConditionEvaluator} Bean 时，行为回退为“无条件通过”，与改动前兼容。
+     */
+    private boolean passesCondition(CacheOperationContext ctx) {
+        if (conditionEvaluator == null) {
+            return true;
+        }
+        return conditionEvaluator.evaluate(ctx.condition(), ctx)
+                && !conditionEvaluator.evaluateUnless(ctx.unless(), ctx);
     }
 
     private CacheOperationContext buildContext(ProceedingJoinPoint joinPoint,
@@ -243,19 +280,7 @@ public class SpringCacheAnnotationProcessor extends CacheAnnotationProcessor {
         if (expression == null || expression.isBlank()) {
             return expression;
         }
-        StandardEvaluationContext eval = new StandardEvaluationContext();
-        eval.setVariable("target", ctx.target());
-        Object[] args = ctx.args() == null ? new Object[0] : ctx.args();
-        Method method = ctx.method();
-        String[] names = method == null ? null : PARAMETER_NAMES.getParameterNames(method);
-        for (int i = 0; i < args.length; i++) {
-            // 支持 #a0/#p0 索引引用与按参数名引用（如 #id）
-            eval.setVariable("a" + i, args[i]);
-            eval.setVariable("p" + i, args[i]);
-            if (names != null && i < names.length && names[i] != null) {
-                eval.setVariable(names[i], args[i]);
-            }
-        }
+        EvaluationContext eval = SpelConditionEvaluator.buildContext(ctx);
         return String.valueOf(SPEL_PARSER.parseExpression(expression).getValue(eval));
     }
 

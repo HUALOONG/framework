@@ -382,7 +382,7 @@ cn.jowen.framework.cache/
 ├─ eviction/     EvictionPolicy（LRU）· EvictionContext · EvictionPolicyFactory
 ├─ lock/         CacheLock · CacheLockFactory · RedissonCacheLock
 ├─ serializer/   CacheSerializer · JacksonSerializer（Jackson 3）· KryoSerializer · SerializerFactory
-└─ support/      CacheKeyGenerator · DefaultCacheKeyGenerator · CacheOperationContext · ConditionEvaluator（SpEL）
+└─ support/      CacheKeyGenerator · DefaultCacheKeyGenerator · CacheOperationContext · ConditionEvaluator（SpEL，实现在 boot-autoconfigure）
 ```
 
 **Spring Boot 4.x 适配**：JacksonSerializer 用 Jackson 3（`tools.jackson`）；命中率指标经 boot-autoconfigure 的

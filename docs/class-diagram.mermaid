@@ -1,0 +1,49 @@
+classDiagram
+    class IntegrationTest {
+        +String redisUrl
+        +RedissonClient redissonClient
+        +RedisCommandExecutor executor
+        +String keyPrefix
+        +void setUp()
+        +void tearDown()
+        +void cleanIntegrationKeys()
+    }
+
+    class RedissonCommandExecutorIntegrationTest {
+        +void testSetIfAbsent_andGet()
+        +void testDelete()
+        +void testDeleteIfMatch()
+        +void testEval_LuaScript()
+        +void testConcurrentSetIfAbsent()
+    }
+
+    class RedisFixedWindowRateLimiterIntegrationTest {
+        +void testAllowUpToPermits()
+        +void testRejectAfterPermits()
+        +void testDistinctKeysIsolated()
+    }
+
+    class RedisTokenBucketRateLimiterIntegrationTest {
+        +void testAllowUpToCapacity()
+        +void testRejectAtCapacity()
+        +void testRefillAfterWindow()
+    }
+
+    class RedisIdempotentStoreIntegrationTest {
+        +void testTryMarkFirstSuccess()
+        +void testTryMarkDuplicateRejected()
+        +void testRemoveClearsMark()
+        +void testCrossInstanceSemantics()
+    }
+
+    class RedisCaptchaStoreIntegrationTest {
+        +void testSaveAndGetRoundTrip()
+        +void testCustomKeyPrefix()
+        +void testExpiredCaptchaRejected()
+    }
+
+    IntegrationTest <|-- RedissonCommandExecutorIntegrationTest
+    IntegrationTest <|-- RedisFixedWindowRateLimiterIntegrationTest
+    IntegrationTest <|-- RedisTokenBucketRateLimiterIntegrationTest
+    IntegrationTest <|-- RedisIdempotentStoreIntegrationTest
+    IntegrationTest <|-- RedisCaptchaStoreIntegrationTest

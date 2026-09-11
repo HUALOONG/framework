@@ -370,6 +370,7 @@
                 <configuration>
                     <source>21</source>
                     <target>21</target>
+                    <parameters>${maven.compiler.parameters}</parameters>
 
                     <compilerArgs>
                         <arg>-Xlint:deprecation</arg>
