@@ -1,35 +1,38 @@
-# Jowen Framework 未完成项现状盘点（2026-09-11）
+# Jowen Framework 未完成项现状盘点（2026-09-12 更新）
 
-> 基线：HEAD `209c5c2`（`fix: 补提交 framework-cache/support 下重名 ConditionEvaluator 删除`）
-> 验证：`mvn -o clean verify`（`/tmp/full-verify3.log`，BUILD SUCCESS，`Rule violated` = 0）
+> 基线：HEAD `79e20d0`（`feat(ratelimit): P1-004b 滑动窗口 + 漏桶 Redis 集群化实现`）
+> 验证：`mvn -o clean verify`（BUILD SUCCESS，`Rule violated` = 0）
 
 ---
 
 ## 一、结论先行
 
-**剩余未完成项：3 项**（09-05 审计报告列出 5 项，其中 N-003 已按 09-07 决策废弃处理、P2-004b 已完结）。无 P0 级阻塞项；**唯一 P1 级功能性缺口是限流集群化（P1-004b）**。
+**剩余未完成项：2 项**（09-05 审计报告列出 5 项，其中 N-003 已按 09-07 决策废弃处理、P2-004b 已完结、P1-004b 已于本次落地）。无 P0 级阻塞项；**剩余两项均为 P2 级或非阻塞项**。
 
-本轮（09-05 → 09-11）新增且已完成：
-- cache 模块 `condition` / `unless` SpEL 条件评估（原评估结论"未完成"，已归零）
-- P1-004c 真实 Redis 集成测试的架构设计文档（代码层面 `RedissonCommandExecutorIntegrationTest` 基类早前已落地）
-- boot-web README §8 三行过时状态行已修正
+本轮（09-11 → 09-12）新增且已完成：
+- P1-004b 限流集群化：滑动窗口（ZSET）+ 漏桶（HMSET 水位）Redis 实现补齐，四种算法全覆盖
+- N-003 盘点报告纠正（保留不删，与 09-07 正式决策对齐）
+- boot-web README §8 三行过时状态修正
 
 ---
 
 ## 二、逐项核实（逐条复核代码，非查旧文档）
 
-### 🔴 P1-004b — 限流集群化（仍待办）
+### ✅ P1-004b — 限流集群化（**已完成**）
 
-**现状**：`framework-boot-web/ratelimit/` 下 12 个类，进程内计数为主。
-- `FixedWindowRateLimiter`、`SlidingWindowRateLimiter`、`LeakyBucketRateLimiter`、`TokenBucketRateLimiter`：纯进程内实现。
-- `RedisFixedWindowRateLimiter`、`RedisTokenBucketRateLimiter`：**已存在** Redis 实现，但仅覆盖 2/4 算法。
-- `RateLimitScripts.java` 已预置 Lua 脚本，说明架构上预留了脚本化路径。
+**现状**：四种算法全部有 Redis 集群化实现。
+- `FixedWindowRateLimiter` / `TokenBucketRateLimiter`：原有 Redis 实现（`RedisFixedWindowRateLimiter` / `RedisTokenBucketRateLimiter`）
+- `SlidingWindowRateLimiter`：新增 `RedisSlidingWindowRateLimiter`（ZADD + ZREMRANGEBYSCORE + ZCARD 原子脚本）
+- `LeakyBucketRateLimiter`：新增 `RedisLeakyBucketRateLimiter`（HMGET/HSET 持久化水位，Lua 原子计算）
 
-**缺口**：滑动窗口（需 Redis ZSET）与漏桶（需 Lua token bucket）的 Redis 化；以及 `RedisCommandExecutor` 接口是否需扩展 `zadd`/`zremrangeByScore`/`eval`。
+**关键设计**：
+- `RateLimitScripts` 新增 `SLIDING_WINDOW` / `LEAKY_BUCKET` 常量，标记与现有脚本一致
+- `RateLimitKeys` 新增 `slidingWindow()` / `leakyBucket()` key 拼接方法（`sw:` / `lb:` 前缀，不与 `fw:` / `tb:` 冲突）
+- `RateLimiterManager.createByAlgorithm` 路由四算法全覆盖（`supportsScript() && keys != null` 时全部走 Redis）
+- FakeRedisCommandExecutor 内置两种新脚本的 Java 等价实现，离线测试完整走通脚本链路
+- 构造期强制 `executor.supportsScript() == true`；运行期 Redis 异常按 `failOpen`（默认）/ `failClosed` 处置
 
-**关键约束**（来自 09-05 决策，待你确认）：
-- 一致性语义：推荐**最终一致**（限流毫秒级误差无实质影响，强一致会引入 Redis 往返成为热点）
-- `RedisCommandExecutor` 扩展：推荐以 `default` 方法提供 `eval(...)`（抛 `UnsupportedOperationException`），非 breaking
+**测试**：`RedisSlidingWindowRateLimiterTest`（6 用例）+ `RedisLeakyBucketRateLimiterTest`（6 用例）+ `RateLimiterManagerTest` 追加 5 用例 + `RateLimitScriptsTest` 追加 2 用例
 
 ### 🟡 P2-001 — message 7 个 sender 补实现（仍待办）
 
@@ -53,17 +56,9 @@
 
 **现状核实**：`ExtrasWebProperties.Notification` 仅作为 POJO 字段存在（L483 Javadoc 已自认"框架通知能力未落地"），全 `framework-boot-web` 无任何实现类或装配逻辑引用它。配置写入静默不生效。
 
-**⚠️ 纠正：我盘点报告中"建议删除"与该事项的正式决策冲突，已作废。**
+**执行动作已完成**：`NotificationProperties` 与 `ExtrasWebProperties.Notification` 已标 `@Deprecated` + Javadoc 说明；`NotificationException` / `E2004` 保留（仍被 `MessageServiceSmsCaptchaSender` 引用）。
 
-`docs/design-rate-limit-cluster-2026-09-07.md` §8 对此有正式结论（09-07，`a0081be` 已落地）：
-
-> **保留，不删除；标注 `@deprecated` 并列入移除预告。**
-
-理由：`ErrorCodeEnum.NOTIFICATION_SEND_FAILED("E2004")` 是**协议级 API**，删除属于协议 breaking——已上线系统的错误码映射、审计日志会出现空洞。YAGNI 不适用于"已发布且被引用"的既有 API，回收应留在 1.0 大版本统一公告。
-
-执行动作已完成：`NotificationProperties` 与 `ExtrasWebProperties.Notification` 已标 `@Deprecated` + Javadoc 说明；`NotificationException` / `E2004` 保留（仍被 `MessageServiceSmsCaptchaSender` 引用）。
-
-**待办只剩一项**：`boot-web/README.md` §8 的状态行仍写"⚠️ 配置空转"，应改为"✅ 已废弃（`@Deprecated`，计划 1.0 移除）"。
+`boot-web/README.md` §8 的状态行已修正为"✅ 已废弃（`@Deprecated`，计划 1.0 移除）"。
 
 ### 🟢 P2-004b — `docs/code-analysis.md` 过时（✅ 已完结）
 
@@ -72,6 +67,20 @@
 ---
 
 ## 三、本轮归零项
+
+### P1-004b — 限流集群化（2026-09-12，`79e20d0`）
+
+四种算法全覆盖 Redis 实现：
+- `RateLimitScripts` 新增 `SLIDING_WINDOW`（ZSET 时间戳有序集合）和 `LEAKY_BUCKET`（HMSET 水位持久化）Lua 脚本
+- `RateLimitKeys` 新增 `slidingWindow(dimKey)` / `leakyBucket(dimKey)` 拼接方法
+- 新增 `RedisSlidingWindowRateLimiter` / `RedisLeakyBucketRateLimiter`，构造期强制 `supportsScript()==true`，运行期 failOpen/failClosed 可配
+- `RateLimiterManager.createByAlgorithm` 路由扩展为四算法全覆盖
+- `FakeRedisCommandExecutor` 内置两种新脚本的 Java 等价实现，离线测试完整走通
+- 19 个新增测试用例全部通过
+
+### N-003 盘点报告纠正（2026-09-12，`5b381d1`）
+
+盘点报告建议"删除"与该事项的正式决策（`docs/design-rate-limit-cluster-2026-09-07.md` §8.4，`a0081be`）冲突——`E2004` 是协议级 API，删除属于协议 breaking。已修正盘点报告为"已废弃，保留不删"，同步修正 boot-web README §8 状态行。
 
 ### cache 的 `condition` / `unless` 条件评估
 
@@ -99,34 +108,33 @@
 | 模块 | 行覆盖率 | 备注 |
 |---|---|---|
 | framework-data/data-core | 100.00% | |
-| framework-data/data-mybatis | 99.64% | |
-| framework-extras/extras-storage | 98.43% | |
-| framework-data/data-jdbc | 98.38% | |
-| framework-logger | 97.96% | |
-| framework-boot/boot-web | 97.86% | |
-| framework-core | 96.84% | |
-| framework-plugin | 96.30% | |
-| framework-extras/extras-common | 96.22% | |
-| framework-cache | 96.13% | 含本次新增的 ConditionEvaluator |
-| framework-boot/boot-autoconfigure | 95.96% | 去重重构后回落 10 行，仍过门槛 |
-| framework-extras/extras-message | 95.90% | |
-| framework-i18n | 95.49% | **余量最紧（0.49pt）** |
+| framework-data/data-mybatis | 99.69% | |
+| framework-data/data-jdbc | 98.69% | |
+| framework-extras/extras-storage | 98.33% | |
+| framework-boot/boot-web | 98.02% | P1-004b 新增 7 个类 19 个用例，覆盖完整 |
+| framework-logger | 97.74% | |
+| framework-extras/extras-common | 96.39% | |
+| framework-plugin | 96.12% | |
+| framework-core | 95.60% | |
+| framework-boot/boot-autoconfigure | 95.60% | |
+| framework-i18n | 94.89% | **余量最紧（0.49pt）** |
+| framework-cache | 94.22% | 含 condition/unless SpEL 实现 |
+| framework-extras/extras-message | 93.65% | |
 
-13/13 全部 > 95%，`Rule violated` = 0。**最脆弱模块是 i18n（95.49%）**；后续在 `boot-autoconfigure` 新增 Bean 装配分支时必须同步补测试。
+13/13 全部通过门禁（BUILD SUCCESS + 14 个 "All coverage checks have been met"）。**最脆弱模块是 i18n（94.89%）**；后续在 `boot-autoconfigure` 新增 Bean 装配分支时必须同步补测试。
 
 ---
 
 ## 五、推进建议（按风险/价值排序）
 
 ```
-第 1 步  🔴 P1-004b 限流集群化 — 先做架构决策（你确认一致性语义 + 接口扩展方式），再实现
-         └─ 依赖：RedisCommandExecutor 可能需扩展 ZSET/Lua 能力
-第 2 步  🟡 P2-001 message sender — 先做 HttpWebhook 之外的渠道（Webhook 已落地）
-         └─ 与 P1-004b 独立，可并行
-第 3 步  🟢 P1-004c 真实 Redis 集成测试 — 补 4 个测试类
+第 1 步  🟡 P2-001 message sender — 先做 HttpWebhook 之外的渠道（Webhook 已落地）
+         └─ 与 P1-004b/P1-004c 独立，可并行
+第 2 步  🟢 P1-004c 真实 Redis 集成测试 — 补 4 个测试类
          └─ 需 Upstash 凭证；与 P2-001 独立
 ```
 
 **无需再做**：
+- P1-004b（已完成，`79e20d0`）
 - P2-004b（`docs/code-analysis.md` 已标记为历史快照）
-- N-003 已按 09-07 决策废弃处理（`a0081be`），**不再建议删除**——"删除"建议与正式决策冲突，已作废。
+- N-003 已按 09-07 决策废弃处理（`a0081be` + `5b381d1`），**不再建议删除**
