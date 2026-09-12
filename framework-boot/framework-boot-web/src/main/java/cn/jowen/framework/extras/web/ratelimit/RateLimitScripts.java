@@ -43,6 +43,61 @@ public final class RateLimitScripts {
             + "redis.call('PEXPIRE', KEYS[1], ARGV[4])\n"
             + "return allowed\n";
 
+    /**
+     * 滑动窗口限流脚本。KEYS[1]=时间戳有序集合键；
+     * ARGV[1]=nowSeconds（当前 unix 时间戳，秒级浮点）；ARGV[2]=windowMillis；
+     * ARGV[3]=permits；ARGV[4]=ttlMillis（建议 2×window）。
+     *
+     * <p>语义：用 ZSET member=unix timestamp 记录每次请求。每次请求时先清除早于
+     * {@code now - windowMillis} 的过期 member，再检查 ZCARD 是否达到限额。
+     * 返回 1 放行、0 拒绝。
+     */
+    public static final String SLIDING_WINDOW =
+            "-- SLIDING_WINDOW\n"
+            + "local now = tonumber(ARGV[1])\n"
+            + "local windowSec = tonumber(ARGV[2]) / 1000.0\n"
+            + "local permits = tonumber(ARGV[3])\n"
+            + "local ttl = tonumber(ARGV[4])\n"
+            + "local boundary = now - windowSec\n"
+            + "redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', boundary)\n"
+            + "local count = redis.call('ZCARD', KEYS[1])\n"
+            + "local allowed = 0\n"
+            + "if count < permits then\n"
+            + "    redis.call('ZADD', KEYS[1], now, ngx.now() .. '-' .. count)\n"
+            + "    allowed = 1\n"
+            + "end\n"
+            + "redis.call('PEXPIRE', KEYS[1], ttl)\n"
+            + "return allowed\n";
+
+    /**
+     * 漏桶限流脚本。KEYS[1]=桶键（存储 "water|last_update_seconds"）；
+     * ARGV[1]=nowSeconds；ARGV[2]=leakPerSecond（每秒漏水份额，=capacity/windowSeconds）；
+     * ARGV[3]=capacity。
+     *
+     * <p>语义：先按经过时间计算漏水量，再判断当前水位 + 1 是否超容。
+     * 返回 1 放行、0 拒绝。
+     */
+    public static final String LEAKY_BUCKET =
+            "-- LEAKY_BUCKET\n"
+            + "local now = tonumber(ARGV[1])\n"
+            + "local leakPerSec = tonumber(ARGV[2])\n"
+            + "local capacity = tonumber(ARGV[3])\n"
+            + "local data = redis.call('HMGET', KEYS[1], 'water', 'last')\n"
+            + "local water = tonumber(data[1]) or 0.0\n"
+            + "local last = tonumber(data[2]) or now\n"
+            + "local elapsed = now - last\n"
+            + "if elapsed > 0 then\n"
+            + "    water = math.max(0, water - elapsed * leakPerSec)\n"
+            + "    last = now\n"
+            + "end\n"
+            + "local allowed = 0\n"
+            + "if water + 1 <= capacity then\n"
+            + "    water = water + 1\n"
+            + "    allowed = 1\n"
+            + "end\n"
+            + "redis.call('HSET', KEYS[1], 'water', tostring(water), 'last', tostring(last))\n"
+            + "return allowed\n";
+
     private RateLimitScripts() {
     }
 }

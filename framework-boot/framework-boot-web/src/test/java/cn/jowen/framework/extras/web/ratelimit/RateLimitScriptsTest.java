@@ -31,4 +31,21 @@ class RateLimitScriptsTest {
                 .contains("HMGET")
                 .contains("HSET");
     }
+
+    @Test
+    void slidingWindowConstantReferencesMarkerAndZsetOps() {
+        assertThat(RateLimitScripts.SLIDING_WINDOW)
+                .contains("SLIDING_WINDOW")
+                .contains("ZREMRANGEBYSCORE")
+                .contains("ZCARD")
+                .contains("ZADD");
+    }
+
+    @Test
+    void leakyBucketConstantReferencesMarkerAndHash() {
+        assertThat(RateLimitScripts.LEAKY_BUCKET)
+                .contains("LEAKY_BUCKET")
+                .contains("HMGET")
+                .contains("HSET");
+    }
 }

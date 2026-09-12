@@ -13,8 +13,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>内置四种内存算法：固定窗口、滑动窗口、漏桶、令牌桶（默认）。
  * 当注入支持脚本的 {@link RedisCommandExecutor} 时，对支持集群化的算法
- * （{@code FIXED_WINDOW} / {@code TOKEN_BUCKET}）自动切换为 Redis 实现，使计数在多实例间共享；
- * 其余算法及未提供执行器（或未提供 key 工具）时回落本地内存实现。
+ * （{@code FIXED_WINDOW} / {@code TOKEN_BUCKET} / {@code SLIDING_WINDOW} / {@code LEAKY_BUCKET}）
+ * 自动切换为 Redis 实现，使计数在多实例间共享；
+ * 未提供执行器（或未提供 key 工具）时回落本地内存实现。
  *
  * <p>实现层保持零 Spring 依赖：Redis 执行器由装配层通过构造参数传入（与幂等 / 验证码范式一致）。
  *
@@ -71,7 +72,8 @@ public final class RateLimiterManager {
      * 构造实例（指定默认算法、Redis 执行器与 key 工具，fail-open）。
      *
      * <p>提供支持脚本的执行器时，{@link #get(String, int, int, RateLimitAlgorithm)} 对
-     * {@code FIXED_WINDOW} / {@code TOKEN_BUCKET} 返回 Redis 实现。
+     * {@code FIXED_WINDOW} / {@code TOKEN_BUCKET} / {@code SLIDING_WINDOW} / {@code LEAKY_BUCKET}
+     * 返回 Redis 实现。
      *
      * @param defaultAlgorithm 默认算法
      * @param redisExecutor     Redis 命令执行器，可为 {@code null}（回落本地）
@@ -146,7 +148,10 @@ public final class RateLimiterManager {
                         new RedisFixedWindowRateLimiter(redisExecutor, keys, permits, window, failOpen);
                 case TOKEN_BUCKET ->
                         new RedisTokenBucketRateLimiter(redisExecutor, keys, permits, window, failOpen);
-                case SLIDING_WINDOW, LEAKY_BUCKET -> localLimiter(permits, window, algorithm);
+                case SLIDING_WINDOW ->
+                        new RedisSlidingWindowRateLimiter(redisExecutor, keys, permits, window, failOpen);
+                case LEAKY_BUCKET ->
+                        new RedisLeakyBucketRateLimiter(redisExecutor, keys, permits, window, failOpen);
             };
         }
         return localLimiter(permits, window, algorithm);

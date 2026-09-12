@@ -52,6 +52,12 @@ public class FakeRedisCommandExecutor implements RedisCommandExecutor {
     /** 内置脚本标识：令牌桶限流。 */
     public static final String SCRIPT_TOKEN_BUCKET = "TOKEN_BUCKET";
 
+    /** 内置脚本标识：滑动窗口限流。 */
+    public static final String SCRIPT_SLIDING_WINDOW = "SLIDING_WINDOW";
+
+    /** 内置脚本标识：漏桶限流。 */
+    public static final String SCRIPT_LEAKY_BUCKET = "LEAKY_BUCKET";
+
     /** 脚本处理函数：把 Lua 语义等价实现为 Java。 */
     @FunctionalInterface
     public interface ScriptHandler {
@@ -93,10 +99,12 @@ public class FakeRedisCommandExecutor implements RedisCommandExecutor {
     private final List<EvalCall> capturedEvals = Collections.synchronizedList(new ArrayList<>());
     private volatile LongSupplier clock = System::currentTimeMillis;
 
-    /** 创建空的内存执行器，并预置 FIXED_WINDOW / TOKEN_BUCKET 的内置语义。 */
+    /** 创建空的内存执行器，并预置 FIXED_WINDOW / TOKEN_BUCKET / SLIDING_WINDOW / LEAKY_BUCKET 的内置语义。 */
     public FakeRedisCommandExecutor() {
         handlers.put(SCRIPT_FIXED_WINDOW, this::fixedWindow);
         handlers.put(SCRIPT_TOKEN_BUCKET, this::tokenBucket);
+        handlers.put(SCRIPT_SLIDING_WINDOW, this::slidingWindow);
+        handlers.put(SCRIPT_LEAKY_BUCKET, this::leakyBucket);
     }
 
     /**
@@ -320,6 +328,96 @@ public class FakeRedisCommandExecutor implements RedisCommandExecutor {
             allowed = 0L;
         }
         put(key, tokens + "|" + ts, 0L);
+        return allowed;
+    }
+
+    /**
+     * 滑动窗口：KEYS[1]=时间戳有序集合键，ARGV[1]=nowSeconds，ARGV[2]=windowSec，
+     * ARGV[3]=permits，ARGV[4]=ttlMillis。
+     *
+     * <p>用 ZSET member=unix timestamp 记录每次请求。每次请求时先清除早于
+     * {@code now - windowSec} 的过期 member，再检查 ZCARD 是否达到限额。
+     *
+     * @param keys KEYS 数组
+     * @param args ARGV 数组
+     * @return 1 放行 / 0 拒绝
+     */
+    private Object slidingWindow(List<String> keys, List<String> args) {
+        String key = keys.get(0);
+        double now = Double.parseDouble(args.get(0));
+        double windowSec = Double.parseDouble(args.get(1));
+        int permits = Integer.parseInt(args.get(2));
+        long ttlMillis = args.size() > 3 ? Long.parseLong(args.get(3)) : 0L;
+
+        double boundary = now - windowSec;
+        // 惰性清理过期 entry（member 用 "now-seq" 格式存于子 key）
+        java.util.Iterator<Map.Entry<String, Value>> it = store.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, Value> e = it.next();
+            if (!e.getKey().startsWith(key + ":")) continue;
+            try {
+                String[] parts = e.getKey().split(":", 3);
+                if (parts.length < 3) continue;
+                double ts = Double.parseDouble(parts[2]);
+                if (ts < boundary) {
+                    it.remove();
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        // 计数当前存活 member
+        long count = 0;
+        for (String k : store.keySet()) {
+            if (k.startsWith(key + ":")) count++;
+        }
+        long allowed;
+        if (count < permits) {
+            String memberKey = key + ":" + now + "-" + count;
+            put(memberKey, Double.toString(now), ttlMillis);
+            allowed = 1L;
+        } else {
+            allowed = 0L;
+        }
+        return allowed;
+    }
+
+    /**
+     * 漏桶：KEYS[1]=桶键（存储 "water|last_seconds"），ARGV[1]=nowSeconds，
+     * ARGV[2]=leakPerSecond，ARGV[3]=capacity。
+     *
+     * <p>语义与 {@code RateLimitScripts.LEAKY_BUCKET} 对齐。
+     *
+     * @param keys KEYS 数组
+     * @param args ARGV 数组
+     * @return 1 放行 / 0 拒绝
+     */
+    private Object leakyBucket(List<String> keys, List<String> args) {
+        String key = keys.get(0);
+        double now = Double.parseDouble(args.get(0));
+        double leakPerSec = Double.parseDouble(args.get(1));
+        int capacity = Integer.parseInt(args.get(2));
+
+        String current = liveValue(key);
+        double water = 0.0;
+        double last = now;
+        if (current != null) {
+            String[] parts = current.split("\\|", 2);
+            water = Double.parseDouble(parts[0]);
+            last = Double.parseDouble(parts[1]);
+        }
+        double elapsed = now - last;
+        if (elapsed > 0) {
+            water = Math.max(0.0, water - elapsed * leakPerSec);
+            last = now;
+        }
+        long allowed;
+        if (water + 1 <= capacity) {
+            water += 1.0;
+            allowed = 1L;
+        } else {
+            allowed = 0L;
+        }
+        put(key, water + "|" + last, 0L);
         return allowed;
     }
 }

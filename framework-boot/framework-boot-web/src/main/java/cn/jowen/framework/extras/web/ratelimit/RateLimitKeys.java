@@ -30,6 +30,12 @@ public final class RateLimitKeys {
     /** 令牌桶算法短码。 */
     private static final String TB = "tb";
 
+    /** 滑动窗口算法短码。 */
+    private static final String SW = "sw";
+
+    /** 漏桶算法短码。 */
+    private static final String LB = "lb";
+
     /** prefix 不可变字段。 */
     private final String prefix;
 
@@ -68,6 +74,26 @@ public final class RateLimitKeys {
     public String tokenBucket(String dimKey) {
         Assert.notEmpty(dimKey, null, "dimKey must not be blank");
         return prefix + TB + ':' + dimKey;
+    }
+
+    /**
+     * 滑动窗口 key。
+     * @param dimKey 业务维度 key，不可为空白
+     * @return 完整 key
+     */
+    public String slidingWindow(String dimKey) {
+        Assert.notEmpty(dimKey, null, "dimKey must not be blank");
+        return prefix + SW + ':' + dimKey;
+    }
+
+    /**
+     * 漏桶 key。
+     * @param dimKey 业务维度 key，不可为空白
+     * @return 完整 key
+     */
+    public String leakyBucket(String dimKey) {
+        Assert.notEmpty(dimKey, null, "dimKey must not be blank");
+        return prefix + LB + ':' + dimKey;
     }
 
     /**

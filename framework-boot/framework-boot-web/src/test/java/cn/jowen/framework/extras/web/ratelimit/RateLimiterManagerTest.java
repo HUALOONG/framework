@@ -120,13 +120,70 @@ class RateLimiterManagerTest {
     }
 
     @Test
-    void managerFallsBackToLocalForUnsupportedAlgorithmEvenWithExecutor() {
-        FakeRedisCommandExecutor exec = new FakeRedisCommandExecutor();
+    void managerFallsBackToLocalSlidingWindowWhenNoExecutor() {
+        RateLimiterManager manager = new RateLimiterManager();
+
+        assertThat(manager.get("api", 2, 60, RateLimitAlgorithm.SLIDING_WINDOW))
+                .isInstanceOf(SlidingWindowRateLimiter.class);
+    }
+
+    @Test
+    void managerFallsBackToLocalSlidingWindowWhenExecutorLacksScript() {
+        NoScriptExecutor exec = new NoScriptExecutor();
         RateLimiterManager manager =
                 new RateLimiterManager(RateLimitAlgorithm.SLIDING_WINDOW, exec, new RateLimitKeys());
 
         assertThat(manager.get("api", 2, 60, RateLimitAlgorithm.SLIDING_WINDOW))
                 .isInstanceOf(SlidingWindowRateLimiter.class);
+    }
+
+    @Test
+    void managerUsesRedisSlidingWindowWhenExecutorSupportsScript() {
+        FakeRedisCommandExecutor exec = new FakeRedisCommandExecutor();
+        RateLimiterManager manager =
+                new RateLimiterManager(RateLimitAlgorithm.SLIDING_WINDOW, exec, new RateLimitKeys());
+
+        assertThat(manager.get("api", 2, 60, RateLimitAlgorithm.SLIDING_WINDOW))
+                .isInstanceOf(RedisSlidingWindowRateLimiter.class);
+    }
+
+    @Test
+    void managerUsesRedisLeakyBucketWhenExecutorSupportsScript() {
+        FakeRedisCommandExecutor exec = new FakeRedisCommandExecutor();
+        RateLimiterManager manager =
+                new RateLimiterManager(RateLimitAlgorithm.LEAKY_BUCKET, exec, new RateLimitKeys());
+
+        assertThat(manager.get("api", 2, 60, RateLimitAlgorithm.LEAKY_BUCKET))
+                .isInstanceOf(RedisLeakyBucketRateLimiter.class);
+    }
+
+    @Test
+    void redisSlidingWindowLimiterIsWiredThroughManagerAndEnforced() {
+        FakeRedisCommandExecutor exec = new FakeRedisCommandExecutor();
+        RateLimiterManager manager =
+                new RateLimiterManager(RateLimitAlgorithm.SLIDING_WINDOW, exec, new RateLimitKeys());
+        RateLimiter limiter = manager.get("k", 1, 60, RateLimitAlgorithm.SLIDING_WINDOW);
+
+        assertThat(limiter.tryAcquire("k")).isTrue();
+        assertThat(limiter.tryAcquire("k")).isFalse();
+    }
+
+    @Test
+    void redisLeakyBucketLimiterIsWiredThroughManagerAndEnforced() {
+        FakeRedisCommandExecutor exec = new FakeRedisCommandExecutor();
+        RateLimiterManager manager =
+                new RateLimiterManager(RateLimitAlgorithm.LEAKY_BUCKET, exec, new RateLimitKeys());
+        RateLimiter limiter = manager.get("k", 1, 60, RateLimitAlgorithm.LEAKY_BUCKET);
+
+        assertThat(limiter.tryAcquire("k")).isTrue();
+        assertThat(limiter.tryAcquire("k")).isFalse();
+    }
+
+    @Test
+    void fullConstructor_producesNonEmptyInstance() {
+        RateLimiterManager manager =
+                new RateLimiterManager(RateLimitAlgorithm.TOKEN_BUCKET, null, null, true);
+        assertThat(manager.get("a", 1, 1)).isNotNull();
     }
 
     @Test
