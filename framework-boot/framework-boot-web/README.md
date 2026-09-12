@@ -350,8 +350,8 @@ framework:
 
 | 项 | 状态 | 说明 |
 |:---|:-----|:-----|
-| 幂等 Redis 实现 | ⚠️ 待补 | 当前仅 `LocalIdempotentStore`，多实例部署不跨节点生效。`tryMark` 语义与 `RedisCommandExecutor.setIfAbsent` 等价，实现成本极低 |
-| 限流集群化 | ⚠️ 待补 | 4 种算法均为进程内计数；集群限流需重写滑动窗口（Redis ZSET）等语义，属较大改动 |
-| 验证码 Redis 实现 | ⚠️ 待补 | 当前仅 `CaptchaStore.InMemory` |
-| `Notification` 配置块 | ⚠️ 配置空转 | `ExtrasWebProperties.Notification` 有配置，但无对应实现包与装配 |
+| 幂等 Redis 实现 | ✅ 已完成 | `RedisIdempotentStore`（`a0081be`），基于 `RedisCommandExecutor.setIfAbsent`/`delete`；`tryMark` 语义与 `setIfAbsent` 等价，故复用而不扩展 SPI |
+| 验证码 Redis 实现 | ✅ 已完成 | `RedisCaptchaStore`（`a0081be`），`\|` 分隔 + Base64 编码，`null` 以 `~` 标记 |
+| 限流集群化 | ⚠️ 待补 | 4 种算法中仅固定窗口与令牌桶有 Redis 实现；滑动窗口（Redis ZSET）、漏桶（Lua）待 Redis 化 |
+| `Notification` 配置块 | ✅ 已废弃 | `ExtrasWebProperties.Notification` 与 `NotificationProperties` 已标 `@Deprecated`（`a0081be`），保留不删（`E2004` 为协议级错误码，计划 1.0 移除） |
 | MyBatis 数据权限拦截器 | ⚠️ 未内置 | 仅提供规则接口与上下文，SQL 改写需业务方实现 |

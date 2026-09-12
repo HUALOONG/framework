@@ -7,12 +7,12 @@
 
 ## 一、结论先行
 
-**剩余未完成项：4 项**（09-05 审计报告列出 5 项，其中 P2-004b 已完结）。
-无 P0 级阻塞项；**唯一 P1 级功能性缺口是限流集群化（P1-004b）**。
+**剩余未完成项：3 项**（09-05 审计报告列出 5 项，其中 N-003 已按 09-07 决策废弃处理、P2-004b 已完结）。无 P0 级阻塞项；**唯一 P1 级功能性缺口是限流集群化（P1-004b）**。
 
 本轮（09-05 → 09-11）新增且已完成：
 - cache 模块 `condition` / `unless` SpEL 条件评估（原评估结论"未完成"，已归零）
 - P1-004c 真实 Redis 集成测试的架构设计文档（代码层面 `RedissonCommandExecutorIntegrationTest` 基类早前已落地）
+- boot-web README §8 三行过时状态行已修正
 
 ---
 
@@ -49,11 +49,21 @@
 故"7 个骨架"的说法需修正：**6 个抽象骨架 + 1 个已落地实现**。
 落地路径：Webhook 零外部依赖，可立即做；其余 6 个需各渠道 API 凭证与协议细节。
 
-### 🟢 N-003 — `Notification` 配置块空转（仍待办）
+### 🟢 N-003 — `Notification` 配置块空转（**已废弃，保留不删**）
 
 **现状核实**：`ExtrasWebProperties.Notification` 仅作为 POJO 字段存在（L483 Javadoc 已自认"框架通知能力未落地"），全 `framework-boot-web` 无任何实现类或装配逻辑引用它。配置写入静默不生效。
 
-**建议处置**：删除该配置块（YAGNI），避免误导使用方——与 09-05 主理人推荐一致。
+**⚠️ 纠正：我盘点报告中"建议删除"与该事项的正式决策冲突，已作废。**
+
+`docs/design-rate-limit-cluster-2026-09-07.md` §8 对此有正式结论（09-07，`a0081be` 已落地）：
+
+> **保留，不删除；标注 `@deprecated` 并列入移除预告。**
+
+理由：`ErrorCodeEnum.NOTIFICATION_SEND_FAILED("E2004")` 是**协议级 API**，删除属于协议 breaking——已上线系统的错误码映射、审计日志会出现空洞。YAGNI 不适用于"已发布且被引用"的既有 API，回收应留在 1.0 大版本统一公告。
+
+执行动作已完成：`NotificationProperties` 与 `ExtrasWebProperties.Notification` 已标 `@Deprecated` + Javadoc 说明；`NotificationException` / `E2004` 保留（仍被 `MessageServiceSmsCaptchaSender` 引用）。
+
+**待办只剩一项**：`boot-web/README.md` §8 的状态行仍写"⚠️ 配置空转"，应改为"✅ 已废弃（`@Deprecated`，计划 1.0 移除）"。
 
 ### 🟢 P2-004b — `docs/code-analysis.md` 过时（✅ 已完结）
 
@@ -113,10 +123,10 @@
          └─ 依赖：RedisCommandExecutor 可能需扩展 ZSET/Lua 能力
 第 2 步  🟡 P2-001 message sender — 先做 HttpWebhook 之外的渠道（Webhook 已落地）
          └─ 与 P1-004b 独立，可并行
-第 3 步  🟢 N-003 删除空转的 Notification 配置块 — 纯删除，零风险
-         └─ 建议与 P1-004b 同 PR（都动 WebExtrasAutoConfiguration 区域）
-第 4 步  🟢 P1-004c 真实 Redis 集成测试 — 补 4 个测试类
+第 3 步  🟢 P1-004c 真实 Redis 集成测试 — 补 4 个测试类
          └─ 需 Upstash 凭证；与 P2-001 独立
 ```
 
-**无需再做**：P2-004b（`docs/code-analysis.md` 已标记为历史快照）。
+**无需再做**：
+- P2-004b（`docs/code-analysis.md` 已标记为历史快照）
+- N-003 已按 09-07 决策废弃处理（`a0081be`），**不再建议删除**——"删除"建议与正式决策冲突，已作废。
