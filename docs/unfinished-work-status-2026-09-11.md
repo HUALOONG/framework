@@ -52,7 +52,7 @@
 | `SiteMessageSender` | `abstract` 骨架（站内信需落库/持久化契约） |
 
 **已归零**：Webhook 三兄弟（Http / DingTalk / WeCom）全部具体化，JDK `HttpClient` 单栈覆盖，零外部依赖定位保持。
-**剩余骨架**：4 个（Sms / Email / Push / Site）都需要第三方 SDK 或明确 API 契约，不适合塞进零依赖的 `extras-message`，建议后续独立子模块或业务方定制。
+**剩余骨架（D1 处理）**：4 个（Sms / Email / Push / Site）已在 Javadoc 加上"需业务方实现"定位说明——`framework-extras-message` 保持零依赖核心抽象层，具体实现推荐拆到独立子模块（`framework-extras-message-{sms,email,push,site}`）或对接厂商 starter。
 
 **覆盖率**：`framework-extras-message` 93.65% → **97.38%**（LINE 334/343）。
 **未覆盖 9 行**：三个 Webhook sender 各 3 行 `InterruptedException` 分支——JDK `HttpClient` 是 final 抽象类，纯 JUnit5+AssertJ 栈无法 mock；引入 Mockito 会破坏"零外部依赖"定位，作为防御性代码接受。

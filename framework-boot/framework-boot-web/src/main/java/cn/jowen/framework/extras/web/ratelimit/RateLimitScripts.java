@@ -63,7 +63,7 @@ public final class RateLimitScripts {
             + "local count = redis.call('ZCARD', KEYS[1])\n"
             + "local allowed = 0\n"
             + "if count < permits then\n"
-            + "    redis.call('ZADD', KEYS[1], now, ngx.now() .. '-' .. count)\n"
+            + "    redis.call('ZADD', KEYS[1], now, now .. '-' .. count)\n"
             + "    allowed = 1\n"
             + "end\n"
             + "redis.call('PEXPIRE', KEYS[1], ttl)\n"
