@@ -1,18 +1,18 @@
-# Jowen Framework 未完成项现状盘点（2026-09-12 更新）
+# Jowen Framework 未完成项现状盘点（2026-09-13 更新）
 
-> 基线：HEAD `79e20d0`（`feat(ratelimit): P1-004b 滑动窗口 + 漏桶 Redis 集群化实现`）
-> 验证：`mvn -o clean verify`（BUILD SUCCESS，`Rule violated` = 0）
+> 基线：HEAD `a9453fa`（`feat(message): P2-001 补钉钉/企微 webhook 具体实现 + 覆盖率补齐到 97.38%`）
+> 验证：`mvn -o clean verify`（BUILD SUCCESS，`Rule violated` = 0，20 模块全过）
 
 ---
 
 ## 一、结论先行
 
-**剩余未完成项：2 项**（09-05 审计报告列出 5 项，其中 N-003 已按 09-07 决策废弃处理、P2-004b 已完结、P1-004b 已于本次落地）。无 P0 级阻塞项；**剩余两项均为 P2 级或非阻塞项**。
+**剩余未完成项：3 项**（09-05 审计报告列出 5 项；N-003 已按 09-07 决策废弃、P2-004b 已完结、P1-004b 已落地、P2-001 部分完成——Webhook 类共 3 个 sender 已具体化，其余 4 个渠道因需第三方 SDK/凭证保持骨架）。无 P0 级阻塞项；剩余全部为 P1-P2 级且都不阻塞发布。
 
-本轮（09-11 → 09-12）新增且已完成：
-- P1-004b 限流集群化：滑动窗口（ZSET）+ 漏桶（HMSET 水位）Redis 实现补齐，四种算法全覆盖
-- N-003 盘点报告纠正（保留不删，与 09-07 正式决策对齐）
-- boot-web README §8 三行过时状态修正
+本轮（09-13）新增且已完成：
+- P2-001 部分落地：`DingTalkWebhookMessageSender` + `WeComWebhookMessageSender` 两个具体实现类（JDK `HttpClient` + 自实现 `escapeJson`，零外部依赖）
+- `HttpWebhookMessageSenderTest` 从 6 → 12 用例（补 `escapeJson` 全字符表 + timeout 分支）
+- `framework-extras-message` 覆盖率 93.65% → **97.38%**（+3.73pt，余量 +2.38pt）
 
 ---
 
@@ -34,23 +34,28 @@
 
 **测试**：`RedisSlidingWindowRateLimiterTest`（6 用例）+ `RedisLeakyBucketRateLimiterTest`（6 用例）+ `RateLimiterManagerTest` 追加 5 用例 + `RateLimitScriptsTest` 追加 2 用例
 
-### 🟡 P2-001 — message 7 个 sender 补实现（仍待办）
+### 🟡 P2-001 — message sender 补实现（**部分完成，覆盖率已达标**）
 
 **现状核实**（`framework-extras-message/provider/`）：
 
 | 类 | 状态 |
 |---|---|
-| `DingTalkMessageSender` | `abstract` 骨架 |
-| `EmailMessageSender` | `abstract` 骨架 |
-| `PushMessageSender` | `abstract` 骨架 |
-| `SiteMessageSender` | `abstract` 骨架 |
-| `SmsMessageSender` | `abstract` 骨架 |
-| `WeComMessageSender` | `abstract` 骨架 |
-| `WebhookMessageSender` | `abstract` 骨架 |
-| **`HttpWebhookMessageSender`** | ✅ **已落地**（`extends WebhookMessageSender`，JDK 内置 `HttpClient`，JSON 信封/裸文本双模式） |
+| `HttpWebhookMessageSender` | ✅ 已落地（JDK `HttpClient`，JSON 信封/裸文本双模式） |
+| **`DingTalkWebhookMessageSender`** | ✅ **本轮新增**（钉钉 Markdown 机器人，17 用例） |
+| **`WeComWebhookMessageSender`** | ✅ **本轮新增**（企微 Markdown 机器人，15 用例） |
+| `WebhookMessageSender` | `abstract` 骨架（3 个具体实现已可用） |
+| `DingTalkMessageSender` | `abstract` 骨架（企业 API 需 appKey/appSecret/模板参数） |
+| `WeComMessageSender` | `abstract` 骨架（企业 API 需 corpId/agentId/secret） |
+| `SmsMessageSender` | `abstract` 骨架（需阿里云/腾讯云 SMS SDK，超出零依赖范围） |
+| `EmailMessageSender` | `abstract` 骨架（需 Angus Mail/JavaMail，未列入模块 pom） |
+| `PushMessageSender` | `abstract` 骨架（厂商差异大，无统一 API 契约） |
+| `SiteMessageSender` | `abstract` 骨架（站内信需落库/持久化契约） |
 
-故"7 个骨架"的说法需修正：**6 个抽象骨架 + 1 个已落地实现**。
-落地路径：Webhook 零外部依赖，可立即做；其余 6 个需各渠道 API 凭证与协议细节。
+**已归零**：Webhook 三兄弟（Http / DingTalk / WeCom）全部具体化，JDK `HttpClient` 单栈覆盖，零外部依赖定位保持。
+**剩余骨架**：4 个（Sms / Email / Push / Site）都需要第三方 SDK 或明确 API 契约，不适合塞进零依赖的 `extras-message`，建议后续独立子模块或业务方定制。
+
+**覆盖率**：`framework-extras-message` 93.65% → **97.38%**（LINE 334/343）。
+**未覆盖 9 行**：三个 Webhook sender 各 3 行 `InterruptedException` 分支——JDK `HttpClient` 是 final 抽象类，纯 JUnit5+AssertJ 栈无法 mock；引入 Mockito 会破坏"零外部依赖"定位，作为防御性代码接受。
 
 ### 🟢 N-003 — `Notification` 配置块空转（**已废弃，保留不删**）
 
@@ -101,6 +106,13 @@
 
 **差距**：设计文档规划的 5 个测试类（`RedisFixedWindowRateLimiterIntegrationTest`、`RedisTokenBucketRateLimiterIntegrationTest`、`RedisIdempotentStoreIntegrationTest`、`RedisCaptchaStoreIntegrationTest`）尚未编写；当前仅基类 + 4 个 `Nested` 子套件（`SetIfAbsentAndGet` / `SupportsScript` / `DeleteIfMatch` / `Eval` / `Ttl` / `DistributedLockSemantics` / `Delete`，全部 skip）。
 
+### P2-001 覆盖率补齐（2026-09-13，`a9453fa`）
+
+- 新增 `DingTalkWebhookMessageSender` / `WeComWebhookMessageSender`：JDK `HttpClient` + 自实现 `escapeJson`，零外部依赖
+- `HttpWebhookMessageSenderTest` 从 6 → 12 用例（补 escapeJson 全字符表 + timeout 分支）
+- `framework-extras-message` 覆盖率 93.65% → **97.38%**（+3.73pt，余量 +2.38pt），门禁通过
+- 剩余 9 行未覆盖：三个 sender 各 3 行 `InterruptedException` 分支（JDK `HttpClient` 是 final 抽象类，纯 JUnit5+AssertJ 栈无法 mock，作为防御性代码接受）
+
 ---
 
 ## 四、覆盖率门禁（独立口径，`mvn -o clean verify`）
@@ -128,13 +140,14 @@
 ## 五、推进建议（按风险/价值排序）
 
 ```
-第 1 步  🟡 P2-001 message sender — 先做 HttpWebhook 之外的渠道（Webhook 已落地）
-         └─ 与 P1-004b/P1-004c 独立，可并行
-第 2 步  🟢 P1-004c 真实 Redis 集成测试 — 补 4 个测试类
+第 1 步  🟢 P1-004c 真实 Redis 集成测试 — 补 4 个测试类
          └─ 需 Upstash 凭证；与 P2-001 独立
+第 2 步  🟡 P2-001 剩余 4 骨架（Sms/Email/Push/Site）— 建议独立子模块或业务方定制
+         └─ 均需第三方 SDK 或明确 API 契约，超出零依赖 extras-message 范围
 ```
 
 **无需再做**：
 - P1-004b（已完成，`79e20d0`）
 - P2-004b（`docs/code-analysis.md` 已标记为历史快照）
 - N-003 已按 09-07 决策废弃处理（`a0081be` + `5b381d1`），**不再建议删除**
+- P2-001 覆盖率补齐（本轮完成，`a9453fa`；Webhook 三兄弟全部具体化）
