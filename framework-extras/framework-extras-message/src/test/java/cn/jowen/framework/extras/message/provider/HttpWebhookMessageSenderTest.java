@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
@@ -119,5 +120,55 @@ class HttpWebhookMessageSenderTest {
 
         String expected = "{\"title\":\"he\\\"llo\",\"content\":\"li\\nne\"}";
         assertThat(lastBody.get()).isEqualTo(expected);
+    }
+
+    @Test
+    void escapeJsonHandlesCarriageReturnTabBackspaceFormfeed() {
+        HttpWebhookMessageSender sender = new HttpWebhookMessageSender(client);
+        sender.send(webhook(baseUrl, "\r\t\b\f", "\r\t\b\f"));
+
+        String body = lastBody.get();
+        assertThat(body).contains("\\r");
+        assertThat(body).contains("\\t");
+        assertThat(body).contains("\\b");
+        assertThat(body).contains("\\f");
+    }
+
+    @Test
+    void escapeJsonHandlesControlCharactersBelow0x20() {
+        HttpWebhookMessageSender sender = new HttpWebhookMessageSender(client);
+        // Use actual control chars via string concatenation to avoid escape issues
+        String controlChars = new String(new char[]{(char)0x01, (char)0x02});
+        sender.send(webhook(baseUrl, controlChars, "test"));
+
+        String body = lastBody.get();
+        assertThat(body).contains("\\u0001");
+        assertThat(body).contains("\\u0002");
+    }
+
+    @Test
+    void nullHttpClientConstructorFallback() {
+        HttpWebhookMessageSender sender = new HttpWebhookMessageSender(null);
+        assertThatCode(() -> sender.send(webhook(baseUrl, "t", "c"))).doesNotThrowAnyException();
+    }
+
+    @Test
+    void nullTimeoutConstructorFallback() {
+        HttpWebhookMessageSender sender = new HttpWebhookMessageSender(client, false, null);
+        assertThatCode(() -> sender.send(webhook(baseUrl, "t", "c"))).doesNotThrowAnyException();
+    }
+
+    @Test
+    void escapeBackslash() {
+        HttpWebhookMessageSender sender = new HttpWebhookMessageSender(client);
+        sender.send(webhook(baseUrl, "a\\b", "c"));
+        assertThat(lastBody.get()).contains("a\\\\b");
+    }
+
+    @Test
+    void escapeForwardSlash() {
+        HttpWebhookMessageSender sender = new HttpWebhookMessageSender(client);
+        sender.send(webhook(baseUrl, "a/b", "c"));
+        assertThat(lastBody.get()).contains("a\\/b");
     }
 }
